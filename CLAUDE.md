@@ -51,14 +51,16 @@ Apple 미리알림(Reminders)의 두 목록을 기반으로 아이들의 일일 
   - `config.ts` — 아이 정보, 경로, 설정
   - `routes/api.ts` — REST API
   - `lib/date.ts` — 공통 날짜 유틸 (todayKST, toKSTDate)
-  - `sync/` — remindctl 싱크 엔진 (5분 간격 setInterval)
+  - `sync/` — remindctl 싱크 엔진 (5분 간격 setInterval, 전체 fetch → 캐시 전체 교체)
   - `badges/` — 뱃지 평가 엔진
     - `definitions.ts` — 64개+ 뱃지 정의 (daily/streak/milestone/weekly/special + 히든)
-    - `engine.ts` — 싱크 시점에 조건 평가 → badges.json 저장
+    - `engine.ts` — 싱크 시점에 전체 재계산 → badges.json 저장
 - `public/` — 정적 프론트엔드 (빌드 없음)
+  - `js/pages/Home.js` — 아이 선택 + 비밀번호 모달
   - `js/pages/Dashboard.js` — 메인 페이지 (달력 + 달성률 + 할일)
   - `js/pages/Badges.js` — 뱃지 컬렉션 (트로피 셸프, 모달)
   - `js/pages/Map.js` — 달성 맵
+  - `js/lib/state.js` — 라우팅 + 세션 관리 (localStorage)
   - `js/components/` — ProgressRing, TaskItem, BottomNav, Toast
   - `vendor/` — vendored ES 모듈 (preact, htm)
 - `data/` — (gitignored) 런타임 캐시/뱃지 데이터
@@ -71,7 +73,9 @@ Apple 미리알림(Reminders)의 두 목록을 기반으로 아이들의 일일 
 - 등급: common, rare, epic, legendary
 - 반복 획득 가능 뱃지 있음
 - 히든 뱃지: 획득 전엔 목록에 미노출
-- 싱크 시점에 동적 평가 (실시간 X)
+- **싱크마다 전체 재계산** (delta 방식 아님, 정합성 보장)
+- 주간 뱃지: 월~일 기준, 지난주(완료된 주)만 평가
+- 얼리버드: KST 6~8시 사이 완료 시 획득
 - 트로피 셸프: 💎×1000 👑×100 🏆×10 🏅×1 시각화
 
 ### 달성 맵
@@ -84,6 +88,19 @@ Apple 미리알림(Reminders)의 두 목록을 기반으로 아이들의 일일 
 ## BottomNav 구조
 
 3탭: 📋 할일 / 🏅 뱃지 / 🗺️ 달성맵
+
+## 세션/로그인
+
+- Home(아이 선택) → 아이 클릭 → 비밀번호 모달 → 대시보드 진입
+- 세션: localStorage (`mungchi_session` = childId)
+- 새로고침 시 세션 유지, 로그아웃은 아이 이름 롱프레스 + 비밀번호
+- ← 뒤로가기 버튼 없음 (애들이 전환 못하게)
+
+## 데이터 정합성
+
+- 미리알림 = SSOT → 매 싱크마다 전체 fetch → 캐시 전체 교체
+- 뱃지 = 매 싱크마다 캐시 전체 순회하여 처음부터 재계산
+- earnedAt은 UTC 저장, 날짜 비교는 반드시 KST 변환 (toKSTDate)
 
 ## 주의사항
 
