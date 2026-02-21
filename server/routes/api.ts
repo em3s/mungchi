@@ -147,22 +147,25 @@ api.get("/children/:id/map", (c) => {
   const siblingId = CHILDREN.find((ch) => ch.id !== child.id)?.id ?? "";
   const ctx = buildContext(cache, child.id, siblingId);
 
+  // 3월~12월 (9개월, 하루 ~10개, 총 ~2700개 기준)
   const milestones = [
     { node: 1, label: "출발!", required: 0, emoji: "🚀" },
-    { node: 2, label: "첫 걸음", required: 3, emoji: "👣" },
-    { node: 3, label: "힘을 내요", required: 10, emoji: "💪" },
-    { node: 4, label: "잘하고 있어!", required: 20, emoji: "🌱" },
-    { node: 5, label: "쑥쑥 성장", required: 30, emoji: "🌿" },
-    { node: 6, label: "절반이다!", required: 50, emoji: "⭐" },
-    { node: 7, label: "대단해!", required: 70, emoji: "🌈" },
-    { node: 8, label: "거의 다 왔어!", required: 90, emoji: "🎯" },
-    { node: 9, label: "백점 만점!", required: 100, emoji: "💯" },
-    { node: 10, label: "전설의 시작", required: 130, emoji: "🏆" },
-    { node: 11, label: "멈출 수 없어!", required: 160, emoji: "🔥" },
-    { node: 12, label: "슈퍼스타", required: 200, emoji: "🌟" },
-    { node: 13, label: "마스터", required: 250, emoji: "👑" },
-    { node: 14, label: "레전드", required: 300, emoji: "🐉" },
-    { node: 15, label: "우주 정복!", required: 400, emoji: "🚀" },
+    { node: 2, label: "첫 걸음", required: 10, emoji: "👣" },
+    { node: 3, label: "힘을 내요", required: 30, emoji: "💪" },
+    { node: 4, label: "잘하고 있어!", required: 60, emoji: "🌱" },
+    { node: 5, label: "쑥쑥 성장", required: 100, emoji: "🌿" },
+    { node: 6, label: "달리기 시작!", required: 150, emoji: "🏃" },
+    { node: 7, label: "대단해!", required: 200, emoji: "🌈" },
+    { node: 8, label: "습관의 힘", required: 300, emoji: "⭐" },
+    { node: 9, label: "반쯤 왔다!", required: 400, emoji: "🎯" },
+    { node: 10, label: "슈퍼스타", required: 500, emoji: "🌟" },
+    { node: 11, label: "멈출 수 없어!", required: 650, emoji: "🔥" },
+    { node: 12, label: "전설의 시작", required: 800, emoji: "🏆" },
+    { node: 13, label: "마스터", required: 1000, emoji: "👑" },
+    { node: 14, label: "초월자", required: 1300, emoji: "⚡" },
+    { node: 15, label: "레전드", required: 1600, emoji: "🐉" },
+    { node: 16, label: "신화", required: 2000, emoji: "🦄" },
+    { node: 17, label: "우주 정복!", required: 2500, emoji: "🪐" },
   ];
 
   const currentNode = milestones.reduce(
