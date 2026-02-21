@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { CHILDREN, getChild } from "../config.js";
 import { readCache } from "../sync/cache.js";
 import { syncAll } from "../sync/reminders.js";
-import { evaluateBadges, getBadgesForChild, buildContext } from "../badges/engine.js";
+import { recalculateAllBadges, getBadgesForChild, buildContext } from "../badges/engine.js";
 import { todayKST } from "../lib/date.js";
 
 const api = new Hono();
@@ -184,10 +184,8 @@ api.get("/children/:id/map", (c) => {
 // 수동 싱크
 api.post("/sync", async (c) => {
   await syncAll();
-  // 싱크 후 뱃지 평가
-  for (const child of CHILDREN) {
-    evaluateBadges(child.id);
-  }
+  // 싱크 후 뱃지 전체 재계산
+  recalculateAllBadges();
   return c.json({ ok: true, syncedAt: new Date().toISOString() });
 });
 
