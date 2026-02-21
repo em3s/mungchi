@@ -38,6 +38,7 @@ export function Dashboard({ childId }) {
   const [monthData, setMonthData] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [dayData, setDayData] = useState(null);
+  const [calOpen, setCalOpen] = useState(true);
 
   const load = useCallback(() => {
     getToday(childId).then(setData);
@@ -89,6 +90,13 @@ export function Dashboard({ childId }) {
     setSelectedDate(date === selectedDate ? null : date);
   }
 
+  function goToday() {
+    const t = todayKST();
+    setCalYear(parseInt(t.slice(0, 4)));
+    setCalMonth(parseInt(t.slice(5, 7)) - 1);
+    setSelectedDate(null);
+  }
+
   function formatSelectedDate(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
     const weekday = WEEKDAYS[d.getDay()];
@@ -107,8 +115,13 @@ export function Dashboard({ childId }) {
   if (!data) return html`<div class="loading">불러오는 중...</div>`;
 
   const themeClass = `theme-${data.child.theme}`;
-  const todoTasks = data.tasks.filter((t) => !t.completed);
-  const doneTasks = data.tasks.filter((t) => t.completed);
+
+  // 선택된 날짜가 있으면 그 날의 데이터, 없으면 오늘 데이터
+  const activeTasks = selectedDate && dayData ? dayData.tasks : data.tasks;
+  const activeRate = selectedDate && dayData ? dayData.stats.rate : data.stats.rate;
+  const activeLabel = selectedDate ? formatSelectedDate(selectedDate) : "오늘";
+  const todoTasks = activeTasks.filter((t) => !t.completed);
+  const doneTasks = activeTasks.filter((t) => t.completed);
 
   // 달력 셀 생성
   const daysInMonth = getDaysInMonth(calYear, calMonth);
@@ -133,11 +146,48 @@ export function Dashboard({ childId }) {
         <button class="sync-btn ${syncing ? "spinning" : ""}" onClick=${handleSync}>🔄</button>
       </div>
 
-      <${ProgressRing} rate=${data.stats.rate} />
+      <div class="section-title toggle" onClick=${() => setCalOpen(!calOpen)}>
+        <span>${calOpen ? "▼" : "▶"} 📅 달력</span>
+      </div>
 
-      <div class="section-title">할 일 (${todoTasks.length})</div>
+      ${calOpen && html`
+        <div class="cal-nav">
+          <button class="cal-arrow" onClick=${prevMonth}>←</button>
+          <span class="cal-title">${calYear}년 ${calMonth + 1}월</span>
+          <button class="cal-arrow" onClick=${nextMonth}>→</button>
+          <button class="cal-today-btn" onClick=${goToday}>오늘</button>
+        </div>
+
+        <div class="cal-grid">
+          ${WEEKDAYS.map((w) => html`
+            <div class="cal-weekday${w === "일" ? " sun" : w === "토" ? " sat" : ""}">${w}</div>
+          `)}
+          ${cells.map((cell) => {
+            if (!cell) return html`<div class="cal-cell empty"></div>`;
+            const isToday = cell.date === today;
+            const isSelected = cell.date === selectedDate;
+            const hasData = cell.data != null;
+            const rateClass = hasData ? getRateClass(cell.data.rate) : "";
+            const isSun = new Date(cell.date + "T00:00:00").getDay() === 0;
+            const isSat = new Date(cell.date + "T00:00:00").getDay() === 6;
+            return html`
+              <div
+                class="cal-cell${isToday ? " today" : ""}${isSelected ? " selected" : ""}${hasData ? " has-data" : ""}${isSun ? " sun" : ""}${isSat ? " sat" : ""}"
+                onClick=${() => handleDateClick(cell.date)}
+              >
+                <span class="cal-day">${cell.day}</span>
+                ${hasData && html`<span class="cal-dot ${rateClass}"></span>`}
+              </div>
+            `;
+          })}
+        </div>
+      `}
+
+      <${ProgressRing} rate=${activeRate} />
+
+      <div class="section-title">${activeLabel} — 할 일 (${todoTasks.length})</div>
       ${todoTasks.length === 0 && doneTasks.length === 0
-        ? html`<div class="task-empty">오늘 할일이 없어요. 싱크해보세요!</div>`
+        ? html`<div class="task-empty">${selectedDate ? "이 날의 데이터가 없어요" : "오늘 할일이 없어요. 싱크해보세요!"}</div>`
         : todoTasks.length === 0
         ? html`<div class="task-empty">모두 완료! 🎉</div>`
         : html`
@@ -151,61 +201,6 @@ export function Dashboard({ childId }) {
         <ul class="task-list">
           ${doneTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} />`)}
         </ul>
-      `}
-
-      <div class="section-title" style="margin-top: 24px;">📅 달력</div>
-
-      <div class="cal-nav">
-        <button class="cal-arrow" onClick=${prevMonth}>←</button>
-        <span class="cal-title">${calYear}년 ${calMonth + 1}월</span>
-        <button class="cal-arrow" onClick=${nextMonth}>→</button>
-      </div>
-
-      <div class="cal-grid">
-        ${WEEKDAYS.map((w) => html`
-          <div class="cal-weekday${w === "일" ? " sun" : w === "토" ? " sat" : ""}">${w}</div>
-        `)}
-        ${cells.map((cell) => {
-          if (!cell) return html`<div class="cal-cell empty"></div>`;
-          const isToday = cell.date === today;
-          const isSelected = cell.date === selectedDate;
-          const hasData = cell.data != null;
-          const rateClass = hasData ? getRateClass(cell.data.rate) : "";
-          const isSun = new Date(cell.date + "T00:00:00").getDay() === 0;
-          const isSat = new Date(cell.date + "T00:00:00").getDay() === 6;
-          return html`
-            <div
-              class="cal-cell${isToday ? " today" : ""}${isSelected ? " selected" : ""}${hasData ? " has-data" : ""}${isSun ? " sun" : ""}${isSat ? " sat" : ""}"
-              onClick=${() => handleDateClick(cell.date)}
-            >
-              <span class="cal-day">${cell.day}</span>
-              ${hasData && html`<span class="cal-dot ${rateClass}"></span>`}
-            </div>
-          `;
-        })}
-      </div>
-
-      ${selectedDate && html`
-        <div class="cal-detail">
-          <div class="cal-detail-header">
-            <span class="cal-detail-date">${formatSelectedDate(selectedDate)}</span>
-            ${dayData && dayData.stats.total > 0 && html`
-              <span class="cal-detail-rate ${getRateClass(dayData.stats.rate)}">
-                ${dayData.stats.rate >= 1 ? "⭐" : ""} ${Math.round(dayData.stats.rate * 100)}%
-              </span>
-            `}
-          </div>
-
-          ${!dayData
-            ? html`<div class="cal-detail-empty">불러오는 중...</div>`
-            : dayData.tasks.length === 0
-            ? html`<div class="cal-detail-empty">이 날의 데이터가 없어요</div>`
-            : html`
-              <ul class="task-list">
-                ${dayData.tasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} />`)}
-              </ul>
-            `}
-        </div>
       `}
 
       <${BottomNav} active="dashboard" childId=${childId} />

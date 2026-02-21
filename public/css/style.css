@@ -105,6 +105,9 @@ body {
   text-transform: uppercase; letter-spacing: 1px;
   margin: 24px 0 12px;
 }
+.section-title.toggle {
+  cursor: pointer; user-select: none;
+}
 
 /* === Bottom Nav === */
 .bottom-nav {
@@ -242,9 +245,18 @@ body {
 .cal-cell.sun:not(.has-data) .cal-day { color: #fab1a0; }
 .cal-cell.sat:not(.has-data) .cal-day { color: #74b9ff; }
 
+.cal-today-btn {
+  background: var(--accent, #6C5CE7); color: white; border: none;
+  font-size: 0.8rem; font-weight: 700; padding: 4px 12px;
+  border-radius: 14px; cursor: pointer; margin-left: 4px;
+}
+.cal-today-btn:active { opacity: 0.8; }
+
 .cal-cell.today {
+  background: rgba(108, 92, 231, 0.12);
   border: 2px solid var(--accent, #6C5CE7);
 }
+.cal-cell.today .cal-day { color: var(--accent, #6C5CE7) !important; font-weight: 700; }
 .cal-cell.selected {
   background: var(--accent, #6C5CE7);
 }
