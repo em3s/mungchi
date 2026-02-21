@@ -140,7 +140,7 @@ api.get("/children/:id/map", (c) => {
 
   const cache = readCache();
   const siblingId = CHILDREN.find((ch) => ch.id !== child.id)?.id ?? "";
-  const ctx = buildContext(cache, child.id, siblingId);
+  const ctx = buildContext(cache, child.id, siblingId, todayKST(), true);
 
   // 3월~12월 (9개월, 하루 ~10개, 총 ~2700개 기준)
   const milestones = [
