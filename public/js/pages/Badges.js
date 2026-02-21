@@ -75,7 +75,7 @@ export function Badges({ childId }) {
                   <div class="badge-emoji">${b.earned ? b.emoji : "🔒"}</div>
                   <div class="badge-name">${b.earned ? b.name : "???"}</div>
                   <span class="badge-grade ${b.grade}">${GRADE_LABELS[b.grade]}</span>
-                  ${b.earned && b.earnedCount > 1 ? html`<span class="badge-count">×${b.earnedCount}</span>` : null}
+                  ${b.earned && b.repeatable ? html`<span class="badge-count">×${b.earnedCount}</span>` : null}
                 </div>
               `)}
             </div>
@@ -92,12 +92,10 @@ export function Badges({ childId }) {
             <div class="badge-modal-desc">
               ${selected.earned ? selected.description : selected.hint}
             </div>
-            ${selected.earned && selected.repeatable && html`
-              <div class="badge-modal-repeat">🔄 반복 획득 가능 · ${selected.earnedCount}회 달성</div>
-            `}
-            ${selected.earned && !selected.repeatable && html`
-              <div class="badge-modal-repeat">🏅 1회 한정 뱃지</div>
-            `}
+            ${selected.repeatable
+              ? html`<div class="badge-modal-repeat">🔄 반복 획득 가능${selected.earned ? ` · ${selected.earnedCount}회 달성` : ""}</div>`
+              : html`<div class="badge-modal-repeat">🏅 1회 한정 뱃지${selected.earned ? " · 획득 완료!" : ""}</div>`
+            }
             <button class="badge-modal-close" onClick=${closeModal}>닫기</button>
           </div>
         </div>
