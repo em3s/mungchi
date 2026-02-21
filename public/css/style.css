@@ -840,6 +840,7 @@ body {
 /* === Pin Pad (password modal) === */
 .pin-dots {
   display: flex;
+  justify-content: center;
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -941,6 +942,9 @@ body {
   width: 300px;
   max-width: 85vw;
   animation: popIn 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .logout-modal-emoji {
   font-size: 3rem;

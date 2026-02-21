@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "../../vendor/preact-hooks.mjs"
 import { getChildren } from "../lib/api.js";
 import { navigate, login } from "../lib/state.js";
 
-const PASSWORD = "49634963";
+const PASSWORD = "999999";
 
 export function Home() {
   const [children, setChildren] = useState([]);

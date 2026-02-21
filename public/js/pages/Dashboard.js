@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "../../vendor/preact-ho
 import { getToday, getDate, getMonth, syncNow } from "../lib/api.js";
 import { navigate, logout } from "../lib/state.js";
 
-const LOCK_PASSWORD = "49634963";
+const LOCK_PASSWORD = "999999";
 import { ProgressRing } from "../components/ProgressRing.js";
 import { TaskItem } from "../components/TaskItem.js";
 import { BottomNav } from "../components/BottomNav.js";
