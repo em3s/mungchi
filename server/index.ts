@@ -1,6 +1,5 @@
-import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { serveStatic } from "@hono/node-server/serve-static";
+import { serveStatic } from "hono/bun";
 import { PORT } from "./config.js";
 import api from "./routes/api.js";
 import { startScheduler } from "./sync/scheduler.js";
@@ -19,6 +18,9 @@ app.get("*", serveStatic({ root: "./public", path: "index.html" }));
 // 스케줄러 시작
 startScheduler();
 
-serve({ fetch: app.fetch, port: PORT }, (info) => {
-  console.log(`🍡 뭉치 서버 시작! http://localhost:${info.port}`);
-});
+export default {
+  port: PORT,
+  fetch: app.fetch,
+};
+
+console.log(`🍡 뭉치 서버 시작! http://localhost:${PORT}`);

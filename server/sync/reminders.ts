@@ -1,6 +1,7 @@
 import { execSync } from "node:child_process";
 import { CHILDREN } from "../config.js";
 import { readCache, writeCache, type Task, type CacheData } from "./cache.js";
+import { todayKST, toKSTDate } from "../lib/date.js";
 
 interface RemindctlItem {
   id: string;
@@ -12,13 +13,6 @@ interface RemindctlItem {
   notes?: string;
   listName?: string;
   listID?: string;
-}
-
-function todayKST(): string {
-  const now = new Date();
-  // KST = UTC+9
-  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return kst.toISOString().slice(0, 10);
 }
 
 function parseReminders(listName: string): RemindctlItem[] {
@@ -48,10 +42,7 @@ function toTask(item: RemindctlItem, index: number): Task {
 
 function dueDateToKST(dueDate?: string): string | null {
   if (!dueDate) return null;
-  const d = new Date(dueDate);
-  // KST = UTC + 9
-  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-  return kst.toISOString().slice(0, 10);
+  return toKSTDate(new Date(dueDate));
 }
 
 export async function syncAll(): Promise<CacheData> {

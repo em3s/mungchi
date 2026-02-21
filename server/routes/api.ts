@@ -3,12 +3,7 @@ import { CHILDREN, getChild } from "../config.js";
 import { readCache } from "../sync/cache.js";
 import { syncAll } from "../sync/reminders.js";
 import { evaluateBadges, getBadgesForChild, buildContext } from "../badges/engine.js";
-
-function todayKST(): string {
-  const now = new Date();
-  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return kst.toISOString().slice(0, 10);
-}
+import { todayKST } from "../lib/date.js";
 
 const api = new Hono();
 

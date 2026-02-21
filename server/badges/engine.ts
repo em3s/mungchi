@@ -1,12 +1,7 @@
 import { CHILDREN } from "../config.js";
 import { readCache, readBadges, writeBadges, type CacheData, type BadgeRecord } from "../sync/cache.js";
 import { BADGE_DEFINITIONS, type BadgeContext } from "./definitions.js";
-
-function todayKST(): string {
-  const now = new Date();
-  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return kst.toISOString().slice(0, 10);
-}
+import { todayKST } from "../lib/date.js";
 
 function dateOffset(base: string, days: number): string {
   const d = new Date(base + "T00:00:00+09:00");

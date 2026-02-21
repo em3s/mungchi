@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "types": ["bun-types"]
   },
   "include": ["server/**/*.ts"],
   "exclude": ["node_modules", "dist"]

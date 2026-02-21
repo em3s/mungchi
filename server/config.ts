@@ -1,8 +1,6 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(import.meta.dir, "..");
 
 export const DATA_DIR = path.join(ROOT, "data");
 export const CACHE_PATH = path.join(DATA_DIR, "cache.json");
@@ -39,4 +37,4 @@ export function getChild(id: string): Child | undefined {
 }
 
 export const PORT = Number(process.env.PORT) || 3000;
-export const SYNC_INTERVAL = "*/5 * * * *"; // 5분마다
+export const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5분

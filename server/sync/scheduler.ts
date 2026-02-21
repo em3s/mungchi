@@ -1,5 +1,4 @@
-import cron from "node-cron";
-import { SYNC_INTERVAL } from "../config.js";
+import { SYNC_INTERVAL_MS } from "../config.js";
 import { syncAll } from "./reminders.js";
 
 export function startScheduler() {
@@ -7,9 +6,9 @@ export function startScheduler() {
   syncAll().catch((err) => console.error("[scheduler] Initial sync failed:", err));
 
   // 5분마다 자동 싱크
-  cron.schedule(SYNC_INTERVAL, () => {
+  setInterval(() => {
     syncAll().catch((err) => console.error("[scheduler] Scheduled sync failed:", err));
-  });
+  }, SYNC_INTERVAL_MS);
 
-  console.log(`[scheduler] Auto-sync every 5 minutes`);
+  console.log(`[scheduler] Auto-sync every ${SYNC_INTERVAL_MS / 60000} minutes`);
 }

@@ -4,6 +4,8 @@
 
 set -e
 
+export PATH="$HOME/.bun/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 PID_FILE="$SCRIPT_DIR/mungchi.pid"
@@ -18,7 +20,7 @@ case "${1:-start}" in
 
     echo "🍡 뭉치 프로덕션 서버 시작 (port 8080)..."
     cd "$PROJECT_DIR"
-    PORT=8080 NODE_ENV=production nohup npx tsx server/index.ts > "$LOG_FILE" 2>&1 &
+    PORT=8080 NODE_ENV=production nohup bun server/index.ts > "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"
     sleep 2
 
