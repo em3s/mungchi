@@ -41,6 +41,8 @@ export interface BadgeContext {
   yesterdayRate: number;
   /** 오늘 요일 (0=일, 6=토) */
   todayDayOfWeek: number;
+  /** 현재 KST 시 (0~23) */
+  currentHourKST: number;
 }
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
@@ -735,7 +737,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "🐦",
     grade: "rare",
     category: "special",
-    condition: (ctx) => ctx.todayCompleted >= 1 && ctx.todayTotal > 0,
+    condition: (ctx) => ctx.todayCompleted >= 1 && ctx.todayTotal > 0 && ctx.currentHourKST < 9,
     repeatable: false,
     hidden: true,
   },

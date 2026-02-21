@@ -94,6 +94,7 @@ export function buildContext(cache: CacheData, childId: string, siblingId: strin
     siblingTodayRate: getDayRate(cache, siblingId, today),
     yesterdayRate: getDayRate(cache, childId, dateOffset(today, -1)),
     todayDayOfWeek: todayDate.getDay(),
+    currentHourKST: (new Date().getUTCHours() + 9) % 24,
   };
 }
 
