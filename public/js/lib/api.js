@@ -26,6 +26,14 @@ export function getMap(childId) {
   return fetchJSON(`/children/${childId}/map`);
 }
 
+export function getDate(childId, date) {
+  return fetchJSON(`/children/${childId}/date/${date}`);
+}
+
+export function getMonth(childId, month) {
+  return fetchJSON(`/children/${childId}/month/${month}`);
+}
+
 export function syncNow() {
   return fetchJSON("/sync", { method: "POST" });
 }

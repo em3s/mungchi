@@ -50,6 +50,61 @@ api.get("/children/:id/today", (c) => {
   });
 });
 
+// 특정 날짜 할일 + 통계
+api.get("/children/:id/date/:date", (c) => {
+  const child = getChild(c.req.param("id"));
+  if (!child) return c.json({ error: "Child not found" }, 404);
+
+  const date = c.req.param("date");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return c.json({ error: "Invalid date format. Use YYYY-MM-DD" }, 400);
+  }
+
+  const cache = readCache();
+  const dayData = cache[child.id]?.[date];
+
+  const tasks = dayData?.tasks ?? [];
+  const total = tasks.length;
+  const completed = tasks.filter((t) => t.completed).length;
+
+  return c.json({
+    child: { id: child.id, name: child.name, emoji: child.emoji, theme: child.theme },
+    date,
+    tasks,
+    stats: {
+      total,
+      completed,
+      rate: total > 0 ? completed / total : 0,
+    },
+    syncedAt: dayData?.syncedAt ?? null,
+  });
+});
+
+// 월간 달성률 요약 (달력용)
+api.get("/children/:id/month/:month", (c) => {
+  const child = getChild(c.req.param("id"));
+  if (!child) return c.json({ error: "Child not found" }, 404);
+
+  const month = c.req.param("month"); // YYYY-MM
+  if (!/^\d{4}-\d{2}$/.test(month)) {
+    return c.json({ error: "Invalid month format. Use YYYY-MM" }, 400);
+  }
+
+  const cache = readCache();
+  const childData = cache[child.id] ?? {};
+
+  const days: Record<string, { total: number; completed: number; rate: number }> = {};
+  for (const [date, dayData] of Object.entries(childData)) {
+    if (date.startsWith(month)) {
+      const total = dayData.tasks.length;
+      const completed = dayData.tasks.filter((t: any) => t.completed).length;
+      days[date] = { total, completed, rate: total > 0 ? completed / total : 0 };
+    }
+  }
+
+  return c.json({ childId: child.id, month, days });
+});
+
 // 뱃지 목록
 api.get("/children/:id/badges", (c) => {
   const child = getChild(c.req.param("id"));

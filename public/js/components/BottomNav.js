@@ -13,6 +13,10 @@ export function BottomNav({ active, childId }) {
           <span class="icon">📋</span>
           <span>할일</span>
         </button>
+        <button class="nav-btn ${active === "calendar" ? "active" : ""}" onClick=${() => go("calendar")}>
+          <span class="icon">📅</span>
+          <span>달력</span>
+        </button>
         <button class="nav-btn ${active === "badges" ? "active" : ""}" onClick=${() => go("badges")}>
           <span class="icon">🏅</span>
           <span>뱃지</span>
