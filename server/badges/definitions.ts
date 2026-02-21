@@ -737,7 +737,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "🐦",
     grade: "rare",
     category: "special",
-    condition: (ctx) => ctx.todayCompleted >= 1 && ctx.todayTotal > 0 && ctx.currentHourKST < 9,
+    condition: (ctx) => ctx.todayCompleted >= 1 && ctx.todayTotal > 0 && ctx.currentHourKST >= 6 && ctx.currentHourKST < 8,
     repeatable: false,
     hidden: true,
   },
