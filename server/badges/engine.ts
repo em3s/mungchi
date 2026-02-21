@@ -52,16 +52,18 @@ function computeTotals(cache: CacheData, childId: string) {
   return { totalCompleted, totalPerfectDays, totalActiveDays };
 }
 
-function computeWeekRate(cache: CacheData, childId: string, today: string): number {
-  // 월~일 기준 한 주 계산
+function computeLastWeekRate(cache: CacheData, childId: string, today: string): number {
+  // 지난주 월~일 기준 달성률
   const d = new Date(today + "T00:00:00+09:00");
   const dow = d.getDay(); // 0=일, 1=월, ...
   const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+  // 지난주 일요일 = 오늘 - daysSinceMonday - 1
+  const lastSunday = dateOffset(today, -(daysSinceMonday + 1));
 
   let total = 0;
   let completed = 0;
-  for (let i = 0; i <= daysSinceMonday; i++) {
-    const date = dateOffset(today, -i);
+  for (let i = 0; i < 7; i++) {
+    const date = dateOffset(lastSunday, -i);
     const day = cache[childId]?.[date];
     if (day) {
       total += day.tasks.length;
@@ -88,7 +90,7 @@ export function buildContext(cache: CacheData, childId: string, siblingId: strin
     totalCompleted,
     totalPerfectDays,
     totalActiveDays,
-    weekRate: computeWeekRate(cache, childId, today),
+    weekRate: computeLastWeekRate(cache, childId, today),
     siblingTodayRate: getDayRate(cache, siblingId, today),
     yesterdayRate: getDayRate(cache, childId, dateOffset(today, -1)),
     todayDayOfWeek: todayDate.getDay(),
