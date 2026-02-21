@@ -837,6 +837,140 @@ body {
   font-size: 0.95rem;
 }
 
+/* === Pin Pad (password modal) === */
+.pin-dots {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.pin-dots.small {
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid #b2bec3;
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pin-dot.filled {
+  background: #6c5ce7;
+  border-color: #6c5ce7;
+}
+.pin-dot.error {
+  border-color: #e17055;
+  animation: pinShake 0.4s ease;
+}
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.pin-error {
+  color: #e17055;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: -12px 0 16px;
+}
+.pin-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 260px;
+}
+.pin-pad.small {
+  width: 220px;
+  gap: 8px;
+}
+.pin-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 50%;
+  background: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3436;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  transition: background 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pin-pad.small .pin-btn {
+  font-size: 1.2rem;
+}
+.pin-btn:active {
+  background: #f0f0f0;
+  transform: scale(0.93);
+}
+.pin-btn.empty {
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+.pin-btn.delete {
+  background: transparent;
+  box-shadow: none;
+  font-size: 1.3rem;
+  color: #636e72;
+}
+.pin-pad.small .pin-btn.delete {
+  font-size: 1.1rem;
+}
+
+/* === Password Modal === */
+.logout-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: fadeIn 0.15s;
+}
+.logout-modal {
+  background: white;
+  border-radius: 24px;
+  padding: 28px 24px;
+  text-align: center;
+  width: 300px;
+  max-width: 85vw;
+  animation: popIn 0.2s;
+}
+.logout-modal-emoji {
+  font-size: 3rem;
+  margin-bottom: 4px;
+}
+.logout-modal-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.logout-modal-subtitle {
+  font-size: 0.85rem;
+  color: #636e72;
+  margin-bottom: 20px;
+}
+.logout-cancel-btn {
+  margin-top: 16px;
+  padding: 10px 32px;
+  background: #f5f6fa;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #636e72;
+  cursor: pointer;
+}
+.logout-cancel-btn:active {
+  background: #dfe6e9;
+}
+
 /* === Loading === */
 .loading {
   text-align: center;
@@ -971,6 +1105,19 @@ body {
   .header .sync-btn {
     font-size: 1.5rem;
     padding: 8px 12px;
+  }
+
+  /* Password Modal */
+  .logout-modal {
+    width: 360px;
+    padding: 36px 32px;
+  }
+  .logout-modal-title {
+    font-size: 1.4rem;
+  }
+  .logout-cancel-btn {
+    font-size: 1rem;
+    padding: 12px 40px;
   }
 
   /* Home */

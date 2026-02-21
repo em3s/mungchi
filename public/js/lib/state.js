@@ -2,6 +2,17 @@
 let _route = { page: "home", childId: null };
 let _listeners = [];
 
+// Auth state (localStorage-based)
+const AUTH_KEY = "mungchi_logged_in";
+
+export function isLoggedIn() {
+  return localStorage.getItem(AUTH_KEY) === "true";
+}
+
+export function login() {
+  localStorage.setItem(AUTH_KEY, "true");
+}
+
 export function getRoute() {
   return _route;
 }
