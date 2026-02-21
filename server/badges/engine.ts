@@ -7,7 +7,7 @@ import {
   type BadgeRecord,
 } from "../sync/cache.js";
 import { BADGE_DEFINITIONS, type BadgeContext } from "./definitions.js";
-import { todayKST } from "../lib/date.js";
+import { todayKST, toKSTDate } from "../lib/date.js";
 
 function dateOffset(base: string, days: number): string {
   const d = new Date(base + "T00:00:00+09:00");
@@ -112,7 +112,10 @@ export function evaluateBadges(childId: string): BadgeRecord[] {
     // 반복 뱃지: 오늘 이미 획득했으면 스킵
     if (def.repeatable) {
       const earnedToday = badgesData.badges.some(
-        (b) => b.badgeId === def.id && b.childId === childId && b.earnedAt.startsWith(today),
+        (b) =>
+          b.badgeId === def.id &&
+          b.childId === childId &&
+          toKSTDate(new Date(b.earnedAt)) === today,
       );
       if (earnedToday) continue;
     }
