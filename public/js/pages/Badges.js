@@ -62,7 +62,6 @@ export function Badges({ childId }) {
   return html`
     <div class="badges-page">
       <div class="header">
-        <button class="back-btn" onClick=${() => navigate("dashboard", childId)}>←</button>
         <h1>🏅 뱃지</h1>
         <span class="badge-counter">${earnedCount}/${totalCount} 발견 · ${totalEarned}회 획득</span>
       </div>

@@ -254,8 +254,11 @@ export function Dashboard({ childId }) {
       `}
 
       <div class="header">
-        <button class="back-btn" onClick=${openLockModal}>←</button>
-        <h1>${data.child.emoji} ${data.child.name}</h1>
+        <h1
+          onTouchStart=${(e) => { e.currentTarget._lt = setTimeout(openLockModal, 800); }}
+          onTouchEnd=${(e) => { clearTimeout(e.currentTarget._lt); }}
+          onTouchMove=${(e) => { clearTimeout(e.currentTarget._lt); }}
+        >${data.child.emoji} ${data.child.name}</h1>
         <button class="sync-btn ${syncing ? "spinning" : ""}" onClick=${handleSync}>🔄</button>
       </div>
 

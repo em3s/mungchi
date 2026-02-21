@@ -16,7 +16,6 @@ export function MapPage({ childId }) {
   return html`
     <div class="map-page">
       <div class="header">
-        <button class="back-btn" onClick=${() => navigate("dashboard", childId)}>←</button>
         <h1>🗺️ 달성 맵</h1>
         <span />
       </div>
