@@ -11,11 +11,7 @@ export function BottomNav({ active, childId }) {
       <div class="nav-inner">
         <button class="nav-btn ${active === "dashboard" ? "active" : ""}" onClick=${() => go("dashboard")}>
           <span class="icon">📋</span>
-          <span>오늘</span>
-        </button>
-        <button class="nav-btn ${active === "calendar" ? "active" : ""}" onClick=${() => go("calendar")}>
-          <span class="icon">📅</span>
-          <span>달력</span>
+          <span>할일</span>
         </button>
         <button class="nav-btn ${active === "badges" ? "active" : ""}" onClick=${() => go("badges")}>
           <span class="icon">🏅</span>
