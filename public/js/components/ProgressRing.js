@@ -8,8 +8,8 @@ export function ProgressRing({ rate = 0, size = 160, stroke = 12 }) {
 
   return html`
     <div class="progress-ring-wrap">
-      <div class="progress-ring-container" style="width:${size}px;height:${size}px">
-        <svg width="${size}" height="${size}">
+      <div class="progress-ring-container">
+        <svg viewBox="0 0 ${size} ${size}">
           <circle class="progress-ring-bg" cx="${size / 2}" cy="${size / 2}" r="${radius}" />
           <circle class="progress-ring-fill"
             cx="${size / 2}" cy="${size / 2}" r="${radius}"

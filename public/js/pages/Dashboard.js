@@ -7,6 +7,41 @@ import { TaskItem } from "../components/TaskItem.js";
 import { BottomNav } from "../components/BottomNav.js";
 import { showToast } from "../components/Toast.js";
 
+const CHEERS = {
+  perfect: [
+    "와! 올클리어! 넌 진짜 최고야! 🎉",
+    "완벽해! 오늘 정말 멋졌어! ✨",
+    "대박! 전부 다 해냈어! 👏",
+    "우와~ 100%! 자랑스러워! 🌟",
+    "올클! 이 기세로 내일도 화이팅! 🔥",
+  ],
+  good: [
+    "잘하고 있어! 조금만 더! 💪",
+    "절반 넘었어! 끝까지 가보자! 🏃",
+    "좋아좋아~ 이 조자! 👍",
+    "대단해! 거의 다 왔어! ⭐",
+  ],
+  start: [
+    "시작이 반이야! 하나씩 해보자! 🐣",
+    "첫 발을 내딛었어! 잘하고 있어! 👣",
+    "좋아~ 하나 했다! 계속 가보자! 🌱",
+  ],
+  zero: [
+    "오늘도 파이팅! 하나부터 시작해볼까? 💫",
+    "할 수 있어! 첫 번째를 눌러봐! ✊",
+    "준비됐지? 시작해보자! 🚀",
+    "오늘의 모험이 기다리고 있어! 🗺️",
+  ],
+};
+
+function getCheer(rate) {
+  const list = rate === 1 ? CHEERS.perfect
+    : rate >= 0.5 ? CHEERS.good
+    : rate > 0 ? CHEERS.start
+    : CHEERS.zero;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 function todayKST() {
   const now = new Date();
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
@@ -27,10 +62,15 @@ function getFirstDayOfWeek(year, month) {
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
+const CONFETTI_EMOJIS = ["🎉", "⭐", "✨", "🌟", "🎊", "💫", "🎉", "⭐", "✨", "🌟", "🎊", "💫"];
+
 export function Dashboard({ childId }) {
   const [data, setData] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const lastSyncRef = useRef(0);
+  const prevRateRef = useRef(null);
+  const cheerRef = useRef({ rate: -1, message: "" });
 
   // 달력 상태
   const today = todayKST();
@@ -39,6 +79,11 @@ export function Dashboard({ childId }) {
   const [monthData, setMonthData] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [dayData, setDayData] = useState(null);
+
+  // 활성 달성률 (hooks에서 사용하므로 먼저 계산)
+  const activeRate = data
+    ? (selectedDate && dayData ? dayData.stats.rate : data.stats.rate)
+    : 0;
 
   const load = useCallback(() => {
     getToday(childId).then(setData);
@@ -66,6 +111,20 @@ export function Dashboard({ childId }) {
     }
     getDate(childId, selectedDate).then(setDayData);
   }, [childId, selectedDate]);
+
+  // 올클리어 컨페티
+  useEffect(() => {
+    if (prevRateRef.current !== null && prevRateRef.current < 1 && activeRate === 1 && !selectedDate) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+    }
+    prevRateRef.current = activeRate;
+  }, [activeRate, selectedDate]);
+
+  // 응원 메시지 (rate 변경 시만 갱신)
+  if (data && activeRate !== cheerRef.current.rate) {
+    cheerRef.current = { rate: activeRate, message: getCheer(activeRate) };
+  }
 
   async function handleSync() {
     const now = Date.now();
@@ -118,10 +177,7 @@ export function Dashboard({ childId }) {
   if (!data) return html`<div class="loading">불러오는 중...</div>`;
 
   const themeClass = `theme-${data.child.theme}`;
-
-  // 선택된 날짜가 있으면 그 날의 데이터, 없으면 오늘 데이터
   const activeTasks = selectedDate && dayData ? dayData.tasks : data.tasks;
-  const activeRate = selectedDate && dayData ? dayData.stats.rate : data.stats.rate;
   const activeLabel = selectedDate ? formatSelectedDate(selectedDate) : "오늘";
   const todoTasks = activeTasks.filter((t) => !t.completed);
   const doneTasks = activeTasks.filter((t) => t.completed);
@@ -143,6 +199,14 @@ export function Dashboard({ childId }) {
 
   return html`
     <div class="dashboard ${themeClass}">
+      ${showConfetti && html`
+        <div class="confetti-container">
+          ${CONFETTI_EMOJIS.map((emoji, i) => html`
+            <span class="confetti-piece" style="--i: ${i}">${emoji}</span>
+          `)}
+        </div>
+      `}
+
       <div class="header">
         <button class="back-btn" onClick=${() => navigate("home")}>←</button>
         <h1>${data.child.emoji} ${data.child.name}</h1>
@@ -181,6 +245,7 @@ export function Dashboard({ childId }) {
       </div>
 
       <${ProgressRing} rate=${activeRate} />
+      <div class="cheer-message" key=${cheerRef.current.message}>${cheerRef.current.message}</div>
 
       <div class="section-title">${activeLabel} — 할 일 (${todoTasks.length})</div>
       ${todoTasks.length === 0 && doneTasks.length === 0

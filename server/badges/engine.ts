@@ -149,21 +149,24 @@ export function getBadgesForChild(childId: string) {
   const badgesData = readBadges();
   const earned = badgesData.badges.filter((b) => b.childId === childId);
 
-  return BADGE_DEFINITIONS.map((def) => {
-    const records = earned.filter((b) => b.badgeId === def.id);
-    const isEarned = records.length > 0;
-    return {
-      badgeId: def.id,
-      name: def.name,
-      description: def.description,
-      hint: def.hint,
-      emoji: def.emoji,
-      grade: def.grade,
-      category: def.category,
-      repeatable: def.repeatable,
-      earned: isEarned,
-      earnedCount: records.length,
-      earnedAt: isEarned ? records[records.length - 1].earnedAt : null,
-    };
-  });
+  return BADGE_DEFINITIONS
+    .filter((def) => !def.hidden || earned.some((b) => b.badgeId === def.id))
+    .map((def) => {
+      const records = earned.filter((b) => b.badgeId === def.id);
+      const isEarned = records.length > 0;
+      return {
+        badgeId: def.id,
+        name: def.name,
+        description: def.description,
+        hint: def.hint,
+        emoji: def.emoji,
+        grade: def.grade,
+        category: def.category,
+        repeatable: def.repeatable,
+        hidden: def.hidden ?? false,
+        earned: isEarned,
+        earnedCount: records.length,
+        earnedAt: isEarned ? records[records.length - 1].earnedAt : null,
+      };
+    });
 }

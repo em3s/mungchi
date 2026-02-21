@@ -33,6 +33,7 @@ export function Badges({ childId }) {
 
   const badges = data.badges;
   const earnedCount = badges.filter((b) => b.earned).length;
+  const hiddenExist = badges.some((b) => b.hidden && b.earned);
   const totalCount = badges.length;
 
   // 카테고리별 그룹
@@ -76,12 +77,15 @@ export function Badges({ childId }) {
                   <div class="badge-name">${b.earned ? b.name : "???"}</div>
                   <span class="badge-grade ${b.grade}">${GRADE_LABELS[b.grade]}</span>
                   ${b.earned && b.repeatable ? html`<span class="badge-count">×${b.earnedCount}</span>` : null}
+                  ${b.hidden && b.earned ? html`<span class="badge-secret">SECRET</span>` : null}
                 </div>
               `)}
             </div>
           </div>
         `;
       })}
+
+      <div class="badge-hidden-hint">🤫 어딘가에 히든 뱃지가 숨어있어요...</div>
 
       ${selected && html`
         <div class="badge-modal-overlay" onClick=${closeModal}>
@@ -92,6 +96,7 @@ export function Badges({ childId }) {
             <div class="badge-modal-desc">
               ${selected.earned ? selected.description : selected.hint}
             </div>
+            ${selected.hidden && selected.earned ? html`<div class="badge-modal-secret">🤫 히든 뱃지 발견!</div>` : null}
             ${selected.repeatable
               ? html`<div class="badge-modal-repeat">🔄 반복 획득 가능${selected.earned ? ` · ${selected.earnedCount}회 달성` : ""}</div>`
               : html`<div class="badge-modal-repeat">🏅 1회 한정 뱃지${selected.earned ? " · 획득 완료!" : ""}</div>`
