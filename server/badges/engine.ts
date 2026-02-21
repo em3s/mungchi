@@ -53,9 +53,14 @@ function computeTotals(cache: CacheData, childId: string) {
 }
 
 function computeWeekRate(cache: CacheData, childId: string, today: string): number {
+  // 월~일 기준 한 주 계산
+  const d = new Date(today + "T00:00:00+09:00");
+  const dow = d.getDay(); // 0=일, 1=월, ...
+  const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+
   let total = 0;
   let completed = 0;
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i <= daysSinceMonday; i++) {
     const date = dateOffset(today, -i);
     const day = cache[childId]?.[date];
     if (day) {
