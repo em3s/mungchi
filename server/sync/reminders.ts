@@ -67,7 +67,6 @@ export async function syncAll(): Promise<CacheData> {
 
   for (const child of CHILDREN) {
     const items = parseReminders(child.listName);
-    if (!cache[child.id]) cache[child.id] = {};
 
     // dueDate 없는 항목은 오늘로 설정 (미리알림 원본 수정)
     for (const item of items) {
@@ -83,7 +82,8 @@ export async function syncAll(): Promise<CacheData> {
       byDate[date].push(item);
     }
 
-    // 모든 날짜 데이터 갱신
+    // 전체 교체 (미리알림이 SSOT)
+    cache[child.id] = {};
     for (const [date, dateItems] of Object.entries(byDate)) {
       cache[child.id][date] = {
         date,
