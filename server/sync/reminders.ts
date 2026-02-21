@@ -45,16 +45,17 @@ function dueDateToKST(dueDate?: string): string | null {
   return toKSTDate(new Date(dueDate));
 }
 
-/** dueDate 없는 미리알림에 오늘 마감일 설정 (원본 수정) */
+/** dueDate 없는 미리알림에 오늘 마감일 설정 (날짜만, 시간 없음) */
 function assignDueDate(item: RemindctlItem): void {
   if (item.dueDate || !item.id) return;
+  const today = todayKST();
   try {
-    execSync(`remindctl edit "${item.id}" --due today`, {
+    execSync(`remindctl edit "${item.id}" --due "${today}"`, {
       encoding: "utf-8",
       timeout: 10000,
     });
-    item.dueDate = new Date().toISOString();
-    console.log(`[sync] Set due date to today: "${item.title}"`);
+    item.dueDate = `${today}T00:00:00+09:00`;
+    console.log(`[sync] Set due date to ${today}: "${item.title}"`);
   } catch (err) {
     console.error(`Failed to set due date for "${item.title}":`, err);
   }
