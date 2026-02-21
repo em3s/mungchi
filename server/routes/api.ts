@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { CHILDREN, getChild } from "../config.js";
 import { readCache } from "../sync/cache.js";
-import { syncAll, toggleTask } from "../sync/reminders.js";
+import { syncAll } from "../sync/reminders.js";
 import { evaluateBadges, getBadgesForChild, buildContext } from "../badges/engine.js";
 
 function todayKST(): string {
@@ -136,23 +136,6 @@ api.post("/sync", async (c) => {
     evaluateBadges(child.id);
   }
   return c.json({ ok: true, syncedAt: new Date().toISOString() });
-});
-
-// 할일 완료/미완료 토글
-api.post("/children/:id/tasks/:taskId/toggle", async (c) => {
-  const child = getChild(c.req.param("id"));
-  if (!child) return c.json({ error: "Child not found" }, 404);
-
-  const taskId = c.req.param("taskId");
-  const body = await c.req.json<{ completed: boolean }>();
-
-  const ok = await toggleTask(child.id, taskId, body.completed);
-  if (!ok) return c.json({ error: "Failed to toggle task" }, 500);
-
-  // 토글 후 뱃지 평가
-  const newBadges = evaluateBadges(child.id);
-
-  return c.json({ ok: true, newBadges });
 });
 
 export default api;

@@ -29,11 +29,3 @@ export function getMap(childId) {
 export function syncNow() {
   return fetchJSON("/sync", { method: "POST" });
 }
-
-export function toggleTask(childId, taskId, completed) {
-  return fetchJSON(`/children/${childId}/tasks/${taskId}/toggle`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ completed }),
-  });
-}

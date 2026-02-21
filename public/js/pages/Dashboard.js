@@ -1,6 +1,6 @@
 import { html } from "../../vendor/htm-preact.mjs";
 import { useState, useEffect, useCallback } from "../../vendor/preact-hooks.mjs";
-import { getToday, getStats, toggleTask as apiToggle, syncNow } from "../lib/api.js";
+import { getToday, getStats, syncNow } from "../lib/api.js";
 import { navigate } from "../lib/state.js";
 import { ProgressRing } from "../components/ProgressRing.js";
 import { TaskItem } from "../components/TaskItem.js";
@@ -18,16 +18,6 @@ export function Dashboard({ childId }) {
   }, [childId]);
 
   useEffect(() => { load(); }, [load]);
-
-  async function handleToggle(taskId, completed) {
-    const result = await apiToggle(childId, taskId, completed);
-    if (result.newBadges?.length > 0) {
-      for (const b of result.newBadges) {
-        showToast(`🏅 새 뱃지: ${b.name || b.badgeId}!`);
-      }
-    }
-    load();
-  }
 
   async function handleSync() {
     setSyncing(true);
@@ -60,14 +50,14 @@ export function Dashboard({ childId }) {
         ? html`<div class="task-empty">모두 완료! 🎉</div>`
         : html`
             <ul class="task-list">
-              ${todoTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} onToggle=${handleToggle} />`)}
+              ${todoTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} />`)}
             </ul>
           `}
 
       ${doneTasks.length > 0 && html`
         <div class="section-title">완료 (${doneTasks.length})</div>
         <ul class="task-list">
-          ${doneTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} onToggle=${handleToggle} />`)}
+          ${doneTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} />`)}
         </ul>
       `}
 
