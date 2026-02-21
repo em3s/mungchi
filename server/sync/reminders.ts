@@ -45,6 +45,21 @@ function dueDateToKST(dueDate?: string): string | null {
   return toKSTDate(new Date(dueDate));
 }
 
+/** dueDate 없는 미리알림에 오늘 마감일 설정 (원본 수정) */
+function assignDueDate(item: RemindctlItem): void {
+  if (item.dueDate || !item.id) return;
+  try {
+    execSync(`remindctl edit "${item.id}" --due today`, {
+      encoding: "utf-8",
+      timeout: 10000,
+    });
+    item.dueDate = new Date().toISOString();
+    console.log(`[sync] Set due date to today: "${item.title}"`);
+  } catch (err) {
+    console.error(`Failed to set due date for "${item.title}":`, err);
+  }
+}
+
 export async function syncAll(): Promise<CacheData> {
   const cache = readCache();
   const syncedAt = new Date().toISOString();
@@ -53,7 +68,12 @@ export async function syncAll(): Promise<CacheData> {
     const items = parseReminders(child.listName);
     if (!cache[child.id]) cache[child.id] = {};
 
-    // 날짜별로 그룹핑 (dueDate 없는 항목은 무시)
+    // dueDate 없는 항목은 오늘로 설정 (미리알림 원본 수정)
+    for (const item of items) {
+      assignDueDate(item);
+    }
+
+    // 날짜별로 그룹핑
     const byDate: Record<string, RemindctlItem[]> = {};
     for (const item of items) {
       const date = dueDateToKST(item.dueDate);
