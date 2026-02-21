@@ -1,6 +1,6 @@
 import { html } from "../../vendor/htm-preact.mjs";
 import { useState, useEffect, useCallback } from "../../vendor/preact-hooks.mjs";
-import { getToday, getStats, syncNow } from "../lib/api.js";
+import { getToday, syncNow } from "../lib/api.js";
 import { navigate } from "../lib/state.js";
 import { ProgressRing } from "../components/ProgressRing.js";
 import { TaskItem } from "../components/TaskItem.js";
@@ -9,12 +9,10 @@ import { showToast } from "../components/Toast.js";
 
 export function Dashboard({ childId }) {
   const [data, setData] = useState(null);
-  const [stats, setStats] = useState(null);
   const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(() => {
     getToday(childId).then(setData);
-    getStats(childId, "week").then(setStats);
   }, [childId]);
 
   useEffect(() => { load(); }, [load]);
@@ -59,21 +57,6 @@ export function Dashboard({ childId }) {
         <ul class="task-list">
           ${doneTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} />`)}
         </ul>
-      `}
-
-      ${stats && html`
-        <div class="section-title">이번 주</div>
-        <div class="stats-bars">
-          ${stats.stats.map((s) => {
-            const h = Math.max(4, s.rate * 80);
-            const day = new Date(s.date + "T00:00:00").toLocaleDateString("ko", { weekday: "short" });
-            return html`
-              <div class="stats-bar" style="height:${h}px">
-                <span class="bar-label">${day}</span>
-              </div>
-            `;
-          })}
-        </div>
       `}
 
       <${BottomNav} active="dashboard" childId=${childId} />
