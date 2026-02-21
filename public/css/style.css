@@ -129,26 +129,97 @@ body {
 .nav-btn.active { color: var(--accent, #6C5CE7); }
 
 /* === Badges Page === */
+.badge-counter {
+  font-size: 0.85rem; font-weight: 700; color: #636e72;
+}
+.badge-progress-bar {
+  height: 6px; background: #dfe6e9; border-radius: 3px;
+  margin: 0 0 20px; overflow: hidden;
+}
+.badge-progress-fill {
+  height: 100%; background: linear-gradient(90deg, #6C5CE7, #a29bfe);
+  border-radius: 3px; transition: width 0.3s;
+}
+.badge-category { margin-bottom: 20px; }
+.badge-category-title {
+  font-size: 0.9rem; font-weight: 700; margin-bottom: 10px;
+  color: #2d3436;
+}
+.badge-category-count { font-weight: 400; color: #b2bec3; font-size: 0.8rem; }
 .badges-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
 }
 .badge-card {
   background: white; border-radius: 16px;
-  padding: 16px 8px; text-align: center;
+  padding: 14px 6px; text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  position: relative; transition: transform 0.15s;
 }
-.badge-card .badge-emoji { font-size: 2.2rem; }
-.badge-card .badge-name { font-size: 0.8rem; font-weight: 600; margin-top: 6px; }
+.badge-card.earned { border: 2px solid transparent; }
+.badge-card.earned.rare { border-color: #74b9ff; }
+.badge-card.earned.epic { border-color: #a29bfe; }
+.badge-card.earned.legendary { border-color: #ffeaa7; }
+.badge-card.locked {
+  background: #f5f6fa; opacity: 0.5;
+}
+.badge-card .badge-emoji { font-size: 2rem; }
+.badge-card .badge-name {
+  font-size: 0.75rem; font-weight: 600; margin-top: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.badge-card.locked .badge-name { color: #b2bec3; }
 .badge-card .badge-grade {
-  font-size: 0.65rem; margin-top: 4px; padding: 2px 8px;
+  font-size: 0.6rem; margin-top: 4px; padding: 2px 8px;
   border-radius: 99px; display: inline-block;
 }
 .badge-grade.common { background: #dfe6e9; color: #636e72; }
-.badge-grade.rare { background: #74b9ff; color: #0984e3; }
-.badge-grade.epic { background: #a29bfe; color: #6C5CE7; }
-.badge-grade.legendary { background: #ffeaa7; color: #d68910; }
+.badge-grade.rare { background: #74b9ff; color: white; }
+.badge-grade.epic { background: #a29bfe; color: white; }
+.badge-grade.legendary { background: #fdcb6e; color: #d68910; }
+.badge-card.locked .badge-grade { background: #dfe6e9; color: #b2bec3; }
+.badge-count {
+  position: absolute; top: 6px; right: 6px;
+  font-size: 0.6rem; font-weight: 700; color: white;
+  background: #e17055; border-radius: 99px; padding: 1px 5px;
+}
 
 .badge-empty { text-align: center; padding: 40px 0; color: #b2bec3; }
+
+/* Badge Modal */
+.badge-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999; animation: fadeIn 0.15s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.badge-modal {
+  background: white; border-radius: 24px; padding: 32px 24px;
+  text-align: center; width: 280px; max-width: 85vw;
+  animation: popIn 0.2s;
+}
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.badge-modal.earned.rare { border: 3px solid #74b9ff; }
+.badge-modal.earned.epic { border: 3px solid #a29bfe; }
+.badge-modal.earned.legendary { border: 3px solid #ffeaa7; }
+.badge-modal.locked { border: 3px solid #dfe6e9; }
+.badge-modal-emoji { font-size: 4rem; margin-bottom: 8px; }
+.badge-modal-name { font-size: 1.2rem; font-weight: 800; margin-bottom: 6px; }
+.badge-modal .badge-grade { font-size: 0.75rem; }
+.badge-modal-desc {
+  font-size: 0.9rem; color: #636e72; margin-top: 16px;
+  line-height: 1.6; word-break: keep-all;
+}
+.badge-modal.locked .badge-modal-desc { color: #e17055; font-weight: 600; }
+.badge-modal-repeat {
+  font-size: 0.75rem; color: #b2bec3; margin-top: 12px;
+}
+.badge-modal-close {
+  margin-top: 20px; padding: 10px 32px;
+  background: #f5f6fa; border: none; border-radius: 12px;
+  font-size: 0.9rem; font-weight: 600; color: #636e72;
+  cursor: pointer;
+}
+.badge-modal-close:active { background: #dfe6e9; }
 
 /* === Map Page === */
 .map-path { display: flex; flex-direction: column; gap: 0; align-items: center; padding: 16px 0; }

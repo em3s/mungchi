@@ -39,14 +39,16 @@ function computeTotals(cache: CacheData, childId: string) {
   const days = cache[childId] ?? {};
   let totalCompleted = 0;
   let totalPerfectDays = 0;
+  let totalActiveDays = 0;
   for (const day of Object.values(days)) {
+    if (day.tasks.length > 0) totalActiveDays++;
     const completed = day.tasks.filter((t) => t.completed).length;
     totalCompleted += completed;
     if (day.tasks.length > 0 && completed === day.tasks.length) {
       totalPerfectDays++;
     }
   }
-  return { totalCompleted, totalPerfectDays };
+  return { totalCompleted, totalPerfectDays, totalActiveDays };
 }
 
 function computeWeekRate(cache: CacheData, childId: string, today: string): number {
@@ -72,7 +74,9 @@ export function buildContext(
   const todayData = cache[childId]?.[today];
   const todayTotal = todayData?.tasks.length ?? 0;
   const todayCompleted = todayData?.tasks.filter((t) => t.completed).length ?? 0;
-  const { totalCompleted, totalPerfectDays } = computeTotals(cache, childId);
+  const { totalCompleted, totalPerfectDays, totalActiveDays } = computeTotals(cache, childId);
+
+  const todayDate = new Date(today + "T00:00:00+09:00");
 
   return {
     todayTotal,
@@ -81,9 +85,11 @@ export function buildContext(
     streak: computeStreak(cache, childId, today),
     totalCompleted,
     totalPerfectDays,
+    totalActiveDays,
     weekRate: computeWeekRate(cache, childId, today),
     siblingTodayRate: getDayRate(cache, siblingId, today),
     yesterdayRate: getDayRate(cache, childId, dateOffset(today, -1)),
+    todayDayOfWeek: todayDate.getDay(),
   };
 }
 
@@ -143,15 +149,21 @@ export function getBadgesForChild(childId: string) {
   const badgesData = readBadges();
   const earned = badgesData.badges.filter((b) => b.childId === childId);
 
-  return earned.map((record) => {
-    const def = BADGE_DEFINITIONS.find((d) => d.id === record.badgeId);
+  return BADGE_DEFINITIONS.map((def) => {
+    const records = earned.filter((b) => b.badgeId === def.id);
+    const isEarned = records.length > 0;
     return {
-      ...record,
-      name: def?.name ?? record.badgeId,
-      description: def?.description ?? "",
-      emoji: def?.emoji ?? "🏅",
-      grade: def?.grade ?? "common",
-      category: def?.category ?? "daily",
+      badgeId: def.id,
+      name: def.name,
+      description: def.description,
+      hint: def.hint,
+      emoji: def.emoji,
+      grade: def.grade,
+      category: def.category,
+      repeatable: def.repeatable,
+      earned: isEarned,
+      earnedCount: records.length,
+      earnedAt: isEarned ? records[records.length - 1].earnedAt : null,
     };
   });
 }
