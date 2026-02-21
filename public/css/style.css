@@ -140,6 +140,21 @@ body {
   height: 100%; background: linear-gradient(90deg, #6C5CE7, #a29bfe);
   border-radius: 3px; transition: width 0.3s;
 }
+.badge-trophy-shelf {
+  display: flex; gap: 12px;
+  justify-content: center; padding: 8px 0 16px;
+}
+.trophy-unit {
+  display: flex; align-items: center; gap: 2px;
+  animation: trophyPop 0.3s ease backwards;
+  animation-delay: calc(var(--d) * 0.1s);
+}
+.trophy-emoji { font-size: 1.5rem; }
+.trophy-count { font-size: 0.85rem; font-weight: 700; color: #636e72; }
+@keyframes trophyPop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 .badge-category { margin-bottom: 20px; }
 .badge-category-title {
   font-size: 0.9rem; font-weight: 700; margin-bottom: 10px;
@@ -491,6 +506,9 @@ body {
   .badge-category-title { font-size: 1rem; }
   .badge-progress-bar { height: 8px; }
   .badge-hidden-hint { font-size: 0.95rem; }
+  .trophy-emoji { font-size: 1.8rem; }
+  .trophy-count { font-size: 1rem; }
+  .badge-trophy-shelf { gap: 16px; }
 
   /* Badge Modal */
   .badge-modal { width: 360px; padding: 40px 32px; }

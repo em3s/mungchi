@@ -21,6 +21,19 @@ const GRADE_LABELS = {
   legendary: "전설",
 };
 
+function earnedIcons(count) {
+  const units = [];
+  const diamonds = Math.floor(count / 1000);
+  const crowns = Math.floor((count % 1000) / 100);
+  const trophies = Math.floor((count % 100) / 10);
+  const medals = count % 10;
+  if (diamonds > 0) units.push({ emoji: "💎", n: diamonds });
+  if (crowns > 0) units.push({ emoji: "👑", n: crowns });
+  if (trophies > 0) units.push({ emoji: "🏆", n: trophies });
+  if (medals > 0) units.push({ emoji: "🏅", n: medals });
+  return units;
+}
+
 export function Badges({ childId }) {
   const [data, setData] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -33,7 +46,7 @@ export function Badges({ childId }) {
 
   const badges = data.badges;
   const earnedCount = badges.filter((b) => b.earned).length;
-  const hiddenExist = badges.some((b) => b.hidden && b.earned);
+  const totalEarned = badges.reduce((sum, b) => sum + (b.earnedCount || 0), 0);
   const totalCount = badges.length;
 
   // 카테고리별 그룹
@@ -51,12 +64,23 @@ export function Badges({ childId }) {
       <div class="header">
         <button class="back-btn" onClick=${() => navigate("dashboard", childId)}>←</button>
         <h1>🏅 뱃지</h1>
-        <span class="badge-counter">${earnedCount}/${totalCount}</span>
+        <span class="badge-counter">${earnedCount}/${totalCount} 발견 · ${totalEarned}회 획득</span>
       </div>
 
       <div class="badge-progress-bar">
         <div class="badge-progress-fill" style="width: ${(earnedCount / totalCount) * 100}%"></div>
       </div>
+
+      ${totalEarned > 0 && html`
+        <div class="badge-trophy-shelf">
+          ${earnedIcons(totalEarned).map((u, i) => html`
+            <span class="trophy-unit" style="--d: ${i}">
+              <span class="trophy-emoji">${u.emoji}</span>
+              <span class="trophy-count">×${u.n}</span>
+            </span>
+          `)}
+        </div>
+      `}
 
       ${CATEGORY_ORDER.map((cat) => {
         const catBadges = grouped[cat];
