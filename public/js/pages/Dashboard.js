@@ -1,7 +1,9 @@
 import { html } from "../../vendor/htm-preact.mjs";
 import { useState, useEffect, useCallback, useRef } from "../../vendor/preact-hooks.mjs";
 import { getToday, getDate, getMonth, syncNow } from "../lib/api.js";
-import { navigate } from "../lib/state.js";
+import { navigate, logout } from "../lib/state.js";
+
+const LOCK_PASSWORD = "49634963";
 import { ProgressRing } from "../components/ProgressRing.js";
 import { TaskItem } from "../components/TaskItem.js";
 import { BottomNav } from "../components/BottomNav.js";
@@ -66,6 +68,9 @@ export function Dashboard({ childId }) {
   const [data, setData] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [lockInput, setLockInput] = useState("");
+  const [lockError, setLockError] = useState(false);
   const lastSyncRef = useRef(0);
   const prevRateRef = useRef(null);
   const cheerRef = useRef({ rate: -1, message: "" });
@@ -166,6 +171,39 @@ export function Dashboard({ childId }) {
     setSelectedDate(null);
   }
 
+  function openLockModal() {
+    setShowLockModal(true);
+    setLockInput("");
+    setLockError(false);
+  }
+
+  function closeLockModal() {
+    setShowLockModal(false);
+    setLockInput("");
+    setLockError(false);
+  }
+
+  function handleLockKey(digit) {
+    setLockError(false);
+    const next = lockInput + digit;
+    if (next.length >= LOCK_PASSWORD.length) {
+      if (next === LOCK_PASSWORD) {
+        logout();
+        navigate("home");
+      } else {
+        setLockError(true);
+        setLockInput("");
+      }
+    } else {
+      setLockInput(next);
+    }
+  }
+
+  function handleLockDelete() {
+    setLockError(false);
+    setLockInput((prev) => prev.slice(0, -1));
+  }
+
   function formatSelectedDate(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
     const weekday = WEEKDAYS[d.getDay()];
@@ -216,7 +254,7 @@ export function Dashboard({ childId }) {
       `}
 
       <div class="header">
-        <button class="back-btn" onClick=${() => navigate("home")}>←</button>
+        <button class="back-btn" onClick=${openLockModal}>←</button>
         <h1>${data.child.emoji} ${data.child.name}</h1>
         <button class="sync-btn ${syncing ? "spinning" : ""}" onClick=${handleSync}>🔄</button>
       </div>
@@ -280,6 +318,38 @@ export function Dashboard({ childId }) {
       `}
 
       <${BottomNav} active="dashboard" childId=${childId} />
+
+      ${showLockModal &&
+      html`
+        <div class="logout-overlay" onClick=${closeLockModal}>
+          <div class="logout-modal" onClick=${(e) => e.stopPropagation()}>
+            <div class="logout-modal-title">잠금 해제</div>
+            <div class="logout-modal-subtitle">비밀번호를 입력하세요</div>
+            <div class="pin-dots small">
+              ${Array.from({ length: LOCK_PASSWORD.length }, (_, i) => i < lockInput.length).map(
+                (filled, i) =>
+                  html`<div
+                    key=${i}
+                    class="pin-dot ${filled ? "filled" : ""} ${lockError ? "error" : ""}"
+                  ></div>`,
+              )}
+            </div>
+            ${lockError && html`<div class="pin-error">비밀번호가 틀렸어요</div>`}
+            <div class="pin-pad small">
+              ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(
+                (n) =>
+                  html`<button class="pin-btn" onClick=${() => handleLockKey(String(n))}>
+                    ${n}
+                  </button>`,
+              )}
+              <div class="pin-btn empty"></div>
+              <button class="pin-btn" onClick=${() => handleLockKey("0")}>0</button>
+              <button class="pin-btn delete" onClick=${handleLockDelete}>⌫</button>
+            </div>
+            <button class="logout-cancel-btn" onClick=${closeLockModal}>취소</button>
+          </div>
+        </div>
+      `}
     </div>
   `;
 }

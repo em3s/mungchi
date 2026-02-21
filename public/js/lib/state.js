@@ -1,17 +1,25 @@
-// Simple reactive state using Preact signals pattern (manual)
-let _route = { page: "home", childId: null };
+// Simple reactive state
 let _listeners = [];
 
-// Auth state (localStorage-based)
-const AUTH_KEY = "mungchi_logged_in";
+// Session: logged-in childId (localStorage)
+const SESSION_KEY = "mungchi_session";
 
-export function isLoggedIn() {
-  return localStorage.getItem(AUTH_KEY) === "true";
+export function getSession() {
+  return localStorage.getItem(SESSION_KEY);
 }
 
-export function login() {
-  localStorage.setItem(AUTH_KEY, "true");
+export function login(childId) {
+  localStorage.setItem(SESSION_KEY, childId);
 }
+
+export function logout() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+// Route
+let _route = getSession()
+  ? { page: "dashboard", childId: getSession() }
+  : { page: "home", childId: null };
 
 export function getRoute() {
   return _route;

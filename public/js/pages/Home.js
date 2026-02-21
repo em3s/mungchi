@@ -1,7 +1,7 @@
 import { html } from "../../vendor/htm-preact.mjs";
 import { useState, useEffect, useCallback } from "../../vendor/preact-hooks.mjs";
 import { getChildren } from "../lib/api.js";
-import { navigate, isLoggedIn, login } from "../lib/state.js";
+import { navigate, login } from "../lib/state.js";
 
 const PASSWORD = "49634963";
 
@@ -19,18 +19,11 @@ export function Home() {
     });
   }, []);
 
-  const handleChildClick = useCallback(
-    (child) => {
-      if (isLoggedIn()) {
-        navigate("dashboard", child.id);
-      } else {
-        setSelectedChild(child);
-        setPinInput("");
-        setPinError(false);
-      }
-    },
-    [],
-  );
+  const handleChildClick = useCallback((child) => {
+    setSelectedChild(child);
+    setPinInput("");
+    setPinError(false);
+  }, []);
 
   const handleKey = useCallback(
     (digit) => {
@@ -38,7 +31,7 @@ export function Home() {
       const next = pinInput + digit;
       if (next.length >= PASSWORD.length) {
         if (next === PASSWORD) {
-          login();
+          login(selectedChild.id);
           navigate("dashboard", selectedChild.id);
         } else {
           setPinError(true);
