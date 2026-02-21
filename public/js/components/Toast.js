@@ -1,5 +1,5 @@
 import { html } from "../../vendor/htm-preact.mjs";
-import { useState, useEffect } from "../../vendor/preact-hooks.mjs";
+import { useState } from "../../vendor/preact-hooks.mjs";
 
 let _showToast = null;
 

@@ -71,17 +71,19 @@ export function Badges({ childId }) {
         <div class="badge-progress-fill" style="width: ${(earnedCount / totalCount) * 100}%"></div>
       </div>
 
-      ${totalEarned > 0 && html`
+      ${totalEarned > 0 &&
+      html`
         <div class="badge-trophy-shelf">
-          ${earnedIcons(totalEarned).map((u, i) => html`
-            <span class="trophy-unit" style="--d: ${i}">
-              <span class="trophy-emoji">${u.emoji}</span>
-              <span class="trophy-count">×${u.n}</span>
-            </span>
-          `)}
+          ${earnedIcons(totalEarned).map(
+            (u, i) => html`
+              <span class="trophy-unit" style="--d: ${i}">
+                <span class="trophy-emoji">${u.emoji}</span>
+                <span class="trophy-count">×${u.n}</span>
+              </span>
+            `,
+          )}
         </div>
       `}
-
       ${CATEGORY_ORDER.map((cat) => {
         const catBadges = grouped[cat];
         if (!catBadges || catBadges.length === 0) return null;
@@ -89,21 +91,26 @@ export function Badges({ childId }) {
         return html`
           <div class="badge-category">
             <div class="badge-category-title">
-              ${CATEGORY_LABELS[cat]} <span class="badge-category-count">${catEarned}/${catBadges.length}</span>
+              ${CATEGORY_LABELS[cat]}
+              <span class="badge-category-count">${catEarned}/${catBadges.length}</span>
             </div>
             <div class="badges-grid">
-              ${catBadges.map((b) => html`
-                <div
-                  class="badge-card ${b.earned ? "earned" : "locked"} ${b.grade}"
-                  onClick=${() => setSelected(b)}
-                >
-                  <div class="badge-emoji">${b.earned ? b.emoji : "🔒"}</div>
-                  <div class="badge-name">${b.earned ? b.name : "???"}</div>
-                  <span class="badge-grade ${b.grade}">${GRADE_LABELS[b.grade]}</span>
-                  ${b.earned && b.repeatable ? html`<span class="badge-count">×${b.earnedCount}</span>` : null}
-                  ${b.hidden && b.earned ? html`<span class="badge-secret">SECRET</span>` : null}
-                </div>
-              `)}
+              ${catBadges.map(
+                (b) => html`
+                  <div
+                    class="badge-card ${b.earned ? "earned" : "locked"} ${b.grade}"
+                    onClick=${() => setSelected(b)}
+                  >
+                    <div class="badge-emoji">${b.earned ? b.emoji : "🔒"}</div>
+                    <div class="badge-name">${b.earned ? b.name : "???"}</div>
+                    <span class="badge-grade ${b.grade}">${GRADE_LABELS[b.grade]}</span>
+                    ${b.earned && b.repeatable
+                      ? html`<span class="badge-count">×${b.earnedCount}</span>`
+                      : null}
+                    ${b.hidden && b.earned ? html`<span class="badge-secret">SECRET</span>` : null}
+                  </div>
+                `,
+              )}
             </div>
           </div>
         `;
@@ -111,20 +118,29 @@ export function Badges({ childId }) {
 
       <div class="badge-hidden-hint">🤫 어딘가에 히든 뱃지가 숨어있어요...</div>
 
-      ${selected && html`
+      ${selected &&
+      html`
         <div class="badge-modal-overlay" onClick=${closeModal}>
-          <div class="badge-modal ${selected.earned ? "earned" : "locked"} ${selected.grade}" onClick=${(e) => e.stopPropagation()}>
+          <div
+            class="badge-modal ${selected.earned ? "earned" : "locked"} ${selected.grade}"
+            onClick=${(e) => e.stopPropagation()}
+          >
             <div class="badge-modal-emoji">${selected.earned ? selected.emoji : "🔒"}</div>
             <div class="badge-modal-name">${selected.earned ? selected.name : "???"}</div>
             <span class="badge-grade ${selected.grade}">${GRADE_LABELS[selected.grade]}</span>
             <div class="badge-modal-desc">
               ${selected.earned ? selected.description : selected.hint}
             </div>
-            ${selected.hidden && selected.earned ? html`<div class="badge-modal-secret">🤫 히든 뱃지 발견!</div>` : null}
+            ${selected.hidden && selected.earned
+              ? html`<div class="badge-modal-secret">🤫 히든 뱃지 발견!</div>`
+              : null}
             ${selected.repeatable
-              ? html`<div class="badge-modal-repeat">🔄 반복 획득 가능${selected.earned ? ` · ${selected.earnedCount}회 달성` : ""}</div>`
-              : html`<div class="badge-modal-repeat">🏅 1회 한정 뱃지${selected.earned ? " · 획득 완료!" : ""}</div>`
-            }
+              ? html`<div class="badge-modal-repeat">
+                  🔄 반복 획득 가능${selected.earned ? ` · ${selected.earnedCount}회 달성` : ""}
+                </div>`
+              : html`<div class="badge-modal-repeat">
+                  🏅 1회 한정 뱃지${selected.earned ? " · 획득 완료!" : ""}
+                </div>`}
             <button class="badge-modal-close" onClick=${closeModal}>닫기</button>
           </div>
         </div>

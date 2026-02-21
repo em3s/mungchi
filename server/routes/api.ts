@@ -15,7 +15,7 @@ api.get("/children", (c) => {
       name: ch.name,
       theme: ch.theme,
       emoji: ch.emoji,
-    }))
+    })),
   );
 });
 
@@ -92,7 +92,7 @@ api.get("/children/:id/month/:month", (c) => {
   for (const [date, dayData] of Object.entries(childData)) {
     if (date.startsWith(month)) {
       const total = dayData.tasks.length;
-      const completed = dayData.tasks.filter((t: any) => t.completed).length;
+      const completed = dayData.tasks.filter((t) => t.completed).length;
       days[date] = { total, completed, rate: total > 0 ? completed / total : 0 };
     }
   }
@@ -165,7 +165,7 @@ api.get("/children/:id/map", (c) => {
 
   const currentNode = milestones.reduce(
     (acc, m) => (ctx.totalCompleted >= m.required ? m.node : acc),
-    0
+    0,
   );
 
   return c.json({
@@ -183,7 +183,7 @@ api.get("/children/:id/map", (c) => {
 
 // 수동 싱크
 api.post("/sync", async (c) => {
-  const cache = await syncAll();
+  await syncAll();
   // 싱크 후 뱃지 평가
   for (const child of CHILDREN) {
     evaluateBadges(child.id);

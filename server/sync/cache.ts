@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import path from "node:path";
 import { CACHE_PATH, BADGES_PATH, DATA_DIR } from "../config.js";
 
 export interface Task {

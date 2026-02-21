@@ -11,10 +11,14 @@ export function ProgressRing({ rate = 0, size = 160, stroke = 12 }) {
       <div class="progress-ring-container">
         <svg viewBox="0 0 ${size} ${size}">
           <circle class="progress-ring-bg" cx="${size / 2}" cy="${size / 2}" r="${radius}" />
-          <circle class="progress-ring-fill"
-            cx="${size / 2}" cy="${size / 2}" r="${radius}"
+          <circle
+            class="progress-ring-fill"
+            cx="${size / 2}"
+            cy="${size / 2}"
+            r="${radius}"
             stroke-dasharray="${circumference}"
-            stroke-dashoffset="${offset}" />
+            stroke-dashoffset="${offset}"
+          />
         </svg>
         <div class="progress-ring-text">
           <div class="pct">${pct}%</div>

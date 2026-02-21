@@ -17,10 +17,10 @@ interface RemindctlItem {
 
 function parseReminders(listName: string): RemindctlItem[] {
   try {
-    const output = execSync(
-      `remindctl show all --list "${listName}" --json`,
-      { encoding: "utf-8", timeout: 10000 }
-    );
+    const output = execSync(`remindctl show all --list "${listName}" --json`, {
+      encoding: "utf-8",
+      timeout: 10000,
+    });
     return JSON.parse(output);
   } catch (err) {
     console.error(`Failed to fetch reminders for "${listName}":`, err);
@@ -80,7 +80,7 @@ export async function syncAll(): Promise<CacheData> {
 export async function toggleTask(
   childId: string,
   taskId: string,
-  completed: boolean
+  completed: boolean,
 ): Promise<boolean> {
   const child = CHILDREN.find((c) => c.id === childId);
   if (!child) return false;

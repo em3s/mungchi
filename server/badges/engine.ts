@@ -1,5 +1,11 @@
 import { CHILDREN } from "../config.js";
-import { readCache, readBadges, writeBadges, type CacheData, type BadgeRecord } from "../sync/cache.js";
+import {
+  readCache,
+  readBadges,
+  writeBadges,
+  type CacheData,
+  type BadgeRecord,
+} from "../sync/cache.js";
 import { BADGE_DEFINITIONS, type BadgeContext } from "./definitions.js";
 import { todayKST } from "../lib/date.js";
 
@@ -60,11 +66,7 @@ function computeWeekRate(cache: CacheData, childId: string, today: string): numb
   return total > 0 ? completed / total : 0;
 }
 
-export function buildContext(
-  cache: CacheData,
-  childId: string,
-  siblingId: string
-): BadgeContext {
+export function buildContext(cache: CacheData, childId: string, siblingId: string): BadgeContext {
   const today = todayKST();
   const todayData = cache[childId]?.[today];
   const todayTotal = todayData?.tasks.length ?? 0;
@@ -102,7 +104,7 @@ export function evaluateBadges(childId: string): BadgeRecord[] {
     // 비반복 뱃지: 이미 획득했으면 스킵
     if (!def.repeatable) {
       const alreadyEarned = badgesData.badges.some(
-        (b) => b.badgeId === def.id && b.childId === childId
+        (b) => b.badgeId === def.id && b.childId === childId,
       );
       if (alreadyEarned) continue;
     }
@@ -110,10 +112,7 @@ export function evaluateBadges(childId: string): BadgeRecord[] {
     // 반복 뱃지: 오늘 이미 획득했으면 스킵
     if (def.repeatable) {
       const earnedToday = badgesData.badges.some(
-        (b) =>
-          b.badgeId === def.id &&
-          b.childId === childId &&
-          b.earnedAt.startsWith(today)
+        (b) => b.badgeId === def.id && b.childId === childId && b.earnedAt.startsWith(today),
       );
       if (earnedToday) continue;
     }
@@ -132,9 +131,7 @@ export function evaluateBadges(childId: string): BadgeRecord[] {
 
   if (newBadges.length > 0) {
     writeBadges(badgesData);
-    console.log(
-      `[badges] ${childId}: earned ${newBadges.length} new badge(s)`
-    );
+    console.log(`[badges] ${childId}: earned ${newBadges.length} new badge(s)`);
   }
 
   return newBadges;
@@ -144,24 +141,24 @@ export function getBadgesForChild(childId: string) {
   const badgesData = readBadges();
   const earned = badgesData.badges.filter((b) => b.childId === childId);
 
-  return BADGE_DEFINITIONS
-    .filter((def) => !def.hidden || earned.some((b) => b.badgeId === def.id))
-    .map((def) => {
-      const records = earned.filter((b) => b.badgeId === def.id);
-      const isEarned = records.length > 0;
-      return {
-        badgeId: def.id,
-        name: def.name,
-        description: def.description,
-        hint: def.hint,
-        emoji: def.emoji,
-        grade: def.grade,
-        category: def.category,
-        repeatable: def.repeatable,
-        hidden: def.hidden ?? false,
-        earned: isEarned,
-        earnedCount: records.length,
-        earnedAt: isEarned ? records[records.length - 1].earnedAt : null,
-      };
-    });
+  return BADGE_DEFINITIONS.filter(
+    (def) => !def.hidden || earned.some((b) => b.badgeId === def.id),
+  ).map((def) => {
+    const records = earned.filter((b) => b.badgeId === def.id);
+    const isEarned = records.length > 0;
+    return {
+      badgeId: def.id,
+      name: def.name,
+      description: def.description,
+      hint: def.hint,
+      emoji: def.emoji,
+      grade: def.grade,
+      category: def.category,
+      repeatable: def.repeatable,
+      hidden: def.hidden ?? false,
+      earned: isEarned,
+      earnedCount: records.length,
+      earnedAt: isEarned ? records[records.length - 1].earnedAt : null,
+    };
+  });
 }

@@ -35,10 +35,8 @@ const CHEERS = {
 };
 
 function getCheer(rate) {
-  const list = rate === 1 ? CHEERS.perfect
-    : rate >= 0.5 ? CHEERS.good
-    : rate > 0 ? CHEERS.start
-    : CHEERS.zero;
+  const list =
+    rate === 1 ? CHEERS.perfect : rate >= 0.5 ? CHEERS.good : rate > 0 ? CHEERS.start : CHEERS.zero;
   return list[Math.floor(Math.random() * list.length)];
 }
 
@@ -81,15 +79,15 @@ export function Dashboard({ childId }) {
   const [dayData, setDayData] = useState(null);
 
   // 활성 달성률 (hooks에서 사용하므로 먼저 계산)
-  const activeRate = data
-    ? (selectedDate && dayData ? dayData.stats.rate : data.stats.rate)
-    : 0;
+  const activeRate = data ? (selectedDate && dayData ? dayData.stats.rate : data.stats.rate) : 0;
 
   const load = useCallback(() => {
     getToday(childId).then(setData);
   }, [childId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // 월간 데이터 로드
   const loadMonth = useCallback(() => {
@@ -114,7 +112,12 @@ export function Dashboard({ childId }) {
 
   // 올클리어 컨페티
   useEffect(() => {
-    if (prevRateRef.current !== null && prevRateRef.current < 1 && activeRate === 1 && !selectedDate) {
+    if (
+      prevRateRef.current !== null &&
+      prevRateRef.current < 1 &&
+      activeRate === 1 &&
+      !selectedDate
+    ) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
     }
@@ -139,13 +142,17 @@ export function Dashboard({ childId }) {
   }
 
   function prevMonth() {
-    if (calMonth === 0) { setCalYear(calYear - 1); setCalMonth(11); }
-    else setCalMonth(calMonth - 1);
+    if (calMonth === 0) {
+      setCalYear(calYear - 1);
+      setCalMonth(11);
+    } else setCalMonth(calMonth - 1);
   }
 
   function nextMonth() {
-    if (calMonth === 11) { setCalYear(calYear + 1); setCalMonth(0); }
-    else setCalMonth(calMonth + 1);
+    if (calMonth === 11) {
+      setCalYear(calYear + 1);
+      setCalMonth(0);
+    } else setCalMonth(calMonth + 1);
   }
 
   function handleDateClick(date) {
@@ -199,11 +206,12 @@ export function Dashboard({ childId }) {
 
   return html`
     <div class="dashboard ${themeClass}">
-      ${showConfetti && html`
+      ${showConfetti &&
+      html`
         <div class="confetti-container">
-          ${CONFETTI_EMOJIS.map((emoji, i) => html`
-            <span class="confetti-piece" style="--i: ${i}">${emoji}</span>
-          `)}
+          ${CONFETTI_EMOJIS.map(
+            (emoji, i) => html` <span class="confetti-piece" style="--i: ${i}">${emoji}</span> `,
+          )}
         </div>
       `}
 
@@ -221,9 +229,11 @@ export function Dashboard({ childId }) {
       </div>
 
       <div class="cal-grid">
-        ${WEEKDAYS.map((w) => html`
-          <div class="cal-weekday${w === "일" ? " sun" : w === "토" ? " sat" : ""}">${w}</div>
-        `)}
+        ${WEEKDAYS.map(
+          (w) => html`
+            <div class="cal-weekday${w === "일" ? " sun" : w === "토" ? " sat" : ""}">${w}</div>
+          `,
+        )}
         ${cells.map((cell) => {
           if (!cell) return html`<div class="cal-cell empty"></div>`;
           const isToday = cell.date === today;
@@ -234,7 +244,9 @@ export function Dashboard({ childId }) {
           const isSat = new Date(cell.date + "T00:00:00").getDay() === 6;
           return html`
             <div
-              class="cal-cell${isToday ? " today" : ""}${isSelected ? " selected" : ""}${hasData ? " has-data" : ""}${isSun ? " sun" : ""}${isSat ? " sat" : ""}"
+              class="cal-cell${isToday ? " today" : ""}${isSelected ? " selected" : ""}${hasData
+                ? " has-data"
+                : ""}${isSun ? " sun" : ""}${isSat ? " sat" : ""}"
               onClick=${() => handleDateClick(cell.date)}
             >
               <span class="cal-day">${cell.day}</span>
@@ -249,16 +261,18 @@ export function Dashboard({ childId }) {
 
       <div class="section-title">${activeLabel} — 할 일 (${todoTasks.length})</div>
       ${todoTasks.length === 0 && doneTasks.length === 0
-        ? html`<div class="task-empty">${selectedDate ? "이 날의 데이터가 없어요" : "오늘 할일이 없어요. 싱크해보세요!"}</div>`
+        ? html`<div class="task-empty">
+            ${selectedDate ? "이 날의 데이터가 없어요" : "오늘 할일이 없어요. 싱크해보세요!"}
+          </div>`
         : todoTasks.length === 0
-        ? html`<div class="task-empty">모두 완료! 🎉</div>`
-        : html`
-            <ul class="task-list">
-              ${todoTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} />`)}
-            </ul>
-          `}
-
-      ${doneTasks.length > 0 && html`
+          ? html`<div class="task-empty">모두 완료! 🎉</div>`
+          : html`
+              <ul class="task-list">
+                ${todoTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} />`)}
+              </ul>
+            `}
+      ${doneTasks.length > 0 &&
+      html`
         <div class="section-title">완료 (${doneTasks.length})</div>
         <ul class="task-list">
           ${doneTasks.map((t) => html`<${TaskItem} key=${t.id} task=${t} />`)}

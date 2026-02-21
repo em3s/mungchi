@@ -36,8 +36,8 @@ export function MapPage({ childId }) {
               </div>
             </div>
             ${i < data.milestones.length - 1 &&
-              html`<div class="map-connector ${m.unlocked ? "active" : ""}"></div>`}
-          `
+            html`<div class="map-connector ${m.unlocked ? "active" : ""}"></div>`}
+          `,
         )}
       </div>
 

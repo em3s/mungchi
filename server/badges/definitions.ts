@@ -673,8 +673,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "🔥",
     grade: "epic",
     category: "special",
-    condition: (ctx) =>
-      ctx.yesterdayRate < 1 && ctx.todayRate === 1 && ctx.todayTotal > 0,
+    condition: (ctx) => ctx.yesterdayRate < 1 && ctx.todayRate === 1 && ctx.todayTotal > 0,
     repeatable: true,
   },
   {
@@ -685,10 +684,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "🤝",
     grade: "legendary",
     category: "special",
-    condition: (ctx) =>
-      ctx.todayRate === 1 &&
-      ctx.siblingTodayRate === 1 &&
-      ctx.todayTotal > 0,
+    condition: (ctx) => ctx.todayRate === 1 && ctx.siblingTodayRate === 1 && ctx.todayTotal > 0,
     repeatable: true,
   },
   {
@@ -713,10 +709,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "💥",
     grade: "rare",
     category: "special",
-    condition: (ctx) =>
-      ctx.todayDayOfWeek === 1 &&
-      ctx.todayRate === 1 &&
-      ctx.todayTotal > 0,
+    condition: (ctx) => ctx.todayDayOfWeek === 1 && ctx.todayRate === 1 && ctx.todayTotal > 0,
     repeatable: true,
   },
   {
@@ -727,10 +720,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "🎊",
     grade: "rare",
     category: "special",
-    condition: (ctx) =>
-      ctx.todayDayOfWeek === 5 &&
-      ctx.todayRate === 1 &&
-      ctx.todayTotal > 0,
+    condition: (ctx) => ctx.todayDayOfWeek === 5 && ctx.todayRate === 1 && ctx.todayTotal > 0,
     repeatable: true,
   },
 
@@ -757,10 +747,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "👫",
     grade: "legendary",
     category: "special",
-    condition: (ctx) =>
-      ctx.streak >= 3 &&
-      ctx.siblingTodayRate === 1 &&
-      ctx.todayRate === 1,
+    condition: (ctx) => ctx.streak >= 3 && ctx.siblingTodayRate === 1 && ctx.todayRate === 1,
     repeatable: false,
     hidden: true,
   },
@@ -784,10 +771,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "🦸‍♂️",
     grade: "rare",
     category: "special",
-    condition: (ctx) =>
-      ctx.todayDayOfWeek === 0 &&
-      ctx.todayRate === 1 &&
-      ctx.todayTotal > 0,
+    condition: (ctx) => ctx.todayDayOfWeek === 0 && ctx.todayRate === 1 && ctx.todayTotal > 0,
     repeatable: false,
     hidden: true,
   },

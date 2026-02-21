@@ -27,10 +27,12 @@ export function Home() {
               <span class="emoji">${child.emoji}</span>
               <div class="info">
                 <div class="name">${child.name}</div>
-                <div class="subtitle">${child.theme === "starry" ? "반짝별 수호자" : "초코별 탐험가"}</div>
+                <div class="subtitle">
+                  ${child.theme === "starry" ? "반짝별 수호자" : "초코별 탐험가"}
+                </div>
               </div>
             </div>
-          `
+          `,
         )}
       </div>
     </div>
