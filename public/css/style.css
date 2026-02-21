@@ -105,10 +105,6 @@ body {
   text-transform: uppercase; letter-spacing: 1px;
   margin: 24px 0 12px;
 }
-.section-title.toggle {
-  cursor: pointer; user-select: none;
-}
-
 /* === Bottom Nav === */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;

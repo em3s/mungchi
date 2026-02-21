@@ -1,5 +1,5 @@
 import { html } from "../../vendor/htm-preact.mjs";
-import { useState, useEffect, useCallback } from "../../vendor/preact-hooks.mjs";
+import { useState, useEffect, useCallback, useRef } from "../../vendor/preact-hooks.mjs";
 import { getToday, getDate, getMonth, syncNow } from "../lib/api.js";
 import { navigate } from "../lib/state.js";
 import { ProgressRing } from "../components/ProgressRing.js";
@@ -30,6 +30,7 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 export function Dashboard({ childId }) {
   const [data, setData] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const lastSyncRef = useRef(0);
 
   // 달력 상태
   const today = todayKST();
@@ -38,7 +39,6 @@ export function Dashboard({ childId }) {
   const [monthData, setMonthData] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [dayData, setDayData] = useState(null);
-  const [calOpen, setCalOpen] = useState(true);
 
   const load = useCallback(() => {
     getToday(childId).then(setData);
@@ -68,6 +68,9 @@ export function Dashboard({ childId }) {
   }, [childId, selectedDate]);
 
   async function handleSync() {
+    const now = Date.now();
+    if (now - lastSyncRef.current < 5000) return;
+    lastSyncRef.current = now;
     setSyncing(true);
     await syncNow();
     load();
@@ -146,42 +149,36 @@ export function Dashboard({ childId }) {
         <button class="sync-btn ${syncing ? "spinning" : ""}" onClick=${handleSync}>🔄</button>
       </div>
 
-      <div class="section-title toggle" onClick=${() => setCalOpen(!calOpen)}>
-        <span>${calOpen ? "▼" : "▶"} 📅 달력</span>
+      <div class="cal-nav">
+        <button class="cal-arrow" onClick=${prevMonth}>←</button>
+        <span class="cal-title">${calYear}년 ${calMonth + 1}월</span>
+        <button class="cal-arrow" onClick=${nextMonth}>→</button>
+        <button class="cal-today-btn" onClick=${goToday}>오늘</button>
       </div>
 
-      ${calOpen && html`
-        <div class="cal-nav">
-          <button class="cal-arrow" onClick=${prevMonth}>←</button>
-          <span class="cal-title">${calYear}년 ${calMonth + 1}월</span>
-          <button class="cal-arrow" onClick=${nextMonth}>→</button>
-          <button class="cal-today-btn" onClick=${goToday}>오늘</button>
-        </div>
-
-        <div class="cal-grid">
-          ${WEEKDAYS.map((w) => html`
-            <div class="cal-weekday${w === "일" ? " sun" : w === "토" ? " sat" : ""}">${w}</div>
-          `)}
-          ${cells.map((cell) => {
-            if (!cell) return html`<div class="cal-cell empty"></div>`;
-            const isToday = cell.date === today;
-            const isSelected = cell.date === selectedDate;
-            const hasData = cell.data != null;
-            const rateClass = hasData ? getRateClass(cell.data.rate) : "";
-            const isSun = new Date(cell.date + "T00:00:00").getDay() === 0;
-            const isSat = new Date(cell.date + "T00:00:00").getDay() === 6;
-            return html`
-              <div
-                class="cal-cell${isToday ? " today" : ""}${isSelected ? " selected" : ""}${hasData ? " has-data" : ""}${isSun ? " sun" : ""}${isSat ? " sat" : ""}"
-                onClick=${() => handleDateClick(cell.date)}
-              >
-                <span class="cal-day">${cell.day}</span>
-                ${hasData && html`<span class="cal-dot ${rateClass}"></span>`}
-              </div>
-            `;
-          })}
-        </div>
-      `}
+      <div class="cal-grid">
+        ${WEEKDAYS.map((w) => html`
+          <div class="cal-weekday${w === "일" ? " sun" : w === "토" ? " sat" : ""}">${w}</div>
+        `)}
+        ${cells.map((cell) => {
+          if (!cell) return html`<div class="cal-cell empty"></div>`;
+          const isToday = cell.date === today;
+          const isSelected = cell.date === selectedDate;
+          const hasData = cell.data != null;
+          const rateClass = hasData ? getRateClass(cell.data.rate) : "";
+          const isSun = new Date(cell.date + "T00:00:00").getDay() === 0;
+          const isSat = new Date(cell.date + "T00:00:00").getDay() === 6;
+          return html`
+            <div
+              class="cal-cell${isToday ? " today" : ""}${isSelected ? " selected" : ""}${hasData ? " has-data" : ""}${isSun ? " sun" : ""}${isSat ? " sat" : ""}"
+              onClick=${() => handleDateClick(cell.date)}
+            >
+              <span class="cal-day">${cell.day}</span>
+              ${hasData && html`<span class="cal-dot ${rateClass}"></span>`}
+            </div>
+          `;
+        })}
+      </div>
 
       <${ProgressRing} rate=${activeRate} />
 
