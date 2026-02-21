@@ -55,27 +55,34 @@ function dueDateToKST(dueDate?: string): string | null {
 }
 
 export async function syncAll(): Promise<CacheData> {
-  const today = todayKST();
   const cache = readCache();
+  const syncedAt = new Date().toISOString();
 
   for (const child of CHILDREN) {
     const items = parseReminders(child.listName);
-    // 오늘 dueDate에 해당하는 항목만 필터
-    const todayItems = items.filter((item) => dueDateToKST(item.dueDate) === today);
-    const tasks = todayItems.map(toTask);
-
     if (!cache[child.id]) cache[child.id] = {};
 
-    // 오늘 데이터만 갱신 (과거 데이터 보존)
-    cache[child.id][today] = {
-      date: today,
-      tasks,
-      syncedAt: new Date().toISOString(),
-    };
+    // 날짜별로 그룹핑 (dueDate 없는 항목은 무시)
+    const byDate: Record<string, RemindctlItem[]> = {};
+    for (const item of items) {
+      const date = dueDateToKST(item.dueDate);
+      if (!date) continue;
+      if (!byDate[date]) byDate[date] = [];
+      byDate[date].push(item);
+    }
+
+    // 모든 날짜 데이터 갱신
+    for (const [date, dateItems] of Object.entries(byDate)) {
+      cache[child.id][date] = {
+        date,
+        tasks: dateItems.map(toTask),
+        syncedAt,
+      };
+    }
   }
 
   writeCache(cache);
-  console.log(`[sync] Synced at ${new Date().toISOString()} — today: ${today}`);
+  console.log(`[sync] Synced at ${syncedAt}`);
   return cache;
 }
 
