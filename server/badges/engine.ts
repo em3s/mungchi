@@ -100,7 +100,7 @@ function buildContextForDate(
     siblingTodayRate: getDayRate(cache, siblingId, date),
     yesterdayRate: getDayRate(cache, childId, dateOffset(date, -1)),
     todayDayOfWeek: d.getDay(),
-    currentHourKST: isToday ? (new Date().getUTCHours() + 9) % 24 : -1,
+    currentHourKST: isToday ? (new Date().getUTCHours() + 9) % 24 : 99,
   };
 }
 
