@@ -47,6 +47,11 @@ export default function AdminPage() {
   const [templateName, setTemplateName] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  // 템플릿 수정 모달
+  const [editTemplate, setEditTemplate] = useState<CustomTemplate | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editTasks, setEditTasks] = useState("");
+
   // 날짜 복제
   const [cloneChildId, setCloneChildId] = useState("sihyun");
   const [cloneSourceDate, setCloneSourceDate] = useState(todayKST());
@@ -178,6 +183,37 @@ export default function AdminPage() {
     },
     [showToast, loadTemplates]
   );
+
+  // --- 템플릿 수정 ---
+  const openEditModal = useCallback((tmpl: CustomTemplate) => {
+    setEditTemplate(tmpl);
+    setEditName(tmpl.name);
+    setEditTasks(tmpl.tasks.map((t) => t.title).join("\n"));
+  }, []);
+
+  const updateTemplate = useCallback(async () => {
+    if (!editTemplate || !editName.trim()) return;
+    const editLines = editTasks
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (editLines.length === 0) return;
+    const tasks: TemplateTask[] = editLines.map((title) => ({
+      title,
+      forChildren: ["sihyun", "misong"],
+    }));
+    const { error } = await supabase
+      .from("task_templates")
+      .update({ name: editName.trim(), tasks })
+      .eq("id", editTemplate.id);
+    if (error) {
+      showToast("수정 실패");
+      return;
+    }
+    showToast(`"${editName.trim()}" 템플릿 수정 완료!`);
+    setEditTemplate(null);
+    loadTemplates();
+  }, [editTemplate, editName, editTasks, showToast, loadTemplates]);
 
   // --- 날짜 복제 ---
   const loadClonePreview = useCallback(async () => {
@@ -402,29 +438,37 @@ export default function AdminPage() {
                       ({tmpl.tasks.length}개)
                     </span>
                   </button>
-                  {confirmDeleteId === tmpl.id ? (
-                    <div className="flex items-center gap-1 ml-2">
-                      <button
-                        onClick={() => deleteTemplate(tmpl.id)}
-                        className="text-xs bg-red-500 text-white px-2 py-1 rounded-lg font-semibold active:opacity-80"
-                      >
-                        삭제
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-lg font-semibold active:opacity-80"
-                      >
-                        취소
-                      </button>
-                    </div>
-                  ) : (
+                  <div className="flex items-center gap-1 ml-2">
                     <button
-                      onClick={() => setConfirmDeleteId(tmpl.id)}
-                      className="text-gray-400 hover:text-red-500 text-lg ml-2"
+                      onClick={() => openEditModal(tmpl)}
+                      className="text-gray-400 hover:text-[#6c5ce7] text-base"
                     >
-                      ×
+                      ✏️
                     </button>
-                  )}
+                    {confirmDeleteId === tmpl.id ? (
+                      <>
+                        <button
+                          onClick={() => deleteTemplate(tmpl.id)}
+                          className="text-xs bg-red-500 text-white px-2 py-1 rounded-lg font-semibold active:opacity-80"
+                        >
+                          삭제
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-lg font-semibold active:opacity-80"
+                        >
+                          취소
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(tmpl.id)}
+                        className="text-gray-400 hover:text-red-500 text-lg"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -571,6 +615,57 @@ export default function AdminPage() {
               : "복제할 대상을 선택하세요"}
         </button>
       </section>
+
+      {/* === 템플릿 수정 모달 === */}
+      {editTemplate && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] animate-fade-in"
+          onClick={() => setEditTemplate(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-[320px] max-w-[85vw] animate-pop-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold mb-4">✏️ 템플릿 수정</h3>
+
+            <label className="text-sm font-semibold text-gray-600 block mb-1">
+              이름
+            </label>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm mb-3 focus:outline-none focus:border-[#6c5ce7]"
+            />
+
+            <label className="text-sm font-semibold text-gray-600 block mb-1">
+              할일 (줄바꿈으로 구분)
+            </label>
+            <textarea
+              value={editTasks}
+              onChange={(e) => setEditTasks(e.target.value)}
+              rows={6}
+              className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm resize-none mb-4 focus:outline-none focus:border-[#6c5ce7]"
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditTemplate(null)}
+                className="flex-1 bg-gray-100 text-gray-600 py-2.5 rounded-xl text-sm font-semibold active:bg-gray-200"
+              >
+                취소
+              </button>
+              <button
+                onClick={updateTemplate}
+                disabled={!editName.trim() || !editTasks.trim()}
+                className="flex-1 bg-[#6c5ce7] text-white py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 active:opacity-80"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Toast message={message} />
     </div>
