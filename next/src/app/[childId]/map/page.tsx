@@ -13,16 +13,31 @@ export default function MapPage({
 }) {
   const { childId } = use(params);
   const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
+  const [sihyunCount, setSihyunCount] = useState(0);
+  const [misongCount, setMisongCount] = useState(0);
 
   useEffect(() => {
     async function load() {
-      const { count } = await supabase
-        .from("tasks")
-        .select("*", { count: "exact", head: true })
-        .eq("child_id", childId)
-        .eq("completed", true);
+      const [total, sihyun, misong] = await Promise.all([
+        supabase
+          .from("tasks")
+          .select("*", { count: "exact", head: true })
+          .eq("completed", true),
+        supabase
+          .from("tasks")
+          .select("*", { count: "exact", head: true })
+          .eq("child_id", "sihyun")
+          .eq("completed", true),
+        supabase
+          .from("tasks")
+          .select("*", { count: "exact", head: true })
+          .eq("child_id", "misong")
+          .eq("completed", true),
+      ]);
 
-      setTotalCompleted(count ?? 0);
+      setTotalCompleted(total.count ?? 0);
+      setSihyunCount(sihyun.count ?? 0);
+      setMisongCount(misong.count ?? 0);
     }
     load();
   }, [childId]);
@@ -50,12 +65,16 @@ export default function MapPage({
     <div className="pt-2">
       {/* Header */}
       <div className="flex items-center justify-between py-4 sticky top-0 z-10" style={{ background: "var(--bg)" }}>
-        <h1 className="text-xl font-bold md:text-2xl">🗺️ 달성 맵</h1>
+        <h1 className="text-xl font-bold md:text-2xl">🌟 쌍둥이별</h1>
         <span />
       </div>
 
-      <div className="text-center mb-4 text-gray-500">
-        총 완료: <strong>{totalCompleted}</strong>개
+      <div className="text-center mb-4 text-gray-500 text-sm">
+        <span>⭐ {sihyunCount}개</span>
+        <span className="mx-1">+</span>
+        <span>🍫 {misongCount}개</span>
+        <span className="mx-1">=</span>
+        <strong className="text-base">🌟 {totalCompleted}개</strong>
       </div>
 
       {/* Map Path */}

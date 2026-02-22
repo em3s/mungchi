@@ -57,23 +57,32 @@ export function getCheer(rate: number): string {
 }
 
 export const MILESTONES = [
-  { node: 1, label: "출발!", required: 0, emoji: "🚀" },
-  { node: 2, label: "첫 걸음", required: 10, emoji: "👣" },
-  { node: 3, label: "힘을 내요", required: 30, emoji: "💪" },
-  { node: 4, label: "잘하고 있어!", required: 60, emoji: "🌱" },
-  { node: 5, label: "쑥쑥 성장", required: 100, emoji: "🌿" },
-  { node: 6, label: "달리기 시작!", required: 150, emoji: "🏃" },
-  { node: 7, label: "대단해!", required: 200, emoji: "🌈" },
-  { node: 8, label: "습관의 힘", required: 300, emoji: "⭐" },
-  { node: 9, label: "반쯤 왔다!", required: 400, emoji: "🎯" },
-  { node: 10, label: "슈퍼스타", required: 500, emoji: "🌟" },
-  { node: 11, label: "멈출 수 없어!", required: 650, emoji: "🔥" },
-  { node: 12, label: "전설의 시작", required: 800, emoji: "🏆" },
-  { node: 13, label: "마스터", required: 1000, emoji: "👑" },
-  { node: 14, label: "초월자", required: 1300, emoji: "⚡" },
-  { node: 15, label: "레전드", required: 1600, emoji: "🐉" },
-  { node: 16, label: "신화", required: 2000, emoji: "🦄" },
-  { node: 17, label: "우주 정복!", required: 2500, emoji: "🪐" },
+  // Act 1: 두 별의 시작
+  { node: 1, label: "두 별의 출발!", required: 0, emoji: "🚀" },
+  { node: 2, label: "반짝반짝", required: 10, emoji: "💫" },
+  { node: 3, label: "달콤한 한 걸음", required: 30, emoji: "🍫" },
+  { node: 4, label: "별빛이 자라요", required: 60, emoji: "🌱" },
+  { node: 5, label: "쑥쑥 빛나기", required: 100, emoji: "🌿" },
+  { node: 6, label: "별들의 달리기", required: 150, emoji: "🏃" },
+  { node: 7, label: "빛나는 별들!", required: 200, emoji: "🌈" },
+  // Act 2: 두 별이 만나다
+  { node: 8, label: "별빛 습관", required: 300, emoji: "⭐" },
+  { node: 9, label: "반짝이는 길", required: 400, emoji: "🎯" },
+  { node: 10, label: "두 별의 만남", required: 500, emoji: "🤝" },
+  { node: 11, label: "함께라서 빛나!", required: 650, emoji: "🔥" },
+  { node: 12, label: "별의 약속", required: 800, emoji: "🏆" },
+  // Act 3: 쌍둥이별 각성
+  { node: 13, label: "쌍둥이별 각성!", required: 1000, emoji: "👑" },
+  { node: 14, label: "별을 초월하다", required: 1300, emoji: "⚡" },
+  { node: 15, label: "쌍둥이별 전설", required: 1600, emoji: "🐉" },
+  { node: 16, label: "쌍둥이별 신화", required: 2000, emoji: "🦄" },
+  { node: 17, label: "우주를 비추다", required: 2500, emoji: "🪐" },
+  // Act 4: 쌍둥이별의 여행
+  { node: 18, label: "은하수를 건너", required: 3000, emoji: "🌌" },
+  { node: 19, label: "시간을 초월", required: 3500, emoji: "⏳" },
+  { node: 20, label: "별의 전사", required: 4000, emoji: "⚔️" },
+  { node: 21, label: "무한의 빛", required: 4500, emoji: "♾️" },
+  { node: 22, label: "쌍둥이별 완성!", required: 5000, emoji: "🌟" },
 ];
 
 export const CONFETTI_EMOJIS = [

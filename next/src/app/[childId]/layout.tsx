@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
 import { CHILDREN } from "@/lib/constants";
+import { PinModal } from "@/components/PinModal";
 
 export default function ChildLayout({
   children,
@@ -12,16 +13,15 @@ export default function ChildLayout({
   children: React.ReactNode;
   params: Promise<{ childId: string }>;
 }) {
+  const { childId } = use(params);
   const router = useRouter();
-  const { childId: sessionChildId, loaded } = useSession();
+  const { childId: sessionChildId, loaded, login } = useSession();
 
-  // params를 사용하기 위해 use() 대신 직접 처리
-  // Next.js App Router에서 layout의 params는 동기적 접근 가능
-  useEffect(() => {
-    if (loaded && !sessionChildId) {
-      router.replace("/");
-    }
-  }, [loaded, sessionChildId, router]);
+  const child = CHILDREN.find((c) => c.id === childId);
+
+  const handlePinSuccess = useCallback(() => {
+    login(childId);
+  }, [login, childId]);
 
   if (!loaded) {
     return (
@@ -31,11 +31,26 @@ export default function ChildLayout({
     );
   }
 
-  if (!sessionChildId) return null;
+  // 유효하지 않은 childId
+  if (!child) {
+    router.replace("/");
+    return null;
+  }
 
-  // 테마 설정
-  const child = CHILDREN.find((c) => c.id === sessionChildId);
-  const themeClass = child ? `theme-${child.theme}` : "";
+  // 세션 없거나 다른 아이의 세션 → PIN 입력
+  if (sessionChildId !== childId) {
+    return (
+      <PinModal
+        title={child.name}
+        subtitle="비밀번호를 입력하세요"
+        emoji={child.emoji}
+        onSuccess={handlePinSuccess}
+        onCancel={() => router.push("/")}
+      />
+    );
+  }
+
+  const themeClass = `theme-${child.theme}`;
 
   return (
     <div

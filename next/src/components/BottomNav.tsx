@@ -14,11 +14,11 @@ export function BottomNav({ childId }: BottomNavProps) {
     { href: `/${childId}`, label: "할일", icon: "📋", key: "dashboard" },
     {
       href: `/${childId}/badges`,
-      label: "뱃지",
-      icon: "🏅",
+      label: childId === "sihyun" ? "반짝별" : "초코별",
+      icon: childId === "sihyun" ? "⭐" : "🍫",
       key: "badges",
     },
-    { href: `/${childId}/map`, label: "달성맵", icon: "🗺️", key: "map" },
+    { href: `/${childId}/map`, label: "쌍둥이별", icon: "🌟", key: "map" },
   ];
 
   function isActive(tab: (typeof tabs)[0]) {
