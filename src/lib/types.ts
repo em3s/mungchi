@@ -67,3 +67,12 @@ export interface Milestone {
   unlocked: boolean;
   current: boolean;
 }
+
+export interface CalendarEvent {
+  uid: string;
+  summary: string;
+  date: string; // YYYY-MM-DD (KST)
+  startTime: string | null; // HH:mm (KST)
+  endTime: string | null;
+  isAllDay: boolean;
+}

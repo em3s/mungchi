@@ -9,6 +9,7 @@ interface CalendarProps {
   monthData: MonthDays | null;
   today: string;
   selectedDate: string | null;
+  eventDates?: Set<string>;
   onDateClick: (date: string) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
@@ -28,6 +29,7 @@ export function Calendar({
   monthData,
   today,
   selectedDate,
+  eventDates,
   onDateClick,
   onPrevMonth,
   onNextMonth,
@@ -95,6 +97,7 @@ export function Calendar({
           const isToday = cell.date === today;
           const isSelected = cell.date === selectedDate;
           const hasData = cell.data != null;
+          const hasEvent = eventDates?.has(cell.date) ?? false;
           const dayOfWeek = new Date(cell.date + "T00:00:00").getDay();
           const isSun = dayOfWeek === 0;
           const isSat = dayOfWeek === 6;
@@ -128,13 +131,22 @@ export function Calendar({
               >
                 {cell.day}
               </span>
-              {hasData && (
-                <span
-                  className={`w-2 h-2 rounded-full md:w-2.5 md:h-2.5 ${
-                    isSelected ? "!border-white" : getRateClass(cell.data!.rate)
-                  }`}
-                />
-              )}
+              <div className="flex gap-[3px] items-center min-h-[8px] md:min-h-[10px]">
+                {hasData && (
+                  <span
+                    className={`w-2 h-2 rounded-full md:w-2.5 md:h-2.5 ${
+                      isSelected ? "!border-white" : getRateClass(cell.data!.rate)
+                    }`}
+                  />
+                )}
+                {hasEvent && (
+                  <span
+                    className={`w-2 h-2 rounded-full md:w-2.5 md:h-2.5 ${
+                      isSelected ? "bg-white/70" : "bg-blue-400"
+                    }`}
+                  />
+                )}
+              </div>
             </div>
           );
         })}
