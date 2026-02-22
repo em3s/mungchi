@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-accent-starry: #6c5ce7;
+  --color-accent-starry-light: #a29bfe;
+  --color-accent-choco: #e17055;
+  --color-accent-choco-light: #fab1a0;
+  --color-bg-starry: #f5f3ff;
+  --color-bg-choco: #fdf5f0;
+}
+
+:root {
+  --accent: #6c5ce7;
+  --accent-light: #a29bfe;
+  --bg: #f5f3ff;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Noto Sans KR", sans-serif;
+  background: var(--bg);
+  color: #2d3436;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+.theme-starry {
+  --accent: #6c5ce7;
+  --accent-light: #a29bfe;
+  --bg: #f5f3ff;
+}
+
+.theme-choco {
+  --accent: #e17055;
+  --accent-light: #fab1a0;
+  --bg: #fdf5f0;
+}
+
+/* Progress Ring */
+.progress-ring-fill {
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+/* Animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pinShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes cheerBounce {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes trophyPop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(108, 92, 231, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(108, 92, 231, 0.6);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
+
+@keyframes toastOut {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 1s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.15s;
+}
+
+.animate-pop-in {
+  animation: popIn 0.2s;
+}
+
+.animate-pin-shake {
+  animation: pinShake 0.4s ease;
+}
+
+.animate-confetti-fall {
+  animation: confettiFall 2.5s ease-out forwards;
+}
+
+.animate-cheer-bounce {
+  animation: cheerBounce 0.5s ease;
+}
+
+.animate-trophy-pop {
+  animation: trophyPop 0.3s ease backwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse 2s infinite;
+}
+
+.animate-toast-in {
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+}

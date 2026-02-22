@@ -1,0 +1,37 @@
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "뭉치",
+  description: "아이들 할일 관리 + 성과(달성) 시스템",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "뭉치",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="ko">
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
+      <body className="antialiased">{children}</body>
+    </html>
+  );
+}
