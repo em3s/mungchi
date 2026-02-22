@@ -1,11 +1,12 @@
-import ical from "node-ical";
 import type { CalendarEvent } from "./types";
 
 // 인메모리 캐시 (10분 TTL)
-let cache: { data: ical.CalendarResponse; fetchedAt: number } | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cache: { data: any; fetchedAt: number } | null = null;
 const CACHE_TTL = 10 * 60 * 1000;
 
-function getSummaryText(summary: ical.ParameterValue): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getSummaryText(summary: any): string {
   return typeof summary === "string" ? summary : summary.val;
 }
 
@@ -21,17 +22,21 @@ function toKSTTimeStr(date: Date): string {
   return kst.toISOString().slice(11, 16);
 }
 
-async function fetchICS(): Promise<ical.CalendarResponse> {
+/** node-ical 동적 import (URL 설정 시에만 로드) */
+async function loadIcal() {
+  return await import("node-ical");
+}
+
+async function fetchICS() {
+  const url = process.env.CALENDAR_ICS_URL;
+  if (!url) return null;
+
   const now = Date.now();
   if (cache && now - cache.fetchedAt < CACHE_TTL) {
     return cache.data;
   }
 
-  const url = process.env.CALENDAR_ICS_URL;
-  if (!url) {
-    return {};
-  }
-
+  const ical = await loadIcal();
   const data = await ical.async.fromURL(url);
   cache = { data, fetchedAt: now };
   return data;
@@ -43,6 +48,9 @@ export async function getEventsForMonth(
   month: number,
 ): Promise<CalendarEvent[]> {
   const data = await fetchICS();
+  if (!data) return [];
+
+  const ical = await loadIcal();
   const events: CalendarEvent[] = [];
 
   // 월 범위 (KST 기준이므로 UTC로 변환하여 여유 있게 조회)
@@ -51,8 +59,9 @@ export async function getEventsForMonth(
   const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
 
   for (const component of Object.values(data)) {
-    if (!component || component.type !== "VEVENT") continue;
-    const vevent = component as ical.VEvent;
+    if (!component || (component as { type?: string }).type !== "VEVENT") continue;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const vevent = component as any;
 
     if (vevent.rrule) {
       // 반복 이벤트 확장
