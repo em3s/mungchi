@@ -174,13 +174,6 @@ export default function DashboardPage({
     }
 
     loadMonth();
-
-    // 뱃지 재계산 트리거
-    fetch("/api/badges/recalculate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ childId }),
-    });
   }
 
   // 할일 추가
@@ -223,13 +216,6 @@ export default function DashboardPage({
 
     loadMonth();
     showToast("할일 삭제!");
-
-    // 뱃지 재계산
-    fetch("/api/badges/recalculate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ childId }),
-    });
   }
 
   // 달력 네비게이션
