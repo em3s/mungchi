@@ -272,7 +272,8 @@ export default function DashboardPage({
   }
 
   function handleDateClick(date: string) {
-    setSelectedDate(date === selectedDate ? null : date);
+    if (date === selectedDate) return;
+    setSelectedDate(date);
   }
 
   function goToday() {
