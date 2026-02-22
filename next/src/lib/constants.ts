@@ -84,7 +84,7 @@ export const CONFETTI_EMOJIS = [
 export const CATEGORY_LABELS: Record<string, string> = {
   daily: "📋 일일",
   streak: "🔥 연속",
-  milestone: "🏔️ 마일스톤",
+  milestone: "🏔️ 발자취",
   weekly: "📈 주간",
   special: "✨ 스페셜",
 };
@@ -93,7 +93,7 @@ export const CATEGORY_ORDER = ["daily", "streak", "milestone", "weekly", "specia
 
 export const GRADE_LABELS: Record<string, string> = {
   common: "일반",
-  rare: "레어",
-  epic: "에픽",
+  rare: "희귀",
+  epic: "영웅",
   legendary: "전설",
 };

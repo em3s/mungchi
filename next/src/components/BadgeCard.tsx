@@ -59,7 +59,7 @@ export function BadgeCard({ badge, onClick }: BadgeCardProps) {
       )}
       {badge.hidden && isEarned && (
         <span className="absolute top-1.5 left-1.5 text-[0.5rem] font-extrabold text-white bg-gradient-to-br from-[#6c5ce7] to-[#e17055] rounded px-1 py-0.5 tracking-wider">
-          SECRET
+          시크릿
         </span>
       )}
     </div>
