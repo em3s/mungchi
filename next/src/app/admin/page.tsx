@@ -5,12 +5,17 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { CHILDREN, PIN } from "@/lib/constants";
 import { todayKST } from "@/lib/date";
-import { BUILT_IN_TEMPLATES, type TemplateTask } from "@/lib/templates";
+
 import { PinModal } from "@/components/PinModal";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 
 const ADMIN_SESSION_KEY = "mungchi_admin";
+
+interface TemplateTask {
+  title: string;
+  forChildren: string[];
+}
 
 interface CustomTemplate {
   id: string;
@@ -380,29 +385,7 @@ export default function AdminPage() {
       <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
         <h2 className="text-lg font-bold mb-4">📋 템플릿</h2>
 
-        {/* 고정 템플릿 */}
         <div className="mb-4">
-          <label className="text-sm font-semibold text-gray-600 block mb-2">
-            고정 템플릿
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {BUILT_IN_TEMPLATES.map((tmpl) => (
-              <button
-                key={tmpl.id}
-                onClick={() => applyTemplate(tmpl.tasks)}
-                className="bg-gray-50 border border-gray-200 px-4 py-2 rounded-xl text-sm font-medium active:bg-gray-100 transition-colors"
-              >
-                {tmpl.emoji} {tmpl.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 커스텀 템플릿 */}
-        <div className="mb-4">
-          <label className="text-sm font-semibold text-gray-600 block mb-2">
-            커스텀 템플릿
-          </label>
           {customTemplates.length > 0 ? (
             <div className="flex flex-col gap-2 mb-3">
               {customTemplates.map((tmpl) => (
