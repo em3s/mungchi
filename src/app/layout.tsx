@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { UpdateButton } from "@/components/UpdateButton";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,7 +32,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <UpdateButton />
+        {children}
+      </body>
     </html>
   );
 }
