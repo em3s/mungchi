@@ -32,6 +32,8 @@ export default function DashboardPage({
   const [showConfetti, setShowConfetti] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [confirmUntoggle, setConfirmUntoggle] = useState<Task | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
   const prevRateRef = useRef<number | null>(null);
   const cheerRef = useRef({ rate: -1, message: "" });
 
@@ -146,6 +148,15 @@ export default function DashboardPage({
 
   // 할일 토글
   async function handleToggle(task: Task) {
+    // 체크 취소는 확인 필요
+    if (task.completed) {
+      setConfirmUntoggle(task);
+      return;
+    }
+    await doToggle(task);
+  }
+
+  async function doToggle(task: Task) {
     const newCompleted = !task.completed;
     await supabase
       .from("tasks")
@@ -203,8 +214,26 @@ export default function DashboardPage({
     }
   }
 
-  // 할일 삭제
-  async function handleDelete(task: Task) {
+  // 할일 수정
+  async function handleEdit(task: Task, newTitle: string) {
+    await supabase.from("tasks").update({ title: newTitle }).eq("id", task.id);
+
+    const updateList = (list: Task[]) =>
+      list.map((t) => (t.id === task.id ? { ...t, title: newTitle } : t));
+
+    if (selectedDate && dayTasks) {
+      setDayTasks(updateList(dayTasks));
+    } else {
+      setTasks(updateList(tasks));
+    }
+  }
+
+  // 할일 삭제 (확인 후)
+  function handleDelete(task: Task) {
+    setConfirmDelete(task);
+  }
+
+  async function doDelete(task: Task) {
     await supabase.from("tasks").delete().eq("id", task.id);
 
     if (selectedDate && dayTasks) {
@@ -354,6 +383,7 @@ export default function DashboardPage({
               key={t.id}
               task={t}
               onToggle={handleToggle}
+              onEdit={handleEdit}
               onDelete={handleDelete}
             />
           ))}
@@ -381,6 +411,76 @@ export default function DashboardPage({
 
       <BottomNav childId={childId} />
       <Toast message={toastMsg} />
+
+      {/* Delete Confirm Modal */}
+      {confirmDelete && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] animate-fade-in"
+          onClick={() => setConfirmDelete(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-[280px] max-w-[85vw] text-center animate-pop-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-lg font-bold mb-2">정말 지울까요?</div>
+            <div className="text-sm text-gray-500 mb-5">
+              &ldquo;{confirmDelete.title}&rdquo;
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2.5 bg-gray-100 rounded-xl text-sm font-semibold text-gray-500 active:bg-gray-200"
+              >
+                아니요
+              </button>
+              <button
+                onClick={() => {
+                  doDelete(confirmDelete);
+                  setConfirmDelete(null);
+                }}
+                className="flex-1 py-2.5 bg-red-500 rounded-xl text-sm font-semibold text-white active:opacity-80"
+              >
+                지울래요
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Untoggle Confirm Modal */}
+      {confirmUntoggle && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] animate-fade-in"
+          onClick={() => setConfirmUntoggle(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-[280px] max-w-[85vw] text-center animate-pop-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-lg font-bold mb-2">아직 안 했어요?</div>
+            <div className="text-sm text-gray-500 mb-5">
+              &ldquo;{confirmUntoggle.title}&rdquo;
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmUntoggle(null)}
+                className="flex-1 py-2.5 bg-gray-100 rounded-xl text-sm font-semibold text-gray-500 active:bg-gray-200"
+              >
+                아니요
+              </button>
+              <button
+                onClick={() => {
+                  doToggle(confirmUntoggle);
+                  setConfirmUntoggle(null);
+                }}
+                className="flex-1 py-2.5 bg-[var(--accent,#6c5ce7)] rounded-xl text-sm font-semibold text-white active:opacity-80"
+              >
+                아직 안했어요
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Logout Modal */}
       {showLockModal && (

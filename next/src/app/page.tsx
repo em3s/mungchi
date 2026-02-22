@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CHILDREN } from "@/lib/constants";
 import { PinModal } from "@/components/PinModal";
@@ -12,6 +12,17 @@ export default function HomePage() {
   const [selectedChild, setSelectedChild] = useState<
     (typeof CHILDREN)[0] | null
   >(null);
+
+  // 롱프레스 → 관리 페이지 진입
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const handleTitleDown = useCallback(() => {
+    longPressTimer.current = setTimeout(() => {
+      router.push("/admin");
+    }, 800);
+  }, [router]);
+  const handleTitleUp = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
 
   // 세션이 있으면 대시보드로 이동
   useEffect(() => {
@@ -32,7 +43,14 @@ export default function HomePage() {
 
   return (
     <div className="max-w-[480px] mx-auto px-4 pt-10 text-center md:max-w-[640px] md:px-6">
-      <h2 className="text-2xl font-bold mb-2 md:text-3xl">🍡 뭉치</h2>
+      <h2
+        className="text-2xl font-bold mb-2 md:text-3xl select-none cursor-default"
+        onPointerDown={handleTitleDown}
+        onPointerUp={handleTitleUp}
+        onPointerLeave={handleTitleUp}
+      >
+        🍡 뭉치
+      </h2>
       <p className="text-gray-500 mb-8 md:text-lg">누구의 할일을 볼까요?</p>
 
       <div className="flex flex-col gap-4">

@@ -57,3 +57,11 @@ CREATE TRIGGER tasks_updated_at
   BEFORE UPDATE ON tasks
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
+
+-- 커스텀 할일 템플릿
+CREATE TABLE task_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  tasks JSONB NOT NULL,  -- [{ title, forChildren }]
+  created_at TIMESTAMPTZ DEFAULT now()
+);
