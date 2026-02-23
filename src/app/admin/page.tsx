@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
 import { CHILDREN, PIN } from "@/lib/constants";
 import { todayKST } from "@/lib/date";
 import {
@@ -114,11 +113,11 @@ export default function AdminPage() {
 
   // 커스텀 템플릿 로드
   const loadTemplates = useCallback(async () => {
-    const { data } = await supabase
-      .from("task_templates")
-      .select("*")
-      .order("created_at");
-    if (data) setCustomTemplates(data as CustomTemplate[]);
+    const res = await fetch("/api/templates");
+    if (res.ok) {
+      const data = await res.json();
+      setCustomTemplates(data as CustomTemplate[]);
+    }
   }, []);
 
   useEffect(() => {
@@ -173,8 +172,12 @@ export default function AdminPage() {
           }))
         )
       );
-      const { error } = await supabase.from("tasks").insert(rows);
-      if (error) throw error;
+      const res = await fetch("/api/tasks/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tasks: rows }),
+      });
+      if (!res.ok) throw new Error("bulk insert failed");
 
       const childNames = selectedChildren
         .map((id) => CHILDREN.find((c) => c.id === id)?.name)
@@ -210,10 +213,12 @@ export default function AdminPage() {
       title,
       forChildren: [...selectedChildren],
     }));
-    const { error } = await supabase
-      .from("task_templates")
-      .insert({ name: templateName.trim(), tasks });
-    if (error) {
+    const res = await fetch("/api/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: templateName.trim(), tasks }),
+    });
+    if (!res.ok) {
       showToast("저장 실패");
       return;
     }
@@ -224,7 +229,7 @@ export default function AdminPage() {
 
   const deleteTemplate = useCallback(
     async (id: string) => {
-      await supabase.from("task_templates").delete().eq("id", id);
+      await fetch(`/api/templates/${id}`, { method: "DELETE" });
       setConfirmDeleteId(null);
       showToast("템플릿 삭제됨");
       loadTemplates();
@@ -250,11 +255,12 @@ export default function AdminPage() {
       title,
       forChildren: ["sihyun", "misong"],
     }));
-    const { error } = await supabase
-      .from("task_templates")
-      .update({ name: editName.trim(), tasks })
-      .eq("id", editTemplate.id);
-    if (error) {
+    const res = await fetch(`/api/templates/${editTemplate.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editName.trim(), tasks }),
+    });
+    if (!res.ok) {
       showToast("수정 실패");
       return;
     }
@@ -266,14 +272,11 @@ export default function AdminPage() {
   // --- 날짜 복제 ---
   const loadClonePreview = useCallback(async () => {
     setCloneLoading(true);
-    const { data } = await supabase
-      .from("tasks")
-      .select("title")
-      .eq("child_id", cloneChildId)
-      .eq("date", cloneSourceDate)
-      .order("priority", { ascending: false })
-      .order("created_at");
-    setClonePreview(data?.map((t) => t.title) ?? []);
+    const res = await fetch(
+      `/api/tasks?childId=${cloneChildId}&date=${cloneSourceDate}`,
+    );
+    const data = res.ok ? await res.json() : [];
+    setClonePreview(data.map((t: { title: string }) => t.title));
     setCloneLoading(false);
   }, [cloneChildId, cloneSourceDate]);
 
@@ -295,25 +298,28 @@ export default function AdminPage() {
     if (clonePreview.length === 0 || cloneTargetDates.length === 0) return;
     setSubmitting(true);
     try {
-      const { data: source } = await supabase
-        .from("tasks")
-        .select("title, priority")
-        .eq("child_id", cloneChildId)
-        .eq("date", cloneSourceDate);
-      if (!source || source.length === 0) {
+      const srcRes = await fetch(
+        `/api/tasks?childId=${cloneChildId}&date=${cloneSourceDate}`,
+      );
+      const source = srcRes.ok ? await srcRes.json() : [];
+      if (source.length === 0) {
         showToast("복제할 할일이 없습니다");
         return;
       }
-      const copies = cloneTargetDates.flatMap((date) =>
-        source.map((t) => ({
+      const copies = cloneTargetDates.flatMap((date: string) =>
+        source.map((t: { title: string; priority: number }) => ({
           child_id: cloneChildId,
           title: t.title,
           date,
           priority: t.priority,
         }))
       );
-      const { error } = await supabase.from("tasks").insert(copies);
-      if (error) throw error;
+      const bulkRes = await fetch("/api/tasks/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tasks: copies }),
+      });
+      if (!bulkRes.ok) throw new Error("clone failed");
 
       const childName = CHILDREN.find((c) => c.id === cloneChildId)?.name;
       showToast(

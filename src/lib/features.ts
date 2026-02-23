@@ -1,8 +1,5 @@
-// 피쳐플래그 — DB 기본값 + localStorage override
+// 피쳐플래그 — API Route 경유 DB 기본값 + localStorage override
 // 우선순위: localStorage override > DB값 > 코드 기본값
-
-import { supabase } from "@/lib/supabase/client";
-import { cached, invalidate } from "@/lib/cache";
 
 const CODE_DEFAULTS = {
   sihyun: { map: true },
@@ -13,28 +10,18 @@ type ChildId = keyof typeof CODE_DEFAULTS;
 export type FeatureKey = keyof (typeof CODE_DEFAULTS)[ChildId];
 
 const STORAGE_KEY = "mungchi_feature_overrides";
-const CACHE_TTL = 60_000; // 1분
 
 export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "map", label: "쌍둥이별" },
 ];
 
-// --- DB (캐시 경유) ---
+// --- DB (API Route 경유) ---
 type FlagMap = Record<string, Record<string, boolean>>;
 let flagsSnapshot: FlagMap = {};
 
 export async function loadFeatureFlags(): Promise<FlagMap> {
-  const flags = await cached<FlagMap>("feature_flags", CACHE_TTL, async () => {
-    const { data } = await supabase.from("feature_flags").select("*");
-    const map: FlagMap = {};
-    if (data) {
-      for (const row of data) {
-        if (!map[row.child_id]) map[row.child_id] = {};
-        map[row.child_id][row.feature] = row.enabled;
-      }
-    }
-    return map;
-  });
+  const res = await fetch("/api/features");
+  const flags: FlagMap = res.ok ? await res.json() : {};
   flagsSnapshot = flags;
   return flags;
 }
@@ -74,12 +61,13 @@ export async function setFeatureFlag(
   feature: FeatureKey,
   enabled: boolean
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from("feature_flags")
-    .upsert({ child_id: childId, feature, enabled });
-  if (error) return false;
-  invalidate("feature_flags");
-  // 스냅샷도 즉시 갱신
+  const res = await fetch("/api/features", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ child_id: childId, feature, enabled }),
+  });
+  if (!res.ok) return false;
+  // 스냅샷 즉시 갱신
   if (!flagsSnapshot[childId]) flagsSnapshot[childId] = {};
   flagsSnapshot[childId][feature] = enabled;
   return true;
