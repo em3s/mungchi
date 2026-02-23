@@ -100,19 +100,22 @@ export function searchDictionary(
 
 export async function getVocabLists(
   childId: string,
-): Promise<{ date: string; count: number; title: string }[]> {
+): Promise<{ date: string; count: number; spellingCount: number; title: string }[]> {
   return cached(`vocab_lists:${childId}`, DATES_TTL, async () => {
     const [entriesRes, metaRes] = await Promise.all([
-      supabase.from("vocab_entries").select("date").eq("user_id", childId),
+      supabase.from("vocab_entries").select("date, spelling").eq("user_id", childId),
       supabase
         .from("vocab_list_meta")
         .select("date, title")
         .eq("user_id", childId),
     ]);
-    const counts = new Map<string, number>();
+    const counts = new Map<string, { total: number; spelling: number }>();
     if (entriesRes.data) {
-      for (const row of entriesRes.data as { date: string }[]) {
-        counts.set(row.date, (counts.get(row.date) ?? 0) + 1);
+      for (const row of entriesRes.data as { date: string; spelling: boolean }[]) {
+        const prev = counts.get(row.date) ?? { total: 0, spelling: 0 };
+        prev.total += 1;
+        if (row.spelling) prev.spelling += 1;
+        counts.set(row.date, prev);
       }
     }
     const titles = new Map<string, string>();
@@ -122,7 +125,12 @@ export async function getVocabLists(
       }
     }
     return Array.from(counts.entries())
-      .map(([date, count]) => ({ date, count, title: titles.get(date) ?? "" }))
+      .map(([date, c]) => ({
+        date,
+        count: c.total,
+        spellingCount: c.spelling,
+        title: titles.get(date) ?? "",
+      }))
       .sort((a, b) => b.date.localeCompare(a.date));
   });
 }
@@ -198,6 +206,24 @@ export async function removeEntry(
   const { error } = await supabase
     .from("vocab_entries")
     .delete()
+    .eq("id", entryId);
+  if (error) return false;
+  invalidate(`vocab_entries:${childId}:${date}`);
+  invalidate(`vocab_lists:${childId}`);
+  return true;
+}
+
+// --- 스펠링 토글 ---
+
+export async function toggleSpelling(
+  childId: string,
+  date: string,
+  entryId: string,
+  value: boolean,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("vocab_entries")
+    .update({ spelling: value })
     .eq("id", entryId);
   if (error) return false;
   invalidate(`vocab_entries:${childId}:${date}`);

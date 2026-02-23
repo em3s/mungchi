@@ -124,6 +124,7 @@ export interface VocabEntry {
   dictionary_id: string | null;
   word: string;
   meaning: string;
+  spelling: boolean;
   created_at?: string;
 }
 

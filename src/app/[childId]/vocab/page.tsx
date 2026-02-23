@@ -9,6 +9,7 @@ import {
   getVocabLists,
   addEntry,
   removeEntry,
+  toggleSpelling,
   updateVocabDate,
   setListTitle,
   saveQuizResult,
@@ -76,9 +77,9 @@ export default function VocabPage({
   const longPressRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; spelling: boolean }>>(new Map());
 
-  // Vocab lists (date + count + title)
+  // Vocab lists (date + count + spellingCount + title)
   const [vocabLists, setVocabLists] = useState<
-    { date: string; count: number; title: string }[]
+    { date: string; count: number; spellingCount: number; title: string }[]
   >([]);
   const [listTitle, setListTitleState] = useState("");
 
@@ -199,7 +200,9 @@ export default function VocabPage({
     setQuizType(type);
     setLoading(true);
     const data = await getEntries(childId, date);
-    setEntries(data);
+    // 스펠링: spelling 체크된 단어만
+    const quizEntries = type === "spelling" ? data.filter((e) => e.spelling) : data;
+    setEntries(quizEntries);
     setLoading(false);
     setView("quiz");
   }
@@ -333,13 +336,16 @@ export default function VocabPage({
                         </button>
                         <button
                           onClick={() => handleStartQuizFromHome(item.date, "spelling")}
+                          disabled={item.spellingCount === 0}
                           className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 ${
-                            qs?.spelling
-                              ? "bg-purple-50 text-purple-400"
-                              : "bg-purple-500 text-white"
+                            item.spellingCount === 0
+                              ? "bg-gray-100 text-gray-300"
+                              : qs?.spelling
+                                ? "bg-purple-50 text-purple-400"
+                                : "bg-purple-500 text-white"
                           }`}
                         >
-                          ✏️ 스펠링 {qs?.spelling ? "✓" : `🍬${item.count}`}
+                          ✏️ 스펠링 {item.spellingCount === 0 ? "0개" : qs?.spelling ? "✓" : `🍬${item.spellingCount}`}
                         </button>
                       </div>
                     )}
@@ -396,8 +402,8 @@ export default function VocabPage({
               {/* Word List */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    단어 ({entries.length})
+                  <div className="text-xs font-semibold text-gray-500 tracking-wider">
+                    단어 ({entries.length}) · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span>
                   </div>
                   {isEditable && !showAddForm && (
                     <button
@@ -423,7 +429,7 @@ export default function VocabPage({
                         user_id: entry.user_id,
                         title: `${entry.word}  ${entry.meaning}`,
                         date: entry.date,
-                        completed: false,
+                        completed: entry.spelling,
                         completed_at: null,
                         priority: 0,
                         notes: null,
@@ -432,6 +438,17 @@ export default function VocabPage({
                         <TaskItem
                           key={entry.id}
                           task={task}
+                          onToggle={async (t) => {
+                            const newVal = !entry.spelling;
+                            const ok = await toggleSpelling(childId, entry.date, entry.id, newVal);
+                            if (ok) {
+                              setEntries((prev) =>
+                                prev.map((e) =>
+                                  e.id === entry.id ? { ...e, spelling: newVal } : e,
+                                ),
+                              );
+                            }
+                          }}
                           onDelete={
                             isEditable
                               ? () => handleRemoveWord(entry.id)
