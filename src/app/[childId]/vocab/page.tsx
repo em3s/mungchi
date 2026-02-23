@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
-import { todayKST } from "@/lib/date";
+import { todayKST, WEEKDAYS } from "@/lib/date";
 import {
   getEntries,
   addEntry,
@@ -11,16 +11,18 @@ import {
   hasEarnedToday,
   saveQuizResult,
   getVocabConfig,
+  getVocabDates,
 } from "@/lib/vocab";
 import { addTransaction, getBalance } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
+import { Calendar } from "@/components/Calendar";
 import { WordInput } from "@/components/WordInput";
 import { VocabQuiz } from "@/components/VocabQuiz";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
-type ViewState = "list" | "adding" | "quiz" | "result";
+type ViewState = "calendar" | "list" | "adding" | "quiz" | "result";
 
 export default function VocabPage({
   params,
@@ -44,8 +46,9 @@ export default function VocabPage({
 
   // State
   const [entries, setEntries] = useState<VocabEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<ViewState>("list");
+  const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<ViewState>("calendar");
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [quizType, setQuizType] = useState<VocabQuizType>("basic");
   const [quizResult, setQuizResult] = useState<{
     total: number;
@@ -57,36 +60,105 @@ export default function VocabPage({
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [coinsEnabled, setCoinsEnabled] = useState(false);
 
-  // Load data
+  // Calendar state
+  const [calYear, setCalYear] = useState(() => parseInt(today.slice(0, 4)));
+  const [calMonth, setCalMonth] = useState(
+    () => parseInt(today.slice(5, 7)) - 1,
+  );
+  const [vocabDates, setVocabDates] = useState<Set<string>>(new Set());
+
+  // Load vocab dates for calendar
+  const loadVocabDates = useCallback(async () => {
+    const dates = await getVocabDates(childId, calYear, calMonth);
+    setVocabDates(dates);
+  }, [childId, calYear, calMonth]);
+
+  // Load entries for selected date
   const loadEntries = useCallback(async () => {
-    const data = await getEntries(childId, today);
+    if (!selectedDate) return;
+    setLoading(true);
+    const data = await getEntries(childId, selectedDate);
     setEntries(data);
     setLoading(false);
-  }, [childId, today]);
+  }, [childId, selectedDate]);
 
+  // Initial load
   useEffect(() => {
     if (!flagsLoaded || featureDisabled) return;
-    loadEntries();
+    loadVocabDates();
     getVocabConfig().then(setConfig);
     const coins = isFeatureEnabled(childId, "coins");
     setCoinsEnabled(coins);
     if (coins) getBalance(childId).then(setCoinBalance);
-  }, [childId, flagsLoaded, featureDisabled, loadEntries]);
+  }, [childId, flagsLoaded, featureDisabled, loadVocabDates]);
+
+  // Load entries when date selected
+  useEffect(() => {
+    if (selectedDate && view !== "calendar") {
+      loadEntries();
+    }
+  }, [selectedDate, view, loadEntries]);
+
+  // Reload calendar dots on month change
+  useEffect(() => {
+    if (flagsLoaded && !featureDisabled) {
+      loadVocabDates();
+    }
+  }, [calYear, calMonth, flagsLoaded, featureDisabled, loadVocabDates]);
 
   if (!flagsLoaded || featureDisabled) return null;
 
-  if (loading) {
-    return (
-      <div className="text-center pt-[60px] text-gray-400 text-xl">
-        불러오는 중...
-      </div>
-    );
+  const minWords = config.min_words ?? 3;
+  const isToday = selectedDate === today;
+
+  // Calendar navigation
+  function prevMonthNav() {
+    if (calMonth === 0) {
+      setCalYear(calYear - 1);
+      setCalMonth(11);
+    } else setCalMonth(calMonth - 1);
   }
 
-  const minWords = config.min_words ?? 3;
+  function nextMonthNav() {
+    if (calMonth === 11) {
+      setCalYear(calYear + 1);
+      setCalMonth(0);
+    } else setCalMonth(calMonth + 1);
+  }
+
+  function goToday() {
+    const t = todayKST();
+    setCalYear(parseInt(t.slice(0, 4)));
+    setCalMonth(parseInt(t.slice(5, 7)) - 1);
+  }
+
+  function handleDateClick(date: string) {
+    if (date > today) return;
+    if (vocabDates.has(date)) {
+      setSelectedDate(date);
+      setView("list");
+    }
+  }
+
+  function handleOpenToday() {
+    setSelectedDate(today);
+    setView("list");
+  }
+
+  function handleBackToCalendar() {
+    setSelectedDate(null);
+    setEntries([]);
+    setView("calendar");
+    loadVocabDates();
+  }
+
+  function formatDate(dateStr: string) {
+    const d = new Date(dateStr + "T00:00:00");
+    return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
+  }
 
   async function handleAddWord(dictEntry: DictionaryEntry) {
-    const result = await addEntry(childId, today, dictEntry);
+    const result = await addEntry(childId, selectedDate!, dictEntry);
     if (result.ok && result.entry) {
       setEntries((prev) => [...prev, result.entry!]);
       showToast(`"${dictEntry.word}" 추가!`);
@@ -96,7 +168,7 @@ export default function VocabPage({
   }
 
   async function handleRemoveWord(entryId: string) {
-    const ok = await removeEntry(childId, today, entryId);
+    const ok = await removeEntry(childId, selectedDate!, entryId);
     if (ok) {
       setEntries((prev) => prev.filter((e) => e.id !== entryId));
     }
@@ -112,10 +184,21 @@ export default function VocabPage({
       quizType === "basic" ? "basic_reward" : "advanced_reward";
     const rewardAmount = config[rewardKey] ?? (quizType === "basic" ? 10 : 20);
 
-    const alreadyEarned = await hasEarnedToday(childId, today, quizType);
+    const alreadyEarned = await hasEarnedToday(
+      childId,
+      selectedDate!,
+      quizType,
+    );
     const candy = alreadyEarned ? 0 : rewardAmount;
 
-    await saveQuizResult(childId, today, quizType, total, correct, candy);
+    await saveQuizResult(
+      childId,
+      selectedDate!,
+      quizType,
+      total,
+      correct,
+      candy,
+    );
 
     if (candy > 0 && coinsEnabled) {
       const result = await addTransaction(
@@ -146,89 +229,155 @@ export default function VocabPage({
         )}
       </div>
 
-      {view === "list" && (
+      {/* Calendar View */}
+      {view === "calendar" && (
         <>
-          {/* Word List */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                오늘의 단어 ({entries.length})
-              </div>
-              <button
-                onClick={() => setView("adding")}
-                className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)]"
-              >
-                + 추가
-              </button>
-            </div>
+          <Calendar
+            year={calYear}
+            month={calMonth}
+            monthData={null}
+            today={today}
+            selectedDate={null}
+            eventDates={vocabDates}
+            onDateClick={handleDateClick}
+            onPrevMonth={prevMonthNav}
+            onNextMonth={nextMonthNav}
+            onGoToday={goToday}
+          />
 
-            {entries.length === 0 ? (
-              <div className="text-center py-10 text-gray-400">
-                영어 단어를 추가해보세요!
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {entries.map((entry) => (
-                  <li
-                    key={entry.id}
-                    className="flex items-center justify-between bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
-                  >
-                    <div>
-                      <div className="font-bold text-base text-gray-800">
-                        {entry.word}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {entry.meaning}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveWord(entry.id)}
-                      className="text-gray-300 hover:text-red-400 text-lg ml-2"
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="mt-4">
+            <button
+              onClick={handleOpenToday}
+              className="w-full bg-[var(--accent,#6c5ce7)] text-white py-4 rounded-2xl font-bold text-base active:opacity-80"
+            >
+              {vocabDates.has(today)
+                ? "📖 오늘의 단어장"
+                : "📖 새 단어장 만들기"}
+            </button>
           </div>
 
-          {/* Quiz Buttons */}
-          {entries.length >= minWords && (
-            <div className="mt-6">
-              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                시험 보기
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleStartQuiz("basic")}
-                  className="flex-1 bg-blue-500 text-white py-3 rounded-xl font-bold text-sm"
-                >
-                  📝 객관식
-                  <div className="text-xs font-normal opacity-80 mt-0.5">
-                    🍬 {config.basic_reward ?? 10}
-                  </div>
-                </button>
-                <button
-                  onClick={() => handleStartQuiz("advanced")}
-                  className="flex-1 bg-purple-500 text-white py-3 rounded-xl font-bold text-sm"
-                >
-                  ✏️ 주관식
-                  <div className="text-xs font-normal opacity-80 mt-0.5">
-                    🍬 {config.advanced_reward ?? 20}
-                  </div>
-                </button>
-              </div>
-            </div>
-          )}
-          {entries.length > 0 && entries.length < minWords && (
-            <div className="text-center text-sm text-gray-400 mt-4">
-              {minWords}개 이상 단어를 추가하면 시험을 볼 수 있어요
+          {vocabDates.size > 0 && (
+            <div className="text-center text-sm text-gray-400 mt-3">
+              이번 달 {vocabDates.size}일 학습
             </div>
           )}
         </>
       )}
 
+      {/* List View */}
+      {view === "list" && (
+        <>
+          {/* Sub-header */}
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={handleBackToCalendar}
+              className="text-xl px-2 py-1 rounded-xl text-gray-500 active:bg-black/5"
+            >
+              ←
+            </button>
+            <span className="text-sm font-semibold text-gray-600">
+              {formatDate(selectedDate!)}
+            </span>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-10 text-gray-400">
+              불러오는 중...
+            </div>
+          ) : (
+            <>
+              {/* Word List */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    단어 ({entries.length})
+                  </div>
+                  {isToday && (
+                    <button
+                      onClick={() => setView("adding")}
+                      className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)]"
+                    >
+                      + 추가
+                    </button>
+                  )}
+                </div>
+
+                {entries.length === 0 ? (
+                  <div className="text-center py-10 text-gray-400">
+                    {isToday
+                      ? "영어 단어를 추가해보세요!"
+                      : "이 날의 단어가 없어요"}
+                  </div>
+                ) : (
+                  <ul className="flex flex-col gap-2">
+                    {entries.map((entry) => (
+                      <li
+                        key={entry.id}
+                        className="flex items-center justify-between bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+                      >
+                        <div>
+                          <div className="font-bold text-base text-gray-800">
+                            {entry.word}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {entry.meaning}
+                          </div>
+                        </div>
+                        {isToday && (
+                          <button
+                            onClick={() => handleRemoveWord(entry.id)}
+                            className="text-gray-300 hover:text-red-400 text-lg ml-2"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Quiz Buttons */}
+              {entries.length >= minWords && (
+                <div className="mt-6">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    시험 보기
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleStartQuiz("basic")}
+                      className="flex-1 bg-blue-500 text-white py-3 rounded-xl font-bold text-sm"
+                    >
+                      📝 객관식
+                      <div className="text-xs font-normal opacity-80 mt-0.5">
+                        🍬 {config.basic_reward ?? 10}
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleStartQuiz("advanced")}
+                      className="flex-1 bg-purple-500 text-white py-3 rounded-xl font-bold text-sm"
+                    >
+                      ✏️ 주관식
+                      <div className="text-xs font-normal opacity-80 mt-0.5">
+                        🍬 {config.advanced_reward ?? 20}
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+              {isToday &&
+                entries.length > 0 &&
+                entries.length < minWords && (
+                  <div className="text-center text-sm text-gray-400 mt-4">
+                    {minWords}개 이상 단어를 추가하면 시험을 볼 수 있어요
+                  </div>
+                )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Adding View */}
       {view === "adding" && (
         <WordInput
           onSelect={handleAddWord}
@@ -237,6 +386,7 @@ export default function VocabPage({
         />
       )}
 
+      {/* Quiz View */}
       {view === "quiz" && (
         <VocabQuiz
           entries={entries}
@@ -246,6 +396,7 @@ export default function VocabPage({
         />
       )}
 
+      {/* Result View */}
       {view === "result" && quizResult && (
         <div className="text-center py-6">
           <div className="text-4xl mb-3">
@@ -267,7 +418,7 @@ export default function VocabPage({
             </div>
           ) : quizResult.alreadyEarned ? (
             <div className="text-sm text-gray-400 mb-4">
-              오늘은 이미 별사탕을 받았어요
+              이미 별사탕을 받았어요
             </div>
           ) : null}
           <button

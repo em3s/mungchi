@@ -5,6 +5,7 @@ import { cached, invalidate } from "@/lib/cache";
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
 
 const ENTRIES_TTL = 30_000; // 30초
+const DATES_TTL = 30_000; // 30초
 const CONFIG_TTL = 60_000; // 1분
 
 // --- 사전 검색 (autocomplete) ---
@@ -24,7 +25,32 @@ export async function searchDictionary(
   return (data as DictionaryEntry[]) ?? [];
 }
 
-// --- 오늘의 단어 목록 ---
+// --- 월별 단어장 날짜 조회 (달력용) ---
+
+export async function getVocabDates(
+  childId: string,
+  year: number,
+  month: number, // 0-indexed (Calendar 컴포넌트 규격)
+): Promise<Set<string>> {
+  const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
+  return cached(`vocab_dates:${childId}:${monthStr}`, DATES_TTL, async () => {
+    const { data } = await supabase
+      .from("vocab_entries")
+      .select("date")
+      .eq("child_id", childId)
+      .gte("date", `${monthStr}-01`)
+      .lte("date", `${monthStr}-31`);
+    const dates = new Set<string>();
+    if (data) {
+      for (const row of data as { date: string }[]) {
+        dates.add(row.date);
+      }
+    }
+    return dates;
+  });
+}
+
+// --- 단어 목록 ---
 
 export async function getEntries(
   childId: string,
@@ -59,6 +85,7 @@ export async function addEntry(
     .single();
   if (error) return { ok: false };
   invalidate(`vocab_entries:${childId}:${date}`);
+  invalidate(`vocab_dates:${childId}:${date.slice(0, 7)}`);
   return { ok: true, entry: data as VocabEntry };
 }
 
@@ -73,6 +100,7 @@ export async function removeEntry(
     .eq("id", entryId);
   if (error) return false;
   invalidate(`vocab_entries:${childId}:${date}`);
+  invalidate(`vocab_dates:${childId}:${date.slice(0, 7)}`);
   return true;
 }
 
