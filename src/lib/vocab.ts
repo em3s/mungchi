@@ -2,23 +2,42 @@
 
 import { supabase } from "@/lib/supabase/client";
 import { cached, invalidate } from "@/lib/cache";
+import { STATIC_DICT } from "@/lib/dictionary-data";
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
 
 const ENTRIES_TTL = 30_000; // 30초
 const DATES_TTL = 30_000; // 30초
 const CONFIG_TTL = 60_000; // 1분
 
-// --- 사전 전체 캐시 (메모리) ---
+// --- 사전 캐시: 정적(코드) + 동적(DB) merge ---
 
 let dictCache: DictionaryEntry[] | null = null;
 
+// 정적 사전 → DictionaryEntry 변환 (word 기반 ID)
+const staticEntries: DictionaryEntry[] = STATIC_DICT.map(([word, meaning, level]) => ({
+  id: `s:${word}`,
+  word,
+  meaning,
+  level,
+}));
+const staticWords = new Set(STATIC_DICT.map(([w]) => w));
+
 export async function loadDictionary(): Promise<DictionaryEntry[]> {
   if (dictCache) return dictCache;
+
+  // DB에서 동적 단어만 가져옴 (정적에 없는 것)
   const { data } = await supabase
     .from("dictionary")
     .select("*")
     .order("word");
-  dictCache = (data as DictionaryEntry[]) ?? [];
+  const dbOnly = ((data as DictionaryEntry[]) ?? []).filter(
+    (e) => !staticWords.has(e.word),
+  );
+
+  // 정적 + 동적 merge (알파벳순)
+  dictCache = [...staticEntries, ...dbOnly].sort((a, b) =>
+    a.word.localeCompare(b.word),
+  );
   return dictCache;
 }
 
