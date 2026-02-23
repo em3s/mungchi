@@ -449,10 +449,10 @@ export default function AdminPage() {
                     return (
                       <button
                         key={feat.key}
-                        onClick={() => toggleDbFlag(child.id, feat.key)}
+                        onClick={() => toggleOverride(child.id, feat.key)}
                         onContextMenu={(e) => {
                           e.preventDefault();
-                          toggleOverride(child.id, feat.key);
+                          toggleDbFlag(child.id, feat.key);
                         }}
                         className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                           state.effective
@@ -468,7 +468,7 @@ export default function AdminPage() {
               </div>
             ))}
             <div className="text-[0.65rem] text-gray-400 mt-1">
-              탭: DB 토글 · 꾹 눌러서: override 토글
+              탭: override · 꾹: DB 토글
             </div>
           </div>
         )}
