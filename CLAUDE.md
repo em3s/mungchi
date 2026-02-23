@@ -147,6 +147,7 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 
 ## 주의사항
 
+- 코드 변경 후 항상 `npm run build` → commit → push까지 완료
 - KST 타임존 (UTC+9) 일관 사용
 - earnedAt은 UTC 저장, 날짜 비교는 반드시 KST 변환 (toKSTDate)
 - React hooks 순서: 모든 hooks는 conditional return 전에 배치
