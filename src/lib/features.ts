@@ -22,7 +22,7 @@ const CACHE_TTL = 60_000; // 1분
 
 export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "map", label: "쌍둥이별" },
-  { key: "star", label: "반짝별/초코별" },
+  { key: "star", label: "반짝별" },
   { key: "coins", label: "별사탕" },
   { key: "vocab", label: "영어단어" },
   { key: "game", label: "공룡 달리기" },

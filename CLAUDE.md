@@ -12,7 +12,7 @@
 | id | name | role | theme | emoji | starName | descriptor |
 |---|---|---|---|---|---|---|
 | sihyun | 시현 | child | starry | ⭐ | 반짝별 | 반짝별 수호자 |
-| misong | 미송 | child | choco | 🍫 | 초코별 | 초코별 탐험가 |
+| misong | 미송 | child | choco | ✨ | 반짝별 | 반짝별 탐험가 |
 | dad | 아빠 | parent | shield | 🛡️ | 든든별 | 쌍둥이별 이끔이 |
 | mom | 엄마 | parent | heart | 💖 | 따뜻별 | 쌍둥이별 지킴이 |
 
