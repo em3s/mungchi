@@ -112,25 +112,21 @@ export function VocabQuiz({
   }
 
   function handleNext() {
-    if (currentIdx + 1 >= roundTotal) {
-      // 라운드 종료
-      const wrongAfterThis = isCorrect ? wrongInRound : [...wrongInRound, current.entry];
-      const correctAfterThis = totalCorrect + (isCorrect ? 1 : 0);
+    const correctAfterThis = totalCorrect + (isCorrect ? 1 : 0);
 
-      // 이미 wrongInRound에 추가됐으므로 그걸 사용
-      // (handleBasicSelect/handleSpellingSubmit에서 이미 추가됨)
-      if (wrongInRound.length === 0 && isCorrect) {
-        // 이번 라운드 전부 맞춤 → 완료
-        onComplete(totalWords, correctAfterThis);
-      } else {
-        // 틀린 것만 다음 라운드
-        const nextWrong = isCorrect ? wrongInRound : wrongInRound;
-        // wrongInRound은 이미 틀린 것들이 들어있음 (현재 문제 포함)
-        startRound(wrongInRound, round + 1);
-        setTotalCorrect(correctAfterThis);
-      }
+    // 전부 맞춤 → 완료
+    if (correctAfterThis >= totalWords) {
+      onComplete(totalWords, totalWords);
       return;
     }
+
+    if (currentIdx + 1 >= roundTotal) {
+      // 라운드 종료 → 틀린 것만 다음 라운드
+      startRound(wrongInRound, round + 1);
+      setTotalCorrect(correctAfterThis);
+      return;
+    }
+
     setCurrentIdx((prev) => prev + 1);
     setAnswer("");
     setSelectedChoice(null);
@@ -139,12 +135,15 @@ export function VocabQuiz({
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
+  const correctAfterCurrent = totalCorrect + (showResult && isCorrect ? 1 : 0);
+  const roundProgress = (currentIdx + (showResult ? 1 : 0)) / roundTotal;
+
   return (
     <div>
-      {/* Progress */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-gray-500">
-          {round > 1 && <span className="text-amber-500 mr-1">재도전 </span>}
+          {round > 1 && <span className="text-amber-500">Round {round} · </span>}
           {currentIdx + 1} / {roundTotal}
         </span>
         <button onClick={onCancel} className="text-sm text-gray-400">
@@ -152,15 +151,29 @@ export function VocabQuiz({
         </button>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-1.5 bg-gray-200 rounded-full mb-6 overflow-hidden">
-        <div
-          className="h-full bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] rounded-full transition-all duration-300"
-          style={{ width: `${(totalCorrect / totalWords) * 100}%` }}
-        />
+      {/* 게이지 1: 현재 라운드 진행 */}
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-[10px] text-gray-400 w-8 shrink-0">진행</span>
+        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gray-400 rounded-full transition-all duration-300"
+            style={{ width: `${roundProgress * 100}%` }}
+          />
+        </div>
       </div>
-      <div className="text-right text-xs text-gray-400 -mt-5 mb-4">
-        {totalCorrect}/{totalWords} 완료
+
+      {/* 게이지 2: 전체 맞춘 수 (이게 꽉 차면 끝) */}
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-[10px] text-green-500 w-8 shrink-0 font-bold">정답</span>
+        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
+            style={{ width: `${(correctAfterCurrent / totalWords) * 100}%` }}
+          />
+        </div>
+        <span className="text-xs font-bold text-green-600 w-10 text-right">
+          {correctAfterCurrent}/{totalWords}
+        </span>
       </div>
 
       {/* Question */}
@@ -238,11 +251,11 @@ export function VocabQuiz({
             onClick={handleNext}
             className="mt-4 w-full bg-[var(--accent,#6c5ce7)] text-white py-3 rounded-xl font-bold"
           >
-            {currentIdx + 1 >= roundTotal
-              ? wrongInRound.length > 0 || !isCorrect
+            {correctAfterCurrent >= totalWords
+              ? "결과 보기"
+              : currentIdx + 1 >= roundTotal
                 ? "틀린 문제 다시 풀기"
-                : "결과 보기"
-              : "다음 문제"}
+                : "다음 문제"}
           </button>
         </div>
       )}
