@@ -83,7 +83,7 @@ export default function ShopPage({
       showToast(`${reward.emoji} ${reward.name} 교환 완료!`);
       getTransactions(childId, 200).then(setTransactions);
     } else {
-      showToast("별사탕이 부족해요!");
+      showToast("초코가 부족해요!");
     }
   }
 
@@ -94,16 +94,16 @@ export default function ShopPage({
         className="flex items-center justify-between py-4 sticky top-0 z-10"
         style={{ background: "var(--bg)" }}
       >
-        <h1 className="text-xl font-bold md:text-2xl">🍬 별사탕</h1>
+        <h1 className="text-xl font-bold md:text-2xl">🍪 초코</h1>
         <span />
       </div>
 
       {/* Balance */}
       <div className="text-center mb-6">
         <div className="text-4xl font-bold text-amber-500 mb-1">
-          🍬 {balance}
+          🍪 {balance}
         </div>
-        <div className="text-sm text-gray-400">모은 별사탕</div>
+        <div className="text-sm text-gray-400">모은 초코</div>
       </div>
 
       {/* Game Banner */}
@@ -114,7 +114,7 @@ export default function ShopPage({
         >
           <div className="text-left">
             <div className="font-bold text-base">🦖 공룡 달리기</div>
-            <div className="text-xs opacity-80">1🍬로 한 판 플레이!</div>
+            <div className="text-xs opacity-80">1🍪로 한 판 플레이!</div>
           </div>
           <div className="text-2xl">▶</div>
         </button>
@@ -124,7 +124,7 @@ export default function ShopPage({
       {rewards.length > 0 && (
         <>
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 md:text-sm">
-            🍬 별사탕샵
+            🍪 초코샵
           </div>
           <div className="grid grid-cols-2 gap-3 mb-6 md:grid-cols-3">
             {rewards.map((r) => (
@@ -218,7 +218,7 @@ export default function ShopPage({
             <div className="text-4xl mb-3">{confirmReward.emoji}</div>
             <div className="text-lg font-bold mb-1">{confirmReward.name}</div>
             <div className="text-sm text-gray-500 mb-4">
-              🍬 {confirmReward.cost}개 사용
+              🍪 {confirmReward.cost}개 사용
             </div>
             <div className="flex gap-2">
               <button

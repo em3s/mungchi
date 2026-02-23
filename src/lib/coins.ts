@@ -1,4 +1,4 @@
-// 별사탕 화폐 시스템 — 잔액 조회, 거래 기록, 보상 교환
+// 초코 화폐 시스템 — 잔액 조회, 거래 기록, 보상 교환
 
 import { supabase } from "@/lib/supabase/client";
 import { cached, invalidate } from "@/lib/cache";

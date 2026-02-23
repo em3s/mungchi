@@ -33,8 +33,8 @@ export function BottomNav({ childId }: BottomNavProps) {
     },
     {
       href: `/${childId}/shop`,
-      label: "별사탕",
-      icon: "🍬",
+      label: "초코",
+      icon: "🍪",
       key: "coins",
     },
     {

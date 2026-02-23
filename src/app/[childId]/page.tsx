@@ -41,7 +41,7 @@ export default function DashboardPage({
   const cheerRef = useRef({ rate: -1, message: "" });
   const bonusGivenRef = useRef(false);
 
-  // 별사탕
+  // 초코
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [coinsEnabled, setCoinsEnabled] = useState(false);
 
@@ -121,7 +121,7 @@ export default function DashboardPage({
     loadTasks();
   }, [loadTasks]);
 
-  // 별사탕 초기화
+  // 초코 초기화
   useEffect(() => {
     loadFeatureFlags().then(() => {
       const enabled = isFeatureEnabled(childId, "coins");
@@ -155,7 +155,7 @@ export default function DashboardPage({
   const activeCompleted = activeTasks.filter((t) => t.completed).length;
   const activeRate = activeTotal > 0 ? activeCompleted / activeTotal : 0;
 
-  // 올클리어 컨페티 + 별사탕 보너스
+  // 올클리어 컨페티 + 초코 보너스
   useEffect(() => {
     if (
       prevRateRef.current !== null &&
@@ -172,7 +172,7 @@ export default function DashboardPage({
           (result) => {
             if (result.ok) {
               setCoinBalance(result.newBalance ?? null);
-              showToast("올클리어 보너스! 별사탕 +3! 🍬");
+              showToast("올클리어 보너스! 초코 +3! 🍪");
             }
           },
         );
@@ -230,7 +230,7 @@ export default function DashboardPage({
       setTasks(updateList(tasks));
     }
 
-    // 별사탕 (오늘 날짜만)
+    // 초코 (오늘 날짜만)
     if (coinsEnabled && !selectedDate) {
       if (newCompleted) {
         const result = await addTransaction(
@@ -242,7 +242,7 @@ export default function DashboardPage({
         );
         if (result.ok) {
           setCoinBalance(result.newBalance ?? null);
-          showToast("별사탕 +1! 🍬");
+          showToast("초코 +1! 🍪");
         }
       } else {
         const result = await addTransaction(
@@ -410,7 +410,7 @@ export default function DashboardPage({
         </h1>
         {coinsEnabled && coinBalance !== null && (
           <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">
-            🍬 {coinBalance}
+            🍪 {coinBalance}
           </span>
         )}
       </div>

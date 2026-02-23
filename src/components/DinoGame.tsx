@@ -285,7 +285,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
               onClick={() => reset()}
               className="px-5 py-2.5 rounded-xl bg-[var(--accent,#6c5ce7)] text-white font-bold text-sm active:opacity-80"
             >
-              다시 하기 (1🍬)
+              다시 하기 (1🍪)
             </button>
             <button
               onClick={() => window.history.back()}

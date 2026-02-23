@@ -28,7 +28,7 @@ export function RewardCard({ reward, balance, onExchange }: RewardCardProps) {
       <div
         className={`text-xs font-bold ${affordable ? "text-amber-500" : "text-gray-400"}`}
       >
-        🍬 {reward.cost}
+        🍪 {reward.cost}
       </div>
     </button>
   );

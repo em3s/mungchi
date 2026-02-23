@@ -72,10 +72,10 @@ export default function GamePage({
           onClick={() => router.push(`/${childId}/shop`)}
           className="text-sm text-gray-400 active:opacity-60"
         >
-          ← 별사탕샵
+          ← 초코샵
         </button>
         <div className="text-sm font-bold text-[var(--accent)]">
-          🍬 {balance ?? "..."}
+          🍪 {balance ?? "..."}
         </div>
       </div>
 
@@ -83,7 +83,7 @@ export default function GamePage({
       <div className="text-center mb-4">
         <h1 className="text-xl font-black text-gray-800">🦖 공룡 달리기</h1>
         <p className="text-xs text-gray-400 mt-1">
-          장애물을 피해 달려보세요! (1🍬)
+          장애물을 피해 달려보세요! (1🍪)
         </p>
       </div>
 
@@ -97,16 +97,16 @@ export default function GamePage({
           />
         ) : (
           <div className="text-center py-16">
-            <div className="text-5xl mb-4">🍬</div>
-            <div className="text-gray-500 font-bold mb-1">별사탕이 부족해요!</div>
+            <div className="text-5xl mb-4">🍪</div>
+            <div className="text-gray-500 font-bold mb-1">초코가 부족해요!</div>
             <div className="text-xs text-gray-400 mb-4">
-              할일이나 퀴즈를 완료해서 별사탕을 모아보세요
+              할일이나 퀴즈를 완료해서 초코를 모아보세요
             </div>
             <button
               onClick={() => router.push(`/${childId}/shop`)}
               className="px-4 py-2 rounded-xl bg-gray-200 text-gray-600 text-sm font-bold active:opacity-80"
             >
-              별사탕샵으로
+              초코샵으로
             </button>
           </div>
         )}

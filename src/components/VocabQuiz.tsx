@@ -254,7 +254,7 @@ export function VocabQuiz({
         <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-50">
           <div className="animate-bounce text-3xl font-black text-amber-500 drop-shadow-lg"
             style={{ animation: "candyFloat 1.2s ease-out forwards" }}>
-            +1 🍬
+            +1 🍪
           </div>
         </div>
       )}
@@ -275,7 +275,7 @@ export function VocabQuiz({
           </button>
           {!isCorrect && (
             <div className="text-sm text-gray-500 mt-1.5">
-              괜찮아! 끝까지 하면 별사탕은 똑같이 받아 🍬
+              괜찮아! 끝까지 하면 초코는 똑같이 받아 🍪
             </div>
           )}
           <button

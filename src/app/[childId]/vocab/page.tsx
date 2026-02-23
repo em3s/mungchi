@@ -236,12 +236,12 @@ export default function VocabPage({
   }
 
   async function handleQuizComplete(total: number, correct: number) {
-    // 객관식: 고정 보상, 스펠링: 1🍬 × 맞춘 수
+    // 객관식: 고정 보상, 스펠링: 1🍪 × 맞춘 수
     // 매번 완주하면 무조건 보상
     const candy =
       quizType === "basic"
         ? (config.basic_reward ?? 1)
-        : correct; // spelling: 1🍬 per correct
+        : correct; // spelling: 1🍪 per correct
 
     await saveQuizResult(
       childId,
@@ -290,7 +290,7 @@ export default function VocabPage({
         </h1>
         {coinsEnabled && coinBalance !== null && (
           <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">
-            🍬 {coinBalance}
+            🍪 {coinBalance}
           </span>
         )}
       </div>
@@ -357,7 +357,7 @@ export default function VocabPage({
                               : "bg-blue-500 text-white"
                           }`}
                         >
-                          📝 객관식 {qs?.basic ? "✓" : `🍬${config.basic_reward ?? 1}`}
+                          📝 객관식 {qs?.basic ? "✓" : `🍪${config.basic_reward ?? 1}`}
                         </button>
                         <button
                           onClick={() => handleStartQuizFromHome(item.id, "spelling")}
@@ -370,7 +370,7 @@ export default function VocabPage({
                                 : "bg-purple-500 text-white"
                           }`}
                         >
-                          ✏️ 스펠링 {item.spellingCount === 0 ? "0개" : qs?.spelling ? "✓" : `🍬${item.spellingCount}`}
+                          ✏️ 스펠링 {item.spellingCount === 0 ? "0개" : qs?.spelling ? "✓" : `🍪${item.spellingCount}`}
                         </button>
                       </div>
                     )}
@@ -586,7 +586,7 @@ export default function VocabPage({
           </div>
           {quizResult.candy > 0 && (
             <div className="text-lg font-bold text-amber-500 mb-4">
-              🍬 별사탕 +{quizResult.candy}!
+              🍪 초코 +{quizResult.candy}!
             </div>
           )}
           <button

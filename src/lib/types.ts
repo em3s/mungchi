@@ -71,7 +71,7 @@ export interface Milestone {
   current: boolean;
 }
 
-// === 별사탕 (coin) 타입 ===
+// === 초코 (coin) 타입 ===
 
 export type CoinTransactionType =
   | "task_complete"

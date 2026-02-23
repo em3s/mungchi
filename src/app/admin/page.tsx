@@ -101,7 +101,7 @@ export default function AdminPage() {
     [showToast]
   );
 
-  // 별사탕 관리
+  // 초코 관리
   const [coinBalances, setCoinBalances] = useState<Record<string, number>>({});
   const [adjustChildId, setAdjustChildId] = useState("sihyun");
   const [adjustAmount, setAdjustAmount] = useState("");
@@ -466,9 +466,9 @@ export default function AdminPage() {
         )}
       </section>
 
-      {/* === 별사탕 관리 섹션 === */}
+      {/* === 초코 관리 섹션 === */}
       <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h2 className="text-lg font-bold mb-4">🍬 별사탕 관리</h2>
+        <h2 className="text-lg font-bold mb-4">🍪 초코 관리</h2>
 
         {/* 잔액 */}
         <div className="mb-4">
@@ -476,7 +476,7 @@ export default function AdminPage() {
           {USERS.map((child) => (
             <div key={child.id} className="flex items-center justify-between py-2">
               <span className="text-sm">{child.emoji} {child.name}</span>
-              <span className="font-bold text-amber-600">🍬 {coinBalances[child.id] ?? 0}</span>
+              <span className="font-bold text-amber-600">🍪 {coinBalances[child.id] ?? 0}</span>
             </div>
           ))}
         </div>
@@ -529,7 +529,7 @@ export default function AdminPage() {
                     ...prev,
                     [adjustChildId]: result.newBalance ?? 0,
                   }));
-                  showToast(`별사탕 ${amt > 0 ? "+" : ""}${amt} 완료`);
+                  showToast(`초코 ${amt > 0 ? "+" : ""}${amt} 완료`);
                   setAdjustAmount("");
                   setAdjustReason("");
                 } else {
@@ -598,7 +598,7 @@ export default function AdminPage() {
               >
                 <span className="text-sm min-w-0 flex-1 truncate">
                   {r.emoji} {r.name}
-                  <span className="text-amber-500 ml-2">🍬 {r.cost}</span>
+                  <span className="text-amber-500 ml-2">🍪 {r.cost}</span>
                   {!r.active && <span className="text-red-400 ml-1">(비활성)</span>}
                 </span>
                 <div className="flex gap-1 shrink-0">
