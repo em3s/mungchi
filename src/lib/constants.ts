@@ -15,6 +15,20 @@ export const CHILDREN: Omit<Child, "pin" | "created_at">[] = [
     emoji: "🍫",
     starName: "초코별",
   },
+  {
+    id: "dad",
+    name: "아빠",
+    theme: "shield",
+    emoji: "🛡️",
+    starName: "방패별",
+  },
+  {
+    id: "mom",
+    name: "엄마",
+    theme: "heart",
+    emoji: "💖",
+    starName: "하트별",
+  },
 ];
 
 export const PIN = "999999";

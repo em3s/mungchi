@@ -5,8 +5,14 @@
   --color-accent-starry-light: #a29bfe;
   --color-accent-choco: #e17055;
   --color-accent-choco-light: #fab1a0;
+  --color-accent-shield: #2d98da;
+  --color-accent-shield-light: #74b9ff;
+  --color-accent-heart: #e84393;
+  --color-accent-heart-light: #fd79a8;
   --color-bg-starry: #f5f3ff;
   --color-bg-choco: #fdf5f0;
+  --color-bg-shield: #f0f7ff;
+  --color-bg-heart: #fff0f6;
 }
 
 :root {
@@ -38,6 +44,18 @@ body {
   --accent: #e17055;
   --accent-light: #fab1a0;
   --bg: #fdf5f0;
+}
+
+.theme-shield {
+  --accent: #2d98da;
+  --accent-light: #74b9ff;
+  --bg: #f0f7ff;
+}
+
+.theme-heart {
+  --accent: #e84393;
+  --accent-light: #fd79a8;
+  --bg: #fff0f6;
 }
 
 /* Progress Ring */

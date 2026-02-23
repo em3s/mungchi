@@ -3,7 +3,7 @@
 export interface Child {
   id: string;
   name: string;
-  theme: "starry" | "choco";
+  theme: "starry" | "choco" | "shield" | "heart";
   emoji: string;
   starName: string;
   pin: string;

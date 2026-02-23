@@ -64,7 +64,13 @@ export default function HomePage() {
             <div>
               <div className="text-xl font-bold md:text-2xl">{child.name}</div>
               <div className="text-gray-500 text-sm mt-1 md:text-base">
-                {child.theme === "starry" ? "반짝별 수호자" : "초코별 탐험가"}
+                {child.theme === "starry"
+                  ? "반짝별 수호자"
+                  : child.theme === "choco"
+                    ? "초코별 탐험가"
+                    : child.theme === "shield"
+                      ? "방패별 수호자"
+                      : "하트별 수호자"}
               </div>
             </div>
           </button>

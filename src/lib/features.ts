@@ -11,6 +11,8 @@ type Stage = "stable" | "testing";
 const CODE_DEFAULTS = {
   sihyun: { map: "testing", star: "testing", coins: "testing", vocab: "testing" },
   misong: { map: "testing", star: "testing", coins: "testing", vocab: "testing" },
+  dad: { map: "testing", star: "testing", coins: "testing", vocab: "testing" },
+  mom: { map: "testing", star: "testing", coins: "testing", vocab: "testing" },
 } as const;
 
 type ChildId = keyof typeof CODE_DEFAULTS;
