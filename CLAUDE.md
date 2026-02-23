@@ -110,6 +110,7 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 - 객관식: Levenshtein 편집거리 기반 유사 단어 오답지 생성
 - 스펠링: spelling=true인 단어만 출제, 정답 시 +1🍬 플로팅 애니메이션
 - 퀴즈 구조: 틀린 문제 재출제 (라운드), 전체 정답 시 완료
+- TTS 발음: Web Speech API (`speechSynthesis`, en-US), 단어 리스트에서 ▶ 버튼으로 발음 재생
 
 ## Feature Flag 시스템
 

@@ -114,6 +114,15 @@ export default function VocabPage({
 
   const minWords = config.min_words ?? 3;
 
+  function speakWord(word: string) {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = "en-US";
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  }
+
   function handleOpenList(listId: string) {
     const list = vocabLists.find((l) => l.id === listId);
     setListTitleState(list?.name ?? "");
@@ -492,6 +501,13 @@ export default function VocabPage({
                             }`}
                           >
                             {entry.spelling ? "✓" : ""}
+                          </button>
+                          <button
+                            onClick={() => speakWord(entry.word)}
+                            className="text-gray-400 text-base active:text-[var(--accent,#6c5ce7)] transition-colors shrink-0"
+                            aria-label={`${entry.word} 발음 듣기`}
+                          >
+                            ▶
                           </button>
                           <span
                             onClick={() => handleStartEdit(entry)}
