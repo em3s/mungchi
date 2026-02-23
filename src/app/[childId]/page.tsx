@@ -16,6 +16,8 @@ import { Toast } from "@/components/Toast";
 import { PinModal } from "@/components/PinModal";
 import { useSession } from "@/hooks/useSession";
 import { useToast } from "@/hooks/useToast";
+import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
+import { addTransaction, getBalance } from "@/lib/coins";
 
 export default function DashboardPage({
   params,
@@ -36,6 +38,11 @@ export default function DashboardPage({
   const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
   const prevRateRef = useRef<number | null>(null);
   const cheerRef = useRef({ rate: -1, message: "" });
+  const bonusGivenRef = useRef(false);
+
+  // 별사탕
+  const [coinBalance, setCoinBalance] = useState<number | null>(null);
+  const [coinsEnabled, setCoinsEnabled] = useState(false);
 
   // 달력 상태
   const today = todayKST();
@@ -111,6 +118,15 @@ export default function DashboardPage({
     loadTasks();
   }, [loadTasks]);
 
+  // 별사탕 초기화
+  useEffect(() => {
+    loadFeatureFlags().then(() => {
+      const enabled = isFeatureEnabled(childId, "coins");
+      setCoinsEnabled(enabled);
+      if (enabled) getBalance(childId).then(setCoinBalance);
+    });
+  }, [childId]);
+
   useEffect(() => {
     loadMonth();
     setSelectedDate(null);
@@ -136,7 +152,7 @@ export default function DashboardPage({
   const activeCompleted = activeTasks.filter((t) => t.completed).length;
   const activeRate = activeTotal > 0 ? activeCompleted / activeTotal : 0;
 
-  // 올클리어 컨페티
+  // 올클리어 컨페티 + 별사탕 보너스
   useEffect(() => {
     if (
       prevRateRef.current !== null &&
@@ -146,9 +162,22 @@ export default function DashboardPage({
     ) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
+
+      if (coinsEnabled && !bonusGivenRef.current) {
+        bonusGivenRef.current = true;
+        addTransaction(childId, 3, "allclear_bonus", "올클리어 보너스").then(
+          (result) => {
+            if (result.ok) {
+              setCoinBalance(result.newBalance ?? null);
+              showToast("올클리어 보너스! 별사탕 +3! 🍬");
+            }
+          },
+        );
+      }
     }
+    if (activeRate < 1) bonusGivenRef.current = false;
     prevRateRef.current = activeRate;
-  }, [activeRate, selectedDate]);
+  }, [activeRate, selectedDate, coinsEnabled, childId, showToast]);
 
   // 응원 메시지
   if (activeRate !== cheerRef.current.rate) {
@@ -196,6 +225,32 @@ export default function DashboardPage({
       setDayTasks(updateList(dayTasks));
     } else {
       setTasks(updateList(tasks));
+    }
+
+    // 별사탕 (오늘 날짜만)
+    if (coinsEnabled && !selectedDate) {
+      if (newCompleted) {
+        const result = await addTransaction(
+          childId,
+          1,
+          "task_complete",
+          task.title,
+          task.id,
+        );
+        if (result.ok) {
+          setCoinBalance(result.newBalance ?? null);
+          showToast("별사탕 +1! 🍬");
+        }
+      } else {
+        const result = await addTransaction(
+          childId,
+          -1,
+          "task_uncomplete",
+          task.title,
+          task.id,
+        );
+        if (result.ok) setCoinBalance(result.newBalance ?? null);
+      }
     }
 
     loadMonth();
@@ -350,6 +405,11 @@ export default function DashboardPage({
         >
           {child?.emoji} {child?.name}
         </h1>
+        {coinsEnabled && coinBalance !== null && (
+          <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">
+            🍬 {coinBalance}
+          </span>
+        )}
       </div>
 
       {/* Calendar */}

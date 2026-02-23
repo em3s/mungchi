@@ -29,6 +29,12 @@ export function BottomNav({ childId }: BottomNavProps) {
       key: "badges",
     },
     {
+      href: `/${childId}/shop`,
+      label: "별사탕",
+      icon: "🍬",
+      key: "coins",
+    },
+    {
       href: `/${childId}/star`,
       label: child?.starName ?? "반짝별",
       icon: child?.emoji ?? "⭐",
@@ -38,6 +44,7 @@ export function BottomNav({ childId }: BottomNavProps) {
   ].filter((tab) => {
     if (tab.key === "map") return isFeatureEnabled(childId, "map");
     if (tab.key === "star") return isFeatureEnabled(childId, "star");
+    if (tab.key === "coins") return isFeatureEnabled(childId, "coins");
     return true;
   });
 

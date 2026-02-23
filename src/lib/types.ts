@@ -69,6 +69,41 @@ export interface Milestone {
   current: boolean;
 }
 
+// === 별사탕 (coin) 타입 ===
+
+export type CoinTransactionType =
+  | "task_complete"
+  | "task_uncomplete"
+  | "allclear_bonus"
+  | "exchange"
+  | "admin_adjust";
+
+export interface CoinTransaction {
+  id: string;
+  child_id: string;
+  amount: number;
+  type: CoinTransactionType;
+  reason: string | null;
+  ref_id: string | null;
+  created_at: string;
+}
+
+export interface CoinReward {
+  id: string;
+  name: string;
+  emoji: string;
+  cost: number;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface CoinBalance {
+  child_id: string;
+  balance: number;
+  updated_at: string;
+}
+
 export interface CalendarEvent {
   uid: string;
   summary: string;

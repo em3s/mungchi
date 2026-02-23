@@ -9,8 +9,8 @@ import { cached, invalidate } from "@/lib/cache";
 type Stage = "stable" | "testing";
 
 const CODE_DEFAULTS = {
-  sihyun: { map: "testing", star: "testing" },
-  misong: { map: "testing", star: "testing" },
+  sihyun: { map: "testing", star: "testing", coins: "testing" },
+  misong: { map: "testing", star: "testing", coins: "testing" },
 } as const;
 
 type ChildId = keyof typeof CODE_DEFAULTS;
@@ -22,6 +22,7 @@ const CACHE_TTL = 60_000; // 1분
 export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "map", label: "쌍둥이별" },
   { key: "star", label: "반짝별/초코별" },
+  { key: "coins", label: "별사탕" },
 ];
 
 // --- DB (캐시 경유) ---
