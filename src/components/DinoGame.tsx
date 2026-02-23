@@ -10,11 +10,11 @@ const PLAYER_X = 60;
 const PLAYER_SIZE = 30;
 const JUMP_VEL = -11.5;
 const GRAVITY = 0.55;
-const INITIAL_SPEED = 4;
-const SPEED_INC = 0.4;
-const MAX_SPEED = 11;
-const MIN_GAP = 70;
-const MAX_GAP = 150;
+const INITIAL_SPEED = 3;
+const SPEED_INC = 0.25;
+const MAX_SPEED = 9;
+const MIN_GAP = 90;
+const MAX_GAP = 180;
 const OBSTACLE_EMOJIS = ["🌵", "🪨", "📦"];
 
 interface Obstacle {
