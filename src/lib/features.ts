@@ -4,9 +4,13 @@
 import { supabase } from "@/lib/supabase/client";
 import { cached, invalidate } from "@/lib/cache";
 
+// stable = 기본 활성 (DB 없어도 보임)
+// testing = 기본 비활성 (DB에서 true로 활성화해야 보임)
+type Stage = "stable" | "testing";
+
 const CODE_DEFAULTS = {
-  sihyun: { map: false, star: false },
-  misong: { map: false, star: false },
+  sihyun: { map: "testing", star: "testing" },
+  misong: { map: "testing", star: "testing" },
 } as const;
 
 type ChildId = keyof typeof CODE_DEFAULTS;
@@ -56,17 +60,21 @@ function getOverrides(): Overrides {
   }
 }
 
+function stageToDefault(stage: Stage): boolean {
+  return stage === "stable";
+}
+
 export function isFeatureEnabled(
   childId: string,
-  feature: FeatureKey
+  feature: FeatureKey,
 ): boolean {
   const override = getOverrides()[childId]?.[feature];
   if (override !== undefined) return override;
   const db = getDbValue(childId, feature);
   if (db !== undefined) return db;
   const flags = CODE_DEFAULTS[childId as ChildId];
-  if (!flags) return true;
-  return flags[feature] ?? true;
+  if (!flags) return false;
+  return stageToDefault(flags[feature] ?? "testing");
 }
 
 // --- DB 토글 (admin용) ---
@@ -115,8 +123,8 @@ export function getFeatureState(
   effective: boolean;
 } {
   const dbVal = getDbValue(childId, feature);
-  const codeDefault =
-    CODE_DEFAULTS[childId as ChildId]?.[feature] ?? true;
+  const stage = CODE_DEFAULTS[childId as ChildId]?.[feature] ?? "testing";
+  const codeDefault = stageToDefault(stage);
   const db = dbVal !== undefined ? dbVal : codeDefault;
   const override = getOverrides()[childId]?.[feature];
   return {
