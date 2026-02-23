@@ -160,6 +160,20 @@ export async function renameList(
   return true;
 }
 
+export async function deleteList(
+  childId: string,
+  listId: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("vocab_list_meta")
+    .delete()
+    .eq("id", listId)
+    .eq("user_id", childId);
+  if (error) return false;
+  invalidate(`vocab_lists:${childId}`);
+  return true;
+}
+
 // --- 단어 목록 ---
 
 export async function getEntries(

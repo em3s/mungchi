@@ -7,6 +7,7 @@ import {
   getEntries,
   getVocabLists,
   createList,
+  deleteList,
   addEntry,
   removeEntry,
   updateEntry,
@@ -341,6 +342,23 @@ export default function VocabPage({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {item.count === 0 && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const ok = await deleteList(childId, item.id);
+                              if (ok) {
+                                showToast("단어장을 삭제했어요");
+                                loadLists();
+                              } else {
+                                showToast("삭제에 실패했어요");
+                              }
+                            }}
+                            className="text-xs text-red-400 px-2 py-1 rounded-lg active:bg-red-50"
+                          >
+                            삭제
+                          </button>
+                        )}
                         <span className="text-sm text-gray-400">
                           {item.count}개
                         </span>
