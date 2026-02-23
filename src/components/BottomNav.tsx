@@ -25,9 +25,16 @@ export function BottomNav({ childId }: BottomNavProps) {
       icon: "🏅",
       key: "badges",
     },
+    {
+      href: `/${childId}/star`,
+      label: childId === "sihyun" ? "반짝별" : "초코별",
+      icon: childId === "sihyun" ? "⭐" : "🍫",
+      key: "star",
+    },
     { href: `/${childId}/map`, label: "쌍둥이별", icon: "🌟", key: "map" },
   ].filter((tab) => {
     if (tab.key === "map") return isFeatureEnabled(childId, "map");
+    if (tab.key === "star") return isFeatureEnabled(childId, "star");
     return true;
   });
 

@@ -85,6 +85,35 @@ export const MILESTONES = [
   { node: 22, label: "쌍둥이별 완성!", required: 5000, emoji: "🌟" },
 ];
 
+export const PERSONAL_MILESTONES = [
+  // Act 1: 나의 시작
+  { node: 1, label: "나의 첫 걸음!", required: 0, emoji: "🚀" },
+  { node: 2, label: "반짝반짝", required: 5, emoji: "💫" },
+  { node: 3, label: "달콤한 한 걸음", required: 15, emoji: "🍫" },
+  { node: 4, label: "빛이 자라요", required: 30, emoji: "🌱" },
+  { node: 5, label: "쑥쑥 빛나기", required: 50, emoji: "🌿" },
+  { node: 6, label: "나의 달리기", required: 75, emoji: "🏃" },
+  { node: 7, label: "빛나는 나!", required: 100, emoji: "🌈" },
+  // Act 2: 성장하다
+  { node: 8, label: "빛의 습관", required: 150, emoji: "⭐" },
+  { node: 9, label: "반짝이는 길", required: 200, emoji: "🎯" },
+  { node: 10, label: "나만의 별", required: 250, emoji: "✨" },
+  { node: 11, label: "빛나는 의지!", required: 325, emoji: "🔥" },
+  { node: 12, label: "별의 약속", required: 400, emoji: "🏆" },
+  // Act 3: 각성
+  { node: 13, label: "별의 각성!", required: 500, emoji: "👑" },
+  { node: 14, label: "별을 초월하다", required: 650, emoji: "⚡" },
+  { node: 15, label: "나의 전설", required: 800, emoji: "🐉" },
+  { node: 16, label: "나의 신화", required: 1000, emoji: "🦄" },
+  { node: 17, label: "우주를 비추다", required: 1250, emoji: "🪐" },
+  // Act 4: 완성의 여행
+  { node: 18, label: "은하수를 건너", required: 1500, emoji: "🌌" },
+  { node: 19, label: "시간을 초월", required: 1750, emoji: "⏳" },
+  { node: 20, label: "별의 전사", required: 2000, emoji: "⚔️" },
+  { node: 21, label: "무한의 빛", required: 2250, emoji: "♾️" },
+  { node: 22, label: "나의 별 완성!", required: 2500, emoji: "🌟" },
+];
+
 export const CONFETTI_EMOJIS = [
   "🎉", "⭐", "✨", "🌟", "🎊", "💫",
   "🎉", "⭐", "✨", "🌟", "🎊", "💫",

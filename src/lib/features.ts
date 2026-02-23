@@ -5,8 +5,8 @@ import { supabase } from "@/lib/supabase/client";
 import { cached, invalidate } from "@/lib/cache";
 
 const CODE_DEFAULTS = {
-  sihyun: { map: true },
-  misong: { map: false },
+  sihyun: { map: true, star: true },
+  misong: { map: false, star: true },
 } as const;
 
 type ChildId = keyof typeof CODE_DEFAULTS;
@@ -17,6 +17,7 @@ const CACHE_TTL = 60_000; // 1분
 
 export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "map", label: "쌍둥이별" },
+  { key: "star", label: "반짝별/초코별" },
 ];
 
 // --- DB (캐시 경유) ---
