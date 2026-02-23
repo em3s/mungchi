@@ -925,7 +925,7 @@ export default function AdminPage() {
             <input
               type="number"
               value={randomCount}
-              onChange={(e) => setRandomCount(e.target.value)}
+              onChange={(e) => { setRandomCount(e.target.value); setRandomPreview([]); }}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-center"
             />
           </div>
@@ -933,7 +933,7 @@ export default function AdminPage() {
             <label className="text-sm font-semibold text-gray-600 block mb-1">난이도</label>
             <select
               value={randomLevel}
-              onChange={(e) => setRandomLevel(e.target.value)}
+              onChange={(e) => { setRandomLevel(e.target.value); setRandomPreview([]); }}
               className="w-full border border-gray-200 rounded-xl px-2 py-2 text-sm"
             >
               <option value="all">전체</option>
@@ -980,27 +980,16 @@ export default function AdminPage() {
           </button>
           <button
             onClick={async () => {
-              const count = parseInt(randomCount);
               const listName = randomTitle.trim();
-              if (!count || count <= 0 || randomChildIds.length === 0 || !listName) return;
+              if (randomPreview.length === 0 || randomChildIds.length === 0 || !listName) return;
               setRandomGenerating(true);
               try {
-                const dict = await loadDictionary();
-                let pool = dict;
-                if (randomLevel !== "all") {
-                  pool = dict.filter((e) => e.level === parseInt(randomLevel));
-                }
-
                 let created = 0;
                 for (const childId of randomChildIds) {
                   const { ok, listId } = await createList(childId, listName);
                   if (!ok || !listId) continue;
 
-                  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-                  const selected = shuffled.slice(0, count);
-                  if (selected.length === 0) continue;
-
-                  const rows = selected.map((e) => ({
+                  const rows = randomPreview.map((e) => ({
                     user_id: childId,
                     list_id: listId,
                     dictionary_id: e.id,
@@ -1009,7 +998,7 @@ export default function AdminPage() {
                   }));
                   const { error } = await supabase.from("vocab_entries").insert(rows);
                   if (error) throw error;
-                  created += selected.length;
+                  created += randomPreview.length;
                 }
 
                 const names = randomChildIds
@@ -1023,10 +1012,10 @@ export default function AdminPage() {
                 setRandomGenerating(false);
               }
             }}
-            disabled={randomChildIds.length === 0 || !randomCount || parseInt(randomCount) <= 0 || !randomTitle.trim() || randomGenerating}
+            disabled={randomPreview.length === 0 || randomChildIds.length === 0 || !randomTitle.trim() || randomGenerating}
             className="flex-1 bg-[#6c5ce7] text-white py-3 rounded-xl font-bold text-sm disabled:opacity-40 active:opacity-80"
           >
-            {randomGenerating ? "생성 중..." : "단어장 생성"}
+            {randomGenerating ? "생성 중..." : "만들기"}
           </button>
         </div>
       </section>
