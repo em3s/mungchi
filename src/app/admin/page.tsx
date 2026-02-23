@@ -8,7 +8,9 @@ import { todayKST } from "@/lib/date";
 import {
   ALL_FEATURES,
   getFeatureState,
+  setFeatureFlag,
   setFeatureOverride,
+  loadFeatureFlags,
   type FeatureKey,
 } from "@/lib/features";
 
@@ -59,19 +61,38 @@ export default function AdminPage() {
   const [editTasks, setEditTasks] = useState("");
 
   // 피쳐플래그
+  const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [, setFlagTick] = useState(0);
-  const toggleFlag = useCallback(
+
+  const reloadFlags = useCallback(async () => {
+    await loadFeatureFlags();
+    setFlagTick((t) => t + 1);
+  }, []);
+
+  const toggleDbFlag = useCallback(
+    async (childId: string, feature: FeatureKey) => {
+      const state = getFeatureState(childId, feature);
+      const ok = await setFeatureFlag(childId, feature, !state.db);
+      if (ok) {
+        setFlagTick((t) => t + 1);
+        showToast("피쳐플래그 변경됨");
+      } else {
+        showToast("변경 실패");
+      }
+    },
+    [showToast]
+  );
+
+  const toggleOverride = useCallback(
     (childId: string, feature: FeatureKey) => {
       const state = getFeatureState(childId, feature);
       if (state.override !== undefined) {
-        // override 있음 → 제거 (코드 기본값 복원)
         setFeatureOverride(childId, feature, null);
       } else {
-        // override 없음 → 기본값 반전으로 override
-        setFeatureOverride(childId, feature, !state.default);
+        setFeatureOverride(childId, feature, !state.db);
       }
       setFlagTick((t) => t + 1);
-      showToast("피쳐플래그 변경됨 (새로고침 시 적용)");
+      showToast("세션 override 변경됨");
     },
     [showToast]
   );
@@ -101,8 +122,11 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (authed) loadTemplates();
-  }, [authed, loadTemplates]);
+    if (authed) {
+      loadTemplates();
+      reloadFlags().then(() => setFlagsLoaded(true));
+    }
+  }, [authed, loadTemplates, reloadFlags]);
 
   // PIN 성공
   const handlePinSuccess = useCallback(() => {
@@ -347,38 +371,52 @@ export default function AdminPage() {
       {/* === 피쳐플래그 섹션 === */}
       <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
         <h2 className="text-lg font-bold mb-4">🚩 피쳐플래그</h2>
-        <div className="flex flex-col gap-3">
-          {CHILDREN.map((child) => (
-            <div key={child.id}>
-              <div className="text-sm font-semibold text-gray-600 mb-2">
-                {child.emoji} {child.name}
+        {!flagsLoaded ? (
+          <div className="text-sm text-gray-400">불러오는 중...</div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {CHILDREN.map((child) => (
+              <div key={child.id}>
+                <div className="text-sm font-semibold text-gray-600 mb-2">
+                  {child.emoji} {child.name}
+                </div>
+                <div className="flex flex-col gap-2">
+                  {ALL_FEATURES.map((feat) => {
+                    const state = getFeatureState(child.id, feat.key);
+                    return (
+                      <div key={feat.key} className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleDbFlag(child.id, feat.key)}
+                          className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                            state.db
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-600"
+                          }`}
+                        >
+                          {feat.label}: {state.db ? "ON" : "OFF"}
+                        </button>
+                        <button
+                          onClick={() => toggleOverride(child.id, feat.key)}
+                          className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+                            state.override !== undefined
+                              ? state.override
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-orange-100 text-orange-600"
+                              : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {state.override !== undefined
+                            ? `override: ${state.override ? "ON" : "OFF"}`
+                            : "override: -"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {ALL_FEATURES.map((feat) => {
-                  const state = getFeatureState(child.id, feat.key);
-                  return (
-                    <button
-                      key={feat.key}
-                      onClick={() => toggleFlag(child.id, feat.key)}
-                      className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
-                        state.effective
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {feat.label}: {state.effective ? "ON" : "OFF"}
-                      {state.override !== undefined && (
-                        <span className="ml-1 text-xs opacity-60">
-                          (override)
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* === 벌크 추가 섹션 === */}
