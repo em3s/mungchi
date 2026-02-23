@@ -207,11 +207,11 @@ export default function VocabPage({
   }
 
   async function handleQuizComplete(total: number, correct: number) {
-    // 객관식: 고정 보상, 스펠링: 1🍬 × 단어수
+    // 객관식: 고정 보상, 스펠링: 1🍬 × 맞춘 수
     const rewardAmount =
       quizType === "basic"
-        ? (config.basic_reward ?? 10)
-        : total; // spelling: 1🍬 per word
+        ? (config.basic_reward ?? 1)
+        : correct; // spelling: 1🍬 per correct
 
     const alreadyEarned = await hasEarnedToday(
       childId,
@@ -337,7 +337,7 @@ export default function VocabPage({
                               : "bg-blue-500 text-white"
                           }`}
                         >
-                          📝 객관식 {qs?.basic ? "✓" : `🍬${config.basic_reward ?? 10}`}
+                          📝 객관식 {qs?.basic ? "✓" : `🍬${config.basic_reward ?? 1}`}
                         </button>
                         <button
                           onClick={() => handleStartQuizFromHome(item.date, "spelling")}
