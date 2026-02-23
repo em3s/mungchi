@@ -35,20 +35,32 @@ export async function loadDictionary(): Promise<DictionaryEntry[]> {
   // 1. 정적 데이터를 IndexedDB에 시드 (최초 1회 또는 버전 변경 시)
   await seedStatic(STATIC_DICT);
 
-  // 2. Supabase에서 동적 단어 가져와서 IndexedDB에 동기화
-  const staticWords = new Set(STATIC_DICT.map(([w]) => w));
+  // 2. Supabase에서 전체 사전 가져오기
   const { data } = await supabase
     .from("dictionary")
     .select("*")
     .order("word");
-  const dbOnly = ((data as DictionaryEntry[]) ?? []).filter(
-    (e) => !staticWords.has(e.word),
-  );
-  await syncDynamic(dbOnly);
+  const allDbEntries = (data as DictionaryEntry[]) ?? [];
 
-  // 3. IndexedDB에서 전체 로드 → 메모리 캐시
+  // DB word→UUID 매핑 (정적 단어의 실제 UUID 보존용)
+  const dbIdMap = new Map<string, string>();
+  for (const e of allDbEntries) {
+    dbIdMap.set(e.word, e.id);
+  }
+
+  // 동적 단어만 IndexedDB에 동기화
+  const staticWords = new Set(STATIC_DICT.map(([w]) => w));
+  const dynamicOnly = allDbEntries.filter((e) => !staticWords.has(e.word));
+  await syncDynamic(dynamicOnly);
+
+  // 3. IndexedDB에서 전체 로드 → 메모리 캐시 (DB UUID 우선 사용)
   const rows = await getAllWords();
-  dictCache = rows.map(rowToEntry);
+  dictCache = rows.map((r) => ({
+    id: r.dbId ?? dbIdMap.get(r.word) ?? `s:${r.word}`,
+    word: r.word,
+    meaning: r.meaning,
+    level: r.level,
+  }));
   return dictCache;
 }
 
