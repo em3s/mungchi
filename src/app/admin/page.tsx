@@ -310,7 +310,7 @@ export default function AdminPage() {
     if (editLines.length === 0) return;
     const tasks: TemplateTask[] = editLines.map((title) => ({
       title,
-      forChildren: ["sihyun", "misong"],
+      forChildren: [...selectedChildren],
     }));
     const { error } = await supabase
       .from("task_templates")
@@ -323,7 +323,7 @@ export default function AdminPage() {
     showToast(`"${editName.trim()}" 템플릿 수정 완료!`);
     setEditTemplate(null);
     loadTemplates();
-  }, [editTemplate, editName, editTasks, showToast, loadTemplates]);
+  }, [editTemplate, editName, editTasks, selectedChildren, showToast, loadTemplates]);
 
   // --- 날짜 복제 ---
   const loadClonePreview = useCallback(async () => {

@@ -199,7 +199,7 @@ export default function VocabPage({
     setSelectedDate(date);
     setQuizType(type);
     setLoading(true);
-    const data = await getEntries(childId, date);
+    const [data] = await Promise.all([getEntries(childId, date), loadDictionary()]);
     // 스펠링: spelling 체크된 단어만
     const quizEntries = type === "spelling" ? data.filter((e) => e.spelling) : data;
     setEntries(quizEntries);

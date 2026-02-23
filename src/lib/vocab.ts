@@ -359,12 +359,13 @@ export function getSimilarWords(
   if (pool.length === 0) return [];
 
   const word = targetWord.toLowerCase();
-  const scored = pool.map((e) => ({
+  // 먼저 셔플 → 안정 정렬하면 같은 거리끼리 랜덤 순서 유지
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  const scored = shuffled.map((e) => ({
     entry: e,
     dist: levenshtein(word, e.word.toLowerCase()),
   }));
-  // 가까운 순 정렬, 같은 거리면 랜덤
-  scored.sort((a, b) => a.dist - b.dist || Math.random() - 0.5);
+  scored.sort((a, b) => a.dist - b.dist);
   // dist=0 제외 (동일 단어)
   return scored.filter((s) => s.dist > 0).slice(0, count).map((s) => s.entry);
 }
