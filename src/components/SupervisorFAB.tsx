@@ -3,24 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CHILDREN } from "@/lib/constants";
-import {
-  ALL_FEATURES,
-  getFeatureState,
-  setFeatureOverride,
-  loadFeatureFlags,
-  type FeatureKey,
-} from "@/lib/features";
 
 const SESSION_KEY = "mungchi_session";
 const ADMIN_KEY = "mungchi_admin";
 const SUPERVISOR_KEY = "mungchi_supervisor";
-
-const FEATURE_EMOJI: Record<string, string> = {
-  map: "🌟",
-  star: "⭐",
-  coins: "🍬",
-  vocab: "📖",
-};
 
 interface SupervisorFABProps {
   currentChildId?: string;
@@ -30,10 +16,6 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
   const router = useRouter();
   const [active, setActive] = useState(false);
   const [open, setOpen] = useState(false);
-  const [showFlags, setShowFlags] = useState(false);
-  const [featureStates, setFeatureStates] = useState<
-    Record<string, Record<string, { effective: boolean; override: boolean | undefined }>>
-  >({});
   const fabRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,34 +23,6 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
       setActive(true);
     }
   }, []);
-
-  function loadStates() {
-    const states: typeof featureStates = {};
-    for (const child of CHILDREN) {
-      states[child.id] = {};
-      for (const f of ALL_FEATURES) {
-        states[child.id][f.key] = getFeatureState(child.id, f.key);
-      }
-    }
-    setFeatureStates(states);
-  }
-
-  function handleToggle(childId: string, feature: FeatureKey) {
-    const current = featureStates[childId]?.[feature];
-    const newValue = !current?.effective;
-    setFeatureOverride(childId, feature, newValue);
-    loadStates();
-  }
-
-  function handleClearOverride(childId: string, feature: FeatureKey) {
-    setFeatureOverride(childId, feature, null);
-    loadStates();
-  }
-
-  function handleOpenMenu() {
-    setOpen(true);
-    loadFeatureFlags().then(() => loadStates());
-  }
 
   // Close on outside click
   useEffect(() => {
@@ -147,69 +101,10 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
               </span>
             )}
           </button>
-          {/* Feature Flags Toggle */}
-          <button
-            onClick={() => setShowFlags(!showFlags)}
-            className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-          >
-            <span className="text-lg">🚩</span>
-            <span>Feature Flags</span>
-            <span className="ml-auto text-gray-400 text-xs">
-              {showFlags ? "▲" : "▼"}
-            </span>
-          </button>
-          {showFlags && (
-            <div className="px-3 pb-3">
-              {CHILDREN.map((child) => (
-                <div key={child.id} className="mt-2">
-                  <div className="text-[0.65rem] font-bold text-gray-400 uppercase mb-1">
-                    {child.emoji} {child.name}
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    {ALL_FEATURES.map((f) => {
-                      const state = featureStates[child.id]?.[f.key];
-                      const isOn = state?.effective ?? false;
-                      const hasOverride = state?.override !== undefined;
-                      return (
-                        <div key={f.key} className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleToggle(child.id, f.key)}
-                            className={`flex-1 flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg font-medium transition-colors ${
-                              isOn
-                                ? "bg-purple-100 text-purple-700"
-                                : "bg-gray-100 text-gray-400"
-                            }`}
-                          >
-                            <span>{FEATURE_EMOJI[f.key]}</span>
-                            <span>{f.label}</span>
-                            {hasOverride && (
-                              <span className="ml-auto text-[0.6rem] bg-orange-100 text-orange-600 px-1 py-0.5 rounded">
-                                override
-                              </span>
-                            )}
-                          </button>
-                          {hasOverride && (
-                            <button
-                              onClick={() =>
-                                handleClearOverride(child.id, f.key)
-                              }
-                              className="text-[0.6rem] text-gray-400 hover:text-red-400 px-1"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
       <button
-        onClick={() => (open ? setOpen(false) : handleOpenMenu())}
+        onClick={() => setOpen(!open)}
         className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl transition-all ${
           open
             ? "bg-gray-600 text-white rotate-45"
