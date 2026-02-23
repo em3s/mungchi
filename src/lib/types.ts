@@ -76,7 +76,8 @@ export type CoinTransactionType =
   | "task_uncomplete"
   | "allclear_bonus"
   | "exchange"
-  | "admin_adjust";
+  | "admin_adjust"
+  | "vocab_quiz";
 
 export interface CoinTransaction {
   id: string;
@@ -103,6 +104,39 @@ export interface CoinBalance {
   balance: number;
   updated_at: string;
 }
+
+// === 영어 단어장 (vocab) 타입 ===
+
+export interface DictionaryEntry {
+  id: string;
+  word: string;
+  meaning: string;
+  level: number;
+  created_at?: string;
+}
+
+export interface VocabEntry {
+  id: string;
+  child_id: string;
+  date: string;
+  dictionary_id: string;
+  word: string;
+  meaning: string;
+  created_at?: string;
+}
+
+export interface VocabQuiz {
+  id: string;
+  child_id: string;
+  date: string;
+  quiz_type: "basic" | "advanced";
+  total_questions: number;
+  correct_answers: number;
+  candy_earned: number;
+  created_at?: string;
+}
+
+export type VocabQuizType = "basic" | "advanced";
 
 export interface CalendarEvent {
   uid: string;

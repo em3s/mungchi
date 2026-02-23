@@ -35,6 +35,12 @@ export function BottomNav({ childId }: BottomNavProps) {
       key: "coins",
     },
     {
+      href: `/${childId}/vocab`,
+      label: "영어",
+      icon: "📖",
+      key: "vocab",
+    },
+    {
       href: `/${childId}/star`,
       label: child?.starName ?? "반짝별",
       icon: child?.emoji ?? "⭐",
@@ -45,6 +51,7 @@ export function BottomNav({ childId }: BottomNavProps) {
     if (tab.key === "map") return isFeatureEnabled(childId, "map");
     if (tab.key === "star") return isFeatureEnabled(childId, "star");
     if (tab.key === "coins") return isFeatureEnabled(childId, "coins");
+    if (tab.key === "vocab") return isFeatureEnabled(childId, "vocab");
     return true;
   });
 

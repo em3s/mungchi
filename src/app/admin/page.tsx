@@ -23,6 +23,10 @@ import {
   getTransactions,
   invalidateRewardsCache,
 } from "@/lib/coins";
+import {
+  getVocabConfig,
+  setVocabConfig as saveVocabConfig,
+} from "@/lib/vocab";
 import type { CoinReward, CoinTransaction } from "@/lib/types";
 
 const ADMIN_SESSION_KEY = "mungchi_admin";
@@ -116,6 +120,20 @@ export default function AdminPage() {
   const [coinTxChild, setCoinTxChild] = useState("sihyun");
   const [coinTxList, setCoinTxList] = useState<CoinTransaction[]>([]);
 
+  // 단어장 보상 설정
+  const [vocabConfig, setVocabConfigState] = useState<Record<string, number>>(
+    {},
+  );
+  const [editingConfig, setEditingConfig] = useState<Record<string, string>>(
+    {},
+  );
+
+  // 사전 관리
+  const [dictWord, setDictWord] = useState("");
+  const [dictMeaning, setDictMeaning] = useState("");
+  const [dictLevel, setDictLevel] = useState(1);
+  const [dictBulk, setDictBulk] = useState("");
+
   // 날짜 복제
   const [cloneChildId, setCloneChildId] = useState("sihyun");
   const [cloneSourceDate, setCloneSourceDate] = useState(todayKST());
@@ -159,6 +177,7 @@ export default function AdminPage() {
       loadTemplates();
       reloadFlags().then(() => setFlagsLoaded(true));
       loadCoinData();
+      getVocabConfig().then(setVocabConfigState);
     }
   }, [authed, loadTemplates, reloadFlags, loadCoinData]);
 
@@ -674,6 +693,173 @@ export default function AdminPage() {
             className="bg-amber-500 text-white px-3 py-2 rounded-xl text-sm font-semibold disabled:opacity-40 active:opacity-80"
           >
             +
+          </button>
+        </div>
+      </section>
+
+      {/* === 단어장 보상 설정 === */}
+      <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <h2 className="text-lg font-bold mb-4">📖 단어장 보상 설정</h2>
+        {[
+          { key: "basic_reward", label: "객관식 퀴즈 보상", def: 10 },
+          { key: "advanced_reward", label: "주관식 퀴즈 보상", def: 20 },
+          { key: "min_words", label: "퀴즈 최소 단어 수", def: 3 },
+        ].map(({ key, label, def }) => (
+          <div
+            key={key}
+            className="flex items-center justify-between py-2"
+          >
+            <span className="text-sm text-gray-600">{label}</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={
+                  editingConfig[key] ??
+                  String(vocabConfig[key] ?? def)
+                }
+                onChange={(e) =>
+                  setEditingConfig((prev) => ({
+                    ...prev,
+                    [key]: e.target.value,
+                  }))
+                }
+                className="w-16 border border-gray-200 rounded-xl px-2 py-1.5 text-sm text-center"
+              />
+              <button
+                onClick={async () => {
+                  const val = parseInt(
+                    editingConfig[key] ??
+                      String(vocabConfig[key] ?? def),
+                  );
+                  if (isNaN(val) || val < 0) return;
+                  const ok = await saveVocabConfig(key, val);
+                  if (ok) {
+                    setVocabConfigState((prev) => ({
+                      ...prev,
+                      [key]: val,
+                    }));
+                    showToast(`${label} → ${val}`);
+                  }
+                }}
+                className="text-sm bg-[#6c5ce7] text-white px-3 py-1.5 rounded-xl font-semibold"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* === 사전 관리 === */}
+      <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <h2 className="text-lg font-bold mb-4">📚 사전 관리</h2>
+
+        {/* 단건 추가 */}
+        <div className="mb-4">
+          <label className="text-sm font-semibold text-gray-600 block mb-2">
+            단어 추가
+          </label>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={dictWord}
+              onChange={(e) => setDictWord(e.target.value)}
+              placeholder="English word"
+              className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              value={dictMeaning}
+              onChange={(e) => setDictMeaning(e.target.value)}
+              placeholder="한글 뜻"
+              className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+            />
+            <select
+              value={dictLevel}
+              onChange={(e) => setDictLevel(Number(e.target.value))}
+              className="border border-gray-200 rounded-xl px-2 py-2 text-sm"
+            >
+              <option value={1}>쉬움</option>
+              <option value={2}>보통</option>
+              <option value={3}>어려움</option>
+            </select>
+            <button
+              onClick={async () => {
+                if (!dictWord.trim() || !dictMeaning.trim()) return;
+                const { error } = await supabase
+                  .from("dictionary")
+                  .upsert(
+                    {
+                      word: dictWord.trim().toLowerCase(),
+                      meaning: dictMeaning.trim(),
+                      level: dictLevel,
+                    },
+                    { onConflict: "word" },
+                  );
+                if (error) {
+                  showToast("추가 실패");
+                  return;
+                }
+                showToast(`"${dictWord.trim()}" 추가됨!`);
+                setDictWord("");
+                setDictMeaning("");
+              }}
+              disabled={!dictWord.trim() || !dictMeaning.trim()}
+              className="bg-[#6c5ce7] text-white px-3 py-2 rounded-xl text-sm font-semibold disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {/* 벌크 추가 */}
+        <div>
+          <label className="text-sm font-semibold text-gray-600 block mb-2">
+            벌크 추가 (한 줄에: 영어단어[Tab]한글뜻)
+          </label>
+          <textarea
+            value={dictBulk}
+            onChange={(e) => setDictBulk(e.target.value)}
+            placeholder={"apple\t사과\nbook\t책\ncat\t고양이"}
+            rows={5}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none mb-2"
+          />
+          <button
+            onClick={async () => {
+              const bulkLines = dictBulk
+                .split("\n")
+                .map((l) => l.trim())
+                .filter(Boolean);
+              const rows = bulkLines
+                .map((line) => {
+                  const [word, meaning] = line.split("\t");
+                  return word && meaning
+                    ? {
+                        word: word.trim().toLowerCase(),
+                        meaning: meaning.trim(),
+                        level: 1,
+                      }
+                    : null;
+                })
+                .filter(
+                  (r): r is { word: string; meaning: string; level: number } =>
+                    r !== null,
+                );
+              if (rows.length === 0) return;
+              const { error } = await supabase
+                .from("dictionary")
+                .upsert(rows, { onConflict: "word" });
+              if (error) {
+                showToast("벌크 추가 실패");
+                return;
+              }
+              showToast(`${rows.length}개 단어 추가됨!`);
+              setDictBulk("");
+            }}
+            disabled={!dictBulk.trim()}
+            className="w-full bg-[#6c5ce7] text-white py-3 rounded-xl font-bold text-base disabled:opacity-40"
+          >
+            벌크 추가
           </button>
         </div>
       </section>
