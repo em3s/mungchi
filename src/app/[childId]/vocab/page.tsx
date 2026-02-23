@@ -345,22 +345,20 @@ export default function VocabPage({
                     {entries.map((entry) => (
                       <li
                         key={entry.id}
-                        className="flex items-center justify-between bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+                        className="flex items-center gap-3 bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-[18px] md:gap-4 md:rounded-2xl"
                       >
-                        <div>
-                          <div className="font-bold text-base text-gray-800">
-                            {entry.word}
-                          </div>
-                          <div className="text-sm text-gray-500">
+                        <span className="flex-1 text-base md:text-lg">
+                          {entry.word}
+                          <span className="text-sm text-gray-400 ml-2">
                             {entry.meaning}
-                          </div>
-                        </div>
+                          </span>
+                        </span>
                         {isEditable && (
                           <button
                             onClick={() => handleRemoveWord(entry.id)}
-                            className="text-gray-300 hover:text-red-400 text-lg ml-2"
+                            className="text-gray-400 text-sm px-1 active:text-red-500 transition-colors"
                           >
-                            ×
+                            ✕
                           </button>
                         )}
                       </li>

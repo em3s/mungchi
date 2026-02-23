@@ -52,14 +52,14 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
 
   return (
     <div className="relative">
-      <div className="flex gap-2 bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="flex gap-2 bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-4">
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           placeholder="영어 단어를 입력하세요"
-          className="flex-1 text-base outline-none bg-transparent"
+          className="flex-1 text-base outline-none bg-transparent md:text-lg"
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
@@ -67,9 +67,9 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100"
+          className="px-3 py-1.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 active:bg-gray-200"
         >
-          닫기
+          취소
         </button>
       </div>
 
