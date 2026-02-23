@@ -21,8 +21,8 @@ export function BottomNav({ childId }: BottomNavProps) {
     { href: `/${childId}`, label: "할일", icon: "📋", key: "dashboard" },
     {
       href: `/${childId}/badges`,
-      label: childId === "sihyun" ? "반짝별" : "초코별",
-      icon: childId === "sihyun" ? "⭐" : "🍫",
+      label: "뱃지",
+      icon: "🏅",
       key: "badges",
     },
     { href: `/${childId}/map`, label: "쌍둥이별", icon: "🌟", key: "map" },

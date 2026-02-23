@@ -100,7 +100,7 @@ export default function BadgesPage({
       {/* Header */}
       <div className="flex items-center justify-between py-4 sticky top-0 z-10" style={{ background: "var(--bg)" }}>
         <h1 className="text-xl font-bold md:text-2xl">
-          {childId === "sihyun" ? "⭐ 반짝별" : "🍫 초코별"}
+          🏅 뱃지
         </h1>
         <span className="text-sm font-bold text-gray-500 md:text-base">
           {earnedCount}/{totalCount} 발견 · {totalEarned}회 획득
