@@ -105,7 +105,7 @@ export default function ShopPage({
       </div>
 
       {/* Rewards Grid */}
-      {rewards.length > 0 ? (
+      {rewards.length > 0 && (
         <>
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 md:text-sm">
             🎁 보상 교환
@@ -121,10 +121,6 @@ export default function ShopPage({
             ))}
           </div>
         </>
-      ) : (
-        <div className="text-center py-8 text-gray-400">
-          아직 등록된 보상이 없어요
-        </div>
       )}
 
       {/* Transaction History */}
