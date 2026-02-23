@@ -168,6 +168,16 @@ export default function VocabPage({
     }
   }
 
+  async function handleAddCustom(word: string, meaning: string) {
+    const result = await addEntry(childId, selectedDate!, null, { word, meaning });
+    if (result.ok && result.entry) {
+      setEntries((prev) => [...prev, result.entry!]);
+      showToast(`"${word}" 추가!`);
+    } else {
+      showToast("이미 추가된 단어예요");
+    }
+  }
+
   async function handleRemoveWord(entryId: string) {
     const ok = await removeEntry(childId, selectedDate!, entryId);
     if (ok) {
@@ -344,6 +354,7 @@ export default function VocabPage({
                 <div className="mb-3">
                   <WordInput
                     onSelect={handleAddWord}
+                    onCustom={handleAddCustom}
                     onCancel={() => setShowAddForm(false)}
                     excludeWords={entries.map((e) => e.word)}
                   />

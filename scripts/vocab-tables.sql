@@ -16,13 +16,13 @@ CREATE TABLE vocab_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,
   date TEXT NOT NULL,                -- YYYY-MM-DD (KST)
-  dictionary_id UUID NOT NULL REFERENCES dictionary(id),
+  dictionary_id UUID REFERENCES dictionary(id),  -- nullable: 사전에 없는 직접 입력 단어
   word TEXT NOT NULL,
   meaning TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_ve_child_date ON vocab_entries(user_id, date);
-CREATE UNIQUE INDEX idx_ve_unique ON vocab_entries(user_id, date, dictionary_id);
+CREATE UNIQUE INDEX idx_ve_unique ON vocab_entries(user_id, date, word);
 
 -- 3. vocab_quizzes: 퀴즈 결과
 CREATE TABLE vocab_quizzes (

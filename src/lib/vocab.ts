@@ -164,17 +164,24 @@ export async function getEntries(
 export async function addEntry(
   childId: string,
   date: string,
-  dictEntry: DictionaryEntry,
+  dictEntry: DictionaryEntry | null,
+  custom?: { word: string; meaning: string },
 ): Promise<{ ok: boolean; entry?: VocabEntry }> {
+  const word = dictEntry?.word ?? custom?.word;
+  const meaning = dictEntry?.meaning ?? custom?.meaning;
+  if (!word || !meaning) return { ok: false };
+
+  const row: Record<string, unknown> = {
+    user_id: childId,
+    date,
+    word,
+    meaning,
+  };
+  if (dictEntry) row.dictionary_id = dictEntry.id;
+
   const { data, error } = await supabase
     .from("vocab_entries")
-    .insert({
-      user_id: childId,
-      date,
-      dictionary_id: dictEntry.id,
-      word: dictEntry.word,
-      meaning: dictEntry.meaning,
-    })
+    .insert(row)
     .select()
     .single();
   if (error) return { ok: false };

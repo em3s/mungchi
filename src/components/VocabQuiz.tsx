@@ -35,7 +35,7 @@ export function VocabQuiz({
     const shuffled = [...entries].sort(() => Math.random() - 0.5);
 
     if (quizType === "basic") {
-      const correctIds = shuffled.map((e) => e.dictionary_id);
+      const correctIds = shuffled.map((e) => e.dictionary_id).filter((id): id is string => id !== null);
       const distractors = getRandomWords(correctIds, shuffled.length * 3);
 
       const qs: QuizQuestion[] = shuffled.map((entry, i) => {
@@ -43,7 +43,7 @@ export function VocabQuiz({
         const wrongChoices = distractors.slice(start, start + 3);
         const allChoices = [
           {
-            id: entry.dictionary_id,
+            id: entry.dictionary_id ?? entry.id,
             word: entry.word,
             meaning: entry.meaning,
             level: 1,

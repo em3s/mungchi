@@ -121,7 +121,7 @@ export interface VocabEntry {
   id: string;
   user_id: string;
   date: string;
-  dictionary_id: string;
+  dictionary_id: string | null;
   word: string;
   meaning: string;
   created_at?: string;

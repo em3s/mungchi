@@ -6,22 +6,32 @@ import type { DictionaryEntry } from "@/lib/types";
 
 interface WordInputProps {
   onSelect: (entry: DictionaryEntry) => void;
+  onCustom: (word: string, meaning: string) => void;
   onCancel: () => void;
   excludeWords: string[];
 }
 
-export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) {
+export function WordInput({ onSelect, onCustom, onCancel, excludeWords }: WordInputProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<DictionaryEntry[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [customMode, setCustomMode] = useState(false);
+  const [customMeaning, setCustomMeaning] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const meaningRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    if (customMode) meaningRef.current?.focus();
+  }, [customMode]);
+
   function handleChange(value: string) {
     setQuery(value);
+    setCustomMode(false);
+    setCustomMeaning("");
 
     if (value.trim().length < 1) {
       setSuggestions([]);
@@ -40,8 +50,30 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
     setQuery("");
     setSuggestions([]);
     setShowDropdown(false);
+    setCustomMode(false);
+    setCustomMeaning("");
     inputRef.current?.focus();
   }
+
+  function handleCustomMode() {
+    setShowDropdown(false);
+    setCustomMode(true);
+  }
+
+  function handleCustomSubmit() {
+    const word = query.trim();
+    const meaning = customMeaning.trim();
+    if (!word || !meaning) return;
+    onCustom(word, meaning);
+    setQuery("");
+    setCustomMeaning("");
+    setCustomMode(false);
+    setSuggestions([]);
+    inputRef.current?.focus();
+  }
+
+  const trimmed = query.trim();
+  const showCustomButton = trimmed.length >= 1 && !customMode;
 
   return (
     <div className="relative">
@@ -66,6 +98,31 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
         </button>
       </div>
 
+      {/* 직접 입력 모드: 뜻 입력 */}
+      {customMode && (
+        <div className="flex gap-2 mt-2 bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <input
+            ref={meaningRef}
+            type="text"
+            value={customMeaning}
+            onChange={(e) => setCustomMeaning(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCustomSubmit()}
+            placeholder="뜻을 입력하세요"
+            className="flex-1 text-base outline-none bg-transparent"
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            onClick={handleCustomSubmit}
+            disabled={!customMeaning.trim()}
+            className="px-3 py-1.5 rounded-xl text-sm font-semibold text-white bg-[var(--accent,#6c5ce7)] disabled:opacity-40 active:opacity-80"
+          >
+            추가
+          </button>
+        </div>
+      )}
+
+      {/* 자동완성 드롭다운 */}
       {showDropdown && (
         <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-30 max-h-64 overflow-y-auto">
           {suggestions.map((entry) => (
@@ -83,6 +140,15 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
         </div>
       )}
 
+      {/* 직접 입력 버튼 */}
+      {showCustomButton && (
+        <button
+          onClick={handleCustomMode}
+          className="w-full mt-1 text-left px-4 py-2.5 text-sm text-gray-400 active:text-gray-600"
+        >
+          &quot;{trimmed}&quot; 직접 입력하기 →
+        </button>
+      )}
     </div>
   );
 }
