@@ -31,6 +31,9 @@ import {
 } from "@/lib/vocab";
 import type { DictionaryEntry } from "@/lib/types";
 import type { CoinReward, CoinTransaction } from "@/lib/types";
+import dynamic from "next/dynamic";
+
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 const ADMIN_SESSION_KEY = "mungchi_admin";
 
@@ -105,6 +108,7 @@ export default function AdminPage() {
   const [coinRewards, setCoinRewards] = useState<CoinReward[]>([]);
   const [newRewardName, setNewRewardName] = useState("");
   const [newRewardEmoji, setNewRewardEmoji] = useState("🎁");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [newRewardCost, setNewRewardCost] = useState("");
   const [coinTxChild, setCoinTxChild] = useState("sihyun");
   const [coinTxList, setCoinTxList] = useState<CoinTransaction[]>([]);
@@ -634,13 +638,27 @@ export default function AdminPage() {
         )}
 
         {/* 보상 추가 */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newRewardEmoji}
-            onChange={(e) => setNewRewardEmoji(e.target.value)}
-            className="w-12 border border-gray-200 rounded-xl px-2 py-2 text-sm text-center"
-          />
+        <div className="flex gap-2 relative">
+          <button
+            type="button"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="w-12 border border-gray-200 rounded-xl px-2 py-2 text-xl text-center bg-white active:bg-gray-50"
+          >
+            {newRewardEmoji}
+          </button>
+          {showEmojiPicker && (
+            <div className="absolute top-12 left-0 z-50">
+              <EmojiPicker
+                onEmojiClick={(emojiData) => {
+                  setNewRewardEmoji(emojiData.emoji);
+                  setShowEmojiPicker(false);
+                }}
+                searchPlaceholder="이모지 검색..."
+                width={300}
+                height={400}
+              />
+            </div>
+          )}
           <input
             type="text"
             value={newRewardName}
