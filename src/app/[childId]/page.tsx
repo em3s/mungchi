@@ -16,6 +16,7 @@ import { Toast } from "@/components/Toast";
 import { PinModal } from "@/components/PinModal";
 import { useSession } from "@/hooks/useSession";
 import { useToast } from "@/hooks/useToast";
+import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { addTransaction, getBalance } from "@/lib/coins";
 
@@ -56,6 +57,8 @@ export default function DashboardPage({
   const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
 
   const child = USERS.find((c) => c.id === childId);
+  const { override: emojiOverride } = useEmojiOverride(childId);
+  const displayEmoji = emojiOverride || child?.emoji;
 
   // 오늘 할일 로드
   const loadTasks = useCallback(async () => {
@@ -403,7 +406,7 @@ export default function DashboardPage({
           onTouchEnd={() => clearTimeout(longPressRef.current)}
           onTouchMove={() => clearTimeout(longPressRef.current)}
         >
-          {child?.emoji} {child?.name}
+          {displayEmoji} {child?.name}
         </h1>
         {coinsEnabled && coinBalance !== null && (
           <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">

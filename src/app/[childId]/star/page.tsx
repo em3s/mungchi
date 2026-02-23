@@ -8,6 +8,7 @@ import { USERS, PERSONAL_MILESTONES } from "@/lib/constants";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { BottomNav } from "@/components/BottomNav";
 import { MilestoneMap } from "@/components/MilestoneMap";
+import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 
 export default function StarPage({
   params,
@@ -20,6 +21,7 @@ export default function StarPage({
   const [flagsLoaded, setFlagsLoaded] = useState(false);
 
   const child = USERS.find((c) => c.id === childId);
+  const { override: emojiOverride } = useEmojiOverride(childId);
 
   useEffect(() => {
     loadFeatureFlags().then(() => setFlagsLoaded(true));
@@ -67,7 +69,7 @@ export default function StarPage({
     );
   }
 
-  const emoji = child?.emoji ?? "⭐";
+  const emoji = emojiOverride || child?.emoji || "⭐";
   const starName = child?.starName ?? "반짝별";
 
   return (

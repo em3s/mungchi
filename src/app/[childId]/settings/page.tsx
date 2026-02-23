@@ -2,8 +2,9 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import { USERS, THEME_PRESETS } from "@/lib/constants";
+import { USERS, THEME_PRESETS, STAR_EMOJIS } from "@/lib/constants";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
+import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 import { BottomNav } from "@/components/BottomNav";
 
 export default function SettingsPage({
@@ -15,6 +16,7 @@ export default function SettingsPage({
   const router = useRouter();
   const user = USERS.find((u) => u.id === childId);
   const { override, loaded, setTheme } = useThemeOverride(childId);
+  const { override: emojiOverride, loaded: emojiLoaded, setEmoji } = useEmojiOverride(childId);
 
   if (!user) {
     router.replace("/");
@@ -22,6 +24,7 @@ export default function SettingsPage({
   }
 
   const activeTheme = override || user.theme;
+  const activeEmoji = emojiOverride || user.emoji;
 
   return (
     <>
@@ -69,6 +72,44 @@ export default function SettingsPage({
             className="mt-4 w-full text-sm text-gray-400 underline"
           >
             기본 테마로 되돌리기
+          </button>
+        )}
+      </section>
+
+      <section className="bg-white rounded-2xl p-5 shadow-sm mt-4">
+        <h2 className="text-base font-bold mb-4">나의 별 이모지</h2>
+
+        {emojiLoaded && (
+          <div className="grid grid-cols-6 gap-3">
+            {STAR_EMOJIS.map((emoji) => {
+              const isActive = activeEmoji === emoji;
+              return (
+                <button
+                  key={emoji}
+                  onClick={() =>
+                    setEmoji(emoji === user.emoji ? null : emoji)
+                  }
+                  className="flex items-center justify-center w-12 h-12 rounded-xl text-2xl transition-all md:w-14 md:h-14"
+                  style={{
+                    backgroundColor: isActive ? "var(--accent-light, #f0edff)" : "#f5f5f5",
+                    borderWidth: 2,
+                    borderColor: isActive ? "var(--accent, #6c5ce7)" : "transparent",
+                    transform: isActive ? "scale(1.15)" : "scale(1)",
+                  }}
+                >
+                  {emoji}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {emojiOverride && (
+          <button
+            onClick={() => setEmoji(null)}
+            className="mt-4 w-full text-sm text-gray-400 underline"
+          >
+            기본 이모지로 되돌리기
           </button>
         )}
       </section>

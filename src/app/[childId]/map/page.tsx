@@ -8,6 +8,7 @@ import { USERS, MILESTONES } from "@/lib/constants";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { BottomNav } from "@/components/BottomNav";
 import { MilestoneMap } from "@/components/MilestoneMap";
+import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 
 const CHILD_USERS = USERS.filter((u) => u.role === "child");
 
@@ -23,6 +24,7 @@ export default function MapPage({
     { id: string; emoji: string; count: number }[]
   >([]);
   const [flagsLoaded, setFlagsLoaded] = useState(false);
+  const { override: emojiOverride } = useEmojiOverride(childId);
 
   useEffect(() => {
     loadFeatureFlags().then(() => setFlagsLoaded(true));
@@ -90,12 +92,15 @@ export default function MapPage({
         }
         subheader={
           <>
-            {childCounts.map((c, i) => (
-              <span key={c.id}>
-                {i > 0 && <span className="mx-1">+</span>}
-                {c.emoji} {c.count}개
-              </span>
-            ))}
+            {childCounts.map((c, i) => {
+              const emoji = c.id === childId && emojiOverride ? emojiOverride : c.emoji;
+              return (
+                <span key={c.id}>
+                  {i > 0 && <span className="mx-1">+</span>}
+                  {emoji} {c.count}개
+                </span>
+              );
+            })}
             <span className="mx-1">=</span>
             <strong className="text-base">🌟 {totalCompleted}개</strong>
           </>

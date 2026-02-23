@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { USERS } from "@/lib/constants";
+import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 
 interface BottomNavProps {
   childId: string;
@@ -19,6 +20,8 @@ export function BottomNav({ childId }: BottomNavProps) {
   }, []);
 
   const child = USERS.find((c) => c.id === childId);
+  const { override: emojiOverride } = useEmojiOverride(childId);
+  const starEmoji = emojiOverride || child?.emoji || "⭐";
 
   const tabs = [
     { href: `/${childId}`, label: "할일", icon: "📋", key: "dashboard" },
@@ -43,7 +46,7 @@ export function BottomNav({ childId }: BottomNavProps) {
     {
       href: `/${childId}/star`,
       label: child?.starName ?? "반짝별",
-      icon: child?.emoji ?? "⭐",
+      icon: starEmoji,
       key: "star",
     },
     { href: `/${childId}/map`, label: "쌍둥이별", icon: "🌟", key: "map" },

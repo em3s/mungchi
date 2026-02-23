@@ -160,6 +160,11 @@ export const GRADE_LABELS: Record<string, string> = {
   legendary: "전설",
 };
 
+export const STAR_EMOJIS = [
+  "⭐", "✨", "🌟", "💫", "☀️", "🌙",
+  "💎", "🔮", "🪐", "⚡", "🌈", "🦋",
+] as const;
+
 export const THEME_PRESETS = [
   { id: "purple", label: "보라", accent: "#6c5ce7" },
   { id: "orange", label: "오렌지", accent: "#e17055" },
