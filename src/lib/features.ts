@@ -9,10 +9,10 @@ import { cached, invalidate } from "@/lib/cache";
 type Stage = "stable" | "testing";
 
 const CODE_DEFAULTS = {
-  sihyun: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing" },
-  misong: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing" },
-  dad: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing" },
-  mom: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing" },
+  sihyun: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing" },
+  misong: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing" },
+  dad: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing" },
+  mom: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing" },
 } as const;
 
 type UserId = keyof typeof CODE_DEFAULTS;
@@ -26,6 +26,7 @@ export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "coins", label: "초코" },
   { key: "vocab", label: "영어단어" },
   { key: "game", label: "공룡 달리기" },
+  { key: "weather", label: "날씨" },
 ];
 
 // --- DB (캐시 경유) ---

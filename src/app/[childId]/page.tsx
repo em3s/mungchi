@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/useToast";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { addTransaction, getBalance } from "@/lib/coins";
+import { WeatherWidget } from "@/components/WeatherWidget";
 
 export default function DashboardPage({
   params,
@@ -44,6 +45,7 @@ export default function DashboardPage({
   // 초코
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [coinsEnabled, setCoinsEnabled] = useState(false);
+  const [weatherEnabled, setWeatherEnabled] = useState(false);
 
   // 달력 상태
   const today = todayKST();
@@ -125,12 +127,13 @@ export default function DashboardPage({
     loadTasks();
   }, [loadTasks]);
 
-  // 초코 초기화
+  // 피쳐 초기화
   useEffect(() => {
     loadFeatureFlags().then(() => {
-      const enabled = isFeatureEnabled(childId, "coins");
-      setCoinsEnabled(enabled);
-      if (enabled) getBalance(childId).then(setCoinBalance);
+      const coinsOn = isFeatureEnabled(childId, "coins");
+      setCoinsEnabled(coinsOn);
+      if (coinsOn) getBalance(childId).then(setCoinBalance);
+      setWeatherEnabled(isFeatureEnabled(childId, "weather"));
     });
   }, [childId]);
 
@@ -418,6 +421,9 @@ export default function DashboardPage({
           </span>
         )}
       </div>
+
+      {/* Weather */}
+      {weatherEnabled && <WeatherWidget today={today} />}
 
       {/* Calendar */}
       <Calendar
