@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { cached } from "@/lib/cache";
 import { CHILDREN, CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/constants";
 import type { BadgeInfo } from "@/lib/types";
 import type { DayTaskSummary } from "@/lib/badges/types";
@@ -25,18 +26,20 @@ export default function BadgesPage({
       const siblingId =
         CHILDREN.find((c) => c.id !== childId)?.id ?? "";
 
-      // 모든 할일 데이터 로드
-      const [childResult, siblingResult] = await Promise.all([
-        supabase
-          .from("tasks")
-          .select("date, completed, completed_at")
-          .eq("child_id", childId)
-          .order("date"),
-        supabase
-          .from("tasks")
-          .select("date, completed, completed_at")
-          .eq("child_id", siblingId)
-          .order("date"),
+      // 모든 할일 데이터 로드 (1분 캐시)
+      const fetchTasks = (id: string) =>
+        cached(`badge_tasks:${id}`, 60_000, async () => {
+          const { data } = await supabase
+            .from("tasks")
+            .select("date, completed, completed_at")
+            .eq("child_id", id)
+            .order("date");
+          return data;
+        });
+
+      const [childData, siblingData] = await Promise.all([
+        fetchTasks(childId),
+        fetchTasks(siblingId),
       ]);
 
       const toDaySummaries = (
@@ -59,8 +62,8 @@ export default function BadgesPage({
         return [...map.values()];
       };
 
-      const childDays = toDaySummaries(childResult.data);
-      const siblingDays = toDaySummaries(siblingResult.data);
+      const childDays = toDaySummaries(childData);
+      const siblingDays = toDaySummaries(siblingData);
 
       const earned = evaluateBadges(childId, childDays, siblingDays);
       const display = getBadgesForDisplay(earned);

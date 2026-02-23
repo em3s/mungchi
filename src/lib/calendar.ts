@@ -1,9 +1,5 @@
 import type { CalendarEvent } from "./types";
-
-// 인메모리 캐시 (10분 TTL)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let cache: { data: any; fetchedAt: number } | null = null;
-const CACHE_TTL = 10 * 60 * 1000;
+import { cached } from "./cache";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getSummaryText(summary: any): string {
@@ -31,15 +27,10 @@ async function fetchICS() {
   const url = process.env.CALENDAR_ICS_URL;
   if (!url) return null;
 
-  const now = Date.now();
-  if (cache && now - cache.fetchedAt < CACHE_TTL) {
-    return cache.data;
-  }
-
-  const ical = await loadIcal();
-  const data = await ical.async.fromURL(url);
-  cache = { data, fetchedAt: now };
-  return data;
+  return cached("calendar_ics", 60_000, async () => {
+    const ical = await loadIcal();
+    return ical.async.fromURL(url);
+  });
 }
 
 /** 월별 이벤트 조회 (month: 0-indexed) */

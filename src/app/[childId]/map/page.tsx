@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { cached } from "@/lib/cache";
 import { MILESTONES } from "@/lib/constants";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { BottomNav } from "@/components/BottomNav";
@@ -35,26 +36,37 @@ export default function MapPage({
   useEffect(() => {
     if (!flagsLoaded || featureDisabled) return;
     async function load() {
-      const [total, sihyun, misong] = await Promise.all([
-        supabase
-          .from("tasks")
-          .select("*", { count: "exact", head: true })
-          .eq("completed", true),
-        supabase
-          .from("tasks")
-          .select("*", { count: "exact", head: true })
-          .eq("child_id", "sihyun")
-          .eq("completed", true),
-        supabase
-          .from("tasks")
-          .select("*", { count: "exact", head: true })
-          .eq("child_id", "misong")
-          .eq("completed", true),
-      ]);
+      const counts = await cached(
+        "map_counts",
+        60_000,
+        async () => {
+          const [total, sihyun, misong] = await Promise.all([
+            supabase
+              .from("tasks")
+              .select("*", { count: "exact", head: true })
+              .eq("completed", true),
+            supabase
+              .from("tasks")
+              .select("*", { count: "exact", head: true })
+              .eq("child_id", "sihyun")
+              .eq("completed", true),
+            supabase
+              .from("tasks")
+              .select("*", { count: "exact", head: true })
+              .eq("child_id", "misong")
+              .eq("completed", true),
+          ]);
+          return {
+            total: total.count ?? 0,
+            sihyun: sihyun.count ?? 0,
+            misong: misong.count ?? 0,
+          };
+        },
+      );
 
-      setTotalCompleted(total.count ?? 0);
-      setSihyunCount(sihyun.count ?? 0);
-      setMisongCount(misong.count ?? 0);
+      setTotalCompleted(counts.total);
+      setSihyunCount(counts.sihyun);
+      setMisongCount(counts.misong);
     }
     load();
   }, [childId, flagsLoaded, featureDisabled]);

@@ -2,6 +2,7 @@
 // 우선순위: localStorage override > DB값 > 코드 기본값
 
 import { supabase } from "@/lib/supabase/client";
+import { cached, invalidate } from "@/lib/cache";
 
 const CODE_DEFAULTS = {
   sihyun: { map: true },
@@ -12,31 +13,34 @@ type ChildId = keyof typeof CODE_DEFAULTS;
 export type FeatureKey = keyof (typeof CODE_DEFAULTS)[ChildId];
 
 const STORAGE_KEY = "mungchi_feature_overrides";
+const CACHE_TTL = 60_000; // 1분
 
 export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "map", label: "쌍둥이별" },
 ];
 
-// --- DB 캐시 ---
-let dbCache: Record<string, Record<string, boolean>> | null = null;
+// --- DB (캐시 경유) ---
+type FlagMap = Record<string, Record<string, boolean>>;
+let flagsSnapshot: FlagMap = {};
 
-export async function loadFeatureFlags(): Promise<
-  Record<string, Record<string, boolean>>
-> {
-  const { data } = await supabase.from("feature_flags").select("*");
-  const flags: Record<string, Record<string, boolean>> = {};
-  if (data) {
-    for (const row of data) {
-      if (!flags[row.child_id]) flags[row.child_id] = {};
-      flags[row.child_id][row.feature] = row.enabled;
+export async function loadFeatureFlags(): Promise<FlagMap> {
+  const flags = await cached<FlagMap>("feature_flags", CACHE_TTL, async () => {
+    const { data } = await supabase.from("feature_flags").select("*");
+    const map: FlagMap = {};
+    if (data) {
+      for (const row of data) {
+        if (!map[row.child_id]) map[row.child_id] = {};
+        map[row.child_id][row.feature] = row.enabled;
+      }
     }
-  }
-  dbCache = flags;
+    return map;
+  });
+  flagsSnapshot = flags;
   return flags;
 }
 
 function getDbValue(childId: string, feature: string): boolean | undefined {
-  return dbCache?.[childId]?.[feature];
+  return flagsSnapshot[childId]?.[feature];
 }
 
 // --- localStorage override ---
@@ -55,13 +59,10 @@ export function isFeatureEnabled(
   childId: string,
   feature: FeatureKey
 ): boolean {
-  // 1. localStorage override
   const override = getOverrides()[childId]?.[feature];
   if (override !== undefined) return override;
-  // 2. DB값
   const db = getDbValue(childId, feature);
   if (db !== undefined) return db;
-  // 3. 코드 기본값
   const flags = CODE_DEFAULTS[childId as ChildId];
   if (!flags) return true;
   return flags[feature] ?? true;
@@ -77,10 +78,10 @@ export async function setFeatureFlag(
     .from("feature_flags")
     .upsert({ child_id: childId, feature, enabled });
   if (error) return false;
-  // 캐시 갱신
-  if (!dbCache) dbCache = {};
-  if (!dbCache[childId]) dbCache[childId] = {};
-  dbCache[childId][feature] = enabled;
+  invalidate("feature_flags");
+  // 스냅샷도 즉시 갱신
+  if (!flagsSnapshot[childId]) flagsSnapshot[childId] = {};
+  flagsSnapshot[childId][feature] = enabled;
   return true;
 }
 

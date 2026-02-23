@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   try {
     const events = await getEventsForMonth(year, month);
     return NextResponse.json(events, {
-      headers: { "Cache-Control": "public, max-age=300" },
+      headers: { "Cache-Control": "public, max-age=30" },
     });
   } catch {
     return NextResponse.json([], {
