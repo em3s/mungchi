@@ -23,51 +23,55 @@ export default function BadgesPage({
 
   useEffect(() => {
     async function load() {
-      const siblingId =
-        CHILDREN.find((c) => c.id !== childId)?.id ?? "";
+      try {
+        const siblingId =
+          CHILDREN.find((c) => c.id !== childId)?.id ?? "";
 
-      // 모든 할일 데이터 로드 (1분 캐시)
-      const fetchTasks = (id: string) =>
-        cached(`badge_tasks:${id}`, 60_000, async () => {
-          const { data } = await supabase
-            .from("tasks")
-            .select("date, completed, completed_at")
-            .eq("child_id", id)
-            .order("date");
-          return data;
-        });
-
-      const [childData, siblingData] = await Promise.all([
-        fetchTasks(childId),
-        fetchTasks(siblingId),
-      ]);
-
-      const toDaySummaries = (
-        data: { date: string; completed: boolean; completed_at: string | null }[] | null
-      ): DayTaskSummary[] => {
-        const map = new Map<string, DayTaskSummary>();
-        for (const task of data || []) {
-          let day = map.get(task.date);
-          if (!day) {
-            day = { date: task.date, total: 0, completed: 0, tasks: [] };
-            map.set(task.date, day);
-          }
-          day.total++;
-          if (task.completed) day.completed++;
-          day.tasks.push({
-            completed: task.completed,
-            completedAt: task.completed_at,
+        // 모든 할일 데이터 로드 (1분 캐시)
+        const fetchTasks = (id: string) =>
+          cached(`badge_tasks:${id}`, 60_000, async () => {
+            const { data } = await supabase
+              .from("tasks")
+              .select("date, completed, completed_at")
+              .eq("child_id", id)
+              .order("date");
+            return data;
           });
-        }
-        return [...map.values()];
-      };
 
-      const childDays = toDaySummaries(childData);
-      const siblingDays = toDaySummaries(siblingData);
+        const [childData, siblingData] = await Promise.all([
+          fetchTasks(childId),
+          fetchTasks(siblingId),
+        ]);
 
-      const earned = evaluateBadges(childId, childDays, siblingDays);
-      const display = getBadgesForDisplay(earned);
-      setBadges(display);
+        const toDaySummaries = (
+          data: { date: string; completed: boolean; completed_at: string | null }[] | null
+        ): DayTaskSummary[] => {
+          const map = new Map<string, DayTaskSummary>();
+          for (const task of data || []) {
+            let day = map.get(task.date);
+            if (!day) {
+              day = { date: task.date, total: 0, completed: 0, tasks: [] };
+              map.set(task.date, day);
+            }
+            day.total++;
+            if (task.completed) day.completed++;
+            day.tasks.push({
+              completed: task.completed,
+              completedAt: task.completed_at,
+            });
+          }
+          return [...map.values()];
+        };
+
+        const childDays = toDaySummaries(childData);
+        const siblingDays = toDaySummaries(siblingData);
+
+        const earned = evaluateBadges(childId, childDays, siblingDays);
+        const display = getBadgesForDisplay(earned);
+        setBadges(display);
+      } catch {
+        setBadges([]);
+      }
     }
 
     load();

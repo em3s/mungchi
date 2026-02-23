@@ -36,37 +36,41 @@ export default function MapPage({
   useEffect(() => {
     if (!flagsLoaded || featureDisabled) return;
     async function load() {
-      const counts = await cached(
-        "map_counts",
-        60_000,
-        async () => {
-          const [total, sihyun, misong] = await Promise.all([
-            supabase
-              .from("tasks")
-              .select("*", { count: "exact", head: true })
-              .eq("completed", true),
-            supabase
-              .from("tasks")
-              .select("*", { count: "exact", head: true })
-              .eq("child_id", "sihyun")
-              .eq("completed", true),
-            supabase
-              .from("tasks")
-              .select("*", { count: "exact", head: true })
-              .eq("child_id", "misong")
-              .eq("completed", true),
-          ]);
-          return {
-            total: total.count ?? 0,
-            sihyun: sihyun.count ?? 0,
-            misong: misong.count ?? 0,
-          };
-        },
-      );
+      try {
+        const counts = await cached(
+          "map_counts",
+          60_000,
+          async () => {
+            const [total, sihyun, misong] = await Promise.all([
+              supabase
+                .from("tasks")
+                .select("*", { count: "exact", head: true })
+                .eq("completed", true),
+              supabase
+                .from("tasks")
+                .select("*", { count: "exact", head: true })
+                .eq("child_id", "sihyun")
+                .eq("completed", true),
+              supabase
+                .from("tasks")
+                .select("*", { count: "exact", head: true })
+                .eq("child_id", "misong")
+                .eq("completed", true),
+            ]);
+            return {
+              total: total.count ?? 0,
+              sihyun: sihyun.count ?? 0,
+              misong: misong.count ?? 0,
+            };
+          },
+        );
 
-      setTotalCompleted(counts.total);
-      setSihyunCount(counts.sihyun);
-      setMisongCount(counts.misong);
+        setTotalCompleted(counts.total);
+        setSihyunCount(counts.sihyun);
+        setMisongCount(counts.misong);
+      } catch {
+        setTotalCompleted(0);
+      }
     }
     load();
   }, [childId, flagsLoaded, featureDisabled]);

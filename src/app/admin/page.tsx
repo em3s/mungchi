@@ -114,11 +114,11 @@ export default function AdminPage() {
 
   // 커스텀 템플릿 로드
   const loadTemplates = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("task_templates")
       .select("*")
       .order("created_at");
-    if (data) setCustomTemplates(data as CustomTemplate[]);
+    if (!error && data) setCustomTemplates(data as CustomTemplate[]);
   }, []);
 
   useEffect(() => {
@@ -224,8 +224,12 @@ export default function AdminPage() {
 
   const deleteTemplate = useCallback(
     async (id: string) => {
-      await supabase.from("task_templates").delete().eq("id", id);
+      const { error } = await supabase.from("task_templates").delete().eq("id", id);
       setConfirmDeleteId(null);
+      if (error) {
+        showToast("삭제 실패");
+        return;
+      }
       showToast("템플릿 삭제됨");
       loadTemplates();
     },
