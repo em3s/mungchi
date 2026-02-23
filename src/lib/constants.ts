@@ -14,7 +14,7 @@ export const USERS: Omit<User, "pin" | "created_at">[] = [
     id: "misong",
     name: "미송",
     role: "child",
-    theme: "choco",
+    theme: "sparkle",
     emoji: "✨",
     starName: "반짝별",
     descriptor: "반짝별 탐험가",

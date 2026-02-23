@@ -12,7 +12,7 @@
 | id | name | role | theme | emoji | starName | descriptor |
 |---|---|---|---|---|---|---|
 | sihyun | 시현 | child | starry | ⭐ | 반짝별 | 반짝별 수호자 |
-| misong | 미송 | child | choco | ✨ | 반짝별 | 반짝별 탐험가 |
+| misong | 미송 | child | sparkle | ✨ | 반짝별 | 반짝별 탐험가 |
 | dad | 아빠 | parent | shield | 🛡️ | 든든별 | 쌍둥이별 이끔이 |
 | mom | 엄마 | parent | heart | 💖 | 따뜻별 | 쌍둥이별 지킴이 |
 
@@ -78,7 +78,7 @@
 
 CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 - `.theme-starry` — 보라 (#6c5ce7)
-- `.theme-choco` — 오렌지 (#e17055)
+- `.theme-sparkle` — 오렌지 (#e17055)
 - `.theme-shield` — 네이비 (#4a69bd)
 - `.theme-heart` — 로즈 (#f78fb3)
 

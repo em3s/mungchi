@@ -3,14 +3,14 @@
 @theme inline {
   --color-accent-starry: #6c5ce7;
   --color-accent-starry-light: #a29bfe;
-  --color-accent-choco: #e17055;
-  --color-accent-choco-light: #fab1a0;
+  --color-accent-sparkle: #e17055;
+  --color-accent-sparkle-light: #fab1a0;
   --color-accent-shield: #4a69bd;
   --color-accent-shield-light: #7d9fd6;
   --color-accent-heart: #f78fb3;
   --color-accent-heart-light: #ffb8d0;
   --color-bg-starry: #f5f3ff;
-  --color-bg-choco: #fdf5f0;
+  --color-bg-sparkle: #fdf5f0;
   --color-bg-shield: #f0f3ff;
   --color-bg-heart: #fff5f9;
 }
@@ -43,7 +43,7 @@ body {
   --bg: #f5f3ff;
 }
 
-.theme-choco {
+.theme-sparkle {
   --accent: #e17055;
   --accent-light: #fab1a0;
   --bg: #fdf5f0;
