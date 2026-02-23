@@ -13,7 +13,9 @@ CREATE TABLE children (
 
 INSERT INTO children (id, name, theme, emoji) VALUES
   ('sihyun', '시현', 'starry', '⭐'),
-  ('misong', '미송', 'choco', '🍫');
+  ('misong', '미송', 'choco', '🍫'),
+  ('dad', '아빠', 'shield', '🛡️'),
+  ('mom', '엄마', 'heart', '💖');
 
 -- 할일
 CREATE TABLE tasks (

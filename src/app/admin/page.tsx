@@ -9,7 +9,6 @@ import {
   ALL_FEATURES,
   getFeatureState,
   setFeatureFlag,
-  setFeatureOverride,
   loadFeatureFlags,
   type FeatureKey,
 } from "@/lib/features";
@@ -91,20 +90,6 @@ export default function AdminPage() {
       } else {
         showToast("변경 실패");
       }
-    },
-    [showToast]
-  );
-
-  const toggleOverride = useCallback(
-    (childId: string, feature: FeatureKey) => {
-      const state = getFeatureState(childId, feature);
-      if (state.override !== undefined) {
-        setFeatureOverride(childId, feature, null);
-      } else {
-        setFeatureOverride(childId, feature, !state.db);
-      }
-      setFlagTick((t) => t + 1);
-      showToast("세션 override 변경됨");
     },
     [showToast]
   );
@@ -445,20 +430,15 @@ export default function AdminPage() {
                 <div className="flex gap-1.5 flex-wrap">
                   {ALL_FEATURES.map((feat) => {
                     const state = getFeatureState(child.id, feat.key);
-                    const hasOverride = state.override !== undefined;
                     return (
                       <button
                         key={feat.key}
-                        onClick={() => toggleOverride(child.id, feat.key)}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          toggleDbFlag(child.id, feat.key);
-                        }}
+                        onClick={() => toggleDbFlag(child.id, feat.key)}
                         className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                          state.effective
+                          state.db
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-400"
-                        } ${hasOverride ? "ring-1 ring-orange-300" : ""}`}
+                        }`}
                       >
                         {feat.label}
                       </button>
@@ -467,9 +447,6 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
-            <div className="text-[0.65rem] text-gray-400 mt-1">
-              탭: override · 꾹: DB 토글
-            </div>
           </div>
         )}
       </section>
