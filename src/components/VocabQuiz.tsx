@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getRandomWords } from "@/lib/vocab";
+import { getSimilarWords } from "@/lib/vocab";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
 interface QuizQuestion {
@@ -17,11 +17,10 @@ interface VocabQuizProps {
 }
 
 function buildBasicQuestions(entries: VocabEntry[]): QuizQuestion[] {
-  const correctIds = entries.map((e) => e.dictionary_id).filter((id): id is string => id !== null);
-  const distractors = getRandomWords(correctIds, entries.length * 3);
-  return entries.map((entry, i) => {
-    const start = i * 3;
-    const wrongChoices = distractors.slice(start, start + 3);
+  const allWords = entries.map((e) => e.word);
+  return entries.map((entry) => {
+    // 편집 거리 기반으로 비슷한 단어 3개 선택
+    const wrongChoices = getSimilarWords(entry.word, allWords, 3);
     const allChoices = [
       {
         id: entry.dictionary_id ?? entry.id,

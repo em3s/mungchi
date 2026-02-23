@@ -313,7 +313,45 @@ export async function setVocabConfig(
   return true;
 }
 
-// --- 퀴즈 선택지 생성 (로컬 랜덤 선택) ---
+// --- 퀴즈 선택지 생성 ---
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[] = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    let prev = i - 1;
+    dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const temp = dp[j];
+      dp[j] = a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, dp[j], dp[j - 1]);
+      prev = temp;
+    }
+  }
+  return dp[n];
+}
+
+/** 정답과 비슷한 단어를 우선 뽑되, 부족하면 랜덤으로 채움 */
+export function getSimilarWords(
+  targetWord: string,
+  excludeWords: string[],
+  count: number,
+): DictionaryEntry[] {
+  if (!dictCache) return [];
+  const excludeSet = new Set(excludeWords);
+  const pool = dictCache.filter((e) => !excludeSet.has(e.word));
+  if (pool.length === 0) return [];
+
+  const word = targetWord.toLowerCase();
+  const scored = pool.map((e) => ({
+    entry: e,
+    dist: levenshtein(word, e.word.toLowerCase()),
+  }));
+  // 가까운 순 정렬, 같은 거리면 랜덤
+  scored.sort((a, b) => a.dist - b.dist || Math.random() - 0.5);
+  // dist=0 제외 (동일 단어)
+  return scored.filter((s) => s.dist > 0).slice(0, count).map((s) => s.entry);
+}
 
 export function getRandomWords(
   excludeIds: string[],
