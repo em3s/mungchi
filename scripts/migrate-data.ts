@@ -7,7 +7,7 @@
  *
  * 환경변수 필요:
  *   NEXT_PUBLIC_SUPABASE_URL
- *   SUPABASE_SERVICE_ROLE_KEY
+ *   SUPABASE_SERVICE_ROLE_KEY (Supabase 대시보드에서 직접 복사)
  */
 
 import { createClient } from "@supabase/supabase-js";
