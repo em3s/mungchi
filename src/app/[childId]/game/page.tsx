@@ -30,7 +30,7 @@ export default function GamePage({
     loadFeatureFlags().then(() => setFlagsLoaded(true));
   }, []);
 
-  const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, "coins");
+  const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, "game");
 
   useEffect(() => {
     if (featureDisabled) router.replace(`/${childId}`);

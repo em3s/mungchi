@@ -115,7 +115,7 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 
 - DB 테이블: `feature_flags` (user_id, feature, enabled)
 - 코드 기본값: false (testing) → DB에서 true로 활성화
-- 현재 피쳐: `map`, `star`, `coins`, `vocab`
+- 현재 피쳐: `map`, `star`, `coins`, `vocab`, `game`
 - admin 페이지에서 DB 토글
 
 ## 세션/로그인
