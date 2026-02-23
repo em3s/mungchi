@@ -111,10 +111,8 @@ export function VocabQuiz({
   }
 
   function handleNext() {
-    const correctAfterThis = totalCorrect + (isCorrect ? 1 : 0);
-
-    // 전부 맞춤 → 완료
-    if (correctAfterThis >= totalWords) {
+    // totalCorrect는 이미 답 제출 시 업데이트됨
+    if (totalCorrect >= totalWords) {
       onComplete(totalWords, totalWords);
       return;
     }
@@ -122,7 +120,6 @@ export function VocabQuiz({
     if (currentIdx + 1 >= roundTotal) {
       // 라운드 종료 → 틀린 것만 다음 라운드
       startRound(wrongInRound, round + 1);
-      setTotalCorrect(correctAfterThis);
       return;
     }
 
@@ -134,7 +131,7 @@ export function VocabQuiz({
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
-  const correctAfterCurrent = totalCorrect + (showResult && isCorrect ? 1 : 0);
+  const correctAfterCurrent = totalCorrect;
   const roundProgress = (currentIdx + (showResult ? 1 : 0)) / roundTotal;
 
   return (
