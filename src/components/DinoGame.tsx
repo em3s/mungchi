@@ -4,7 +4,8 @@ import { useRef, useEffect, useCallback, useState } from "react";
 
 // --- 게임 설정 ---
 const W = 600;
-const H = 200;
+const GAME_H = 200;       // 게임이 그려지는 영역 높이
+const CANVAS_H = 500;     // 캔버스 전체 높이 (터치 영역)
 const GROUND_Y = 170;
 const PLAYER_X = 60;
 const PLAYER_SIZE = 30;
@@ -32,7 +33,6 @@ interface DinoGameProps {
 
 export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Game state refs (avoid re-renders during game loop)
   const stateRef = useRef<"ready" | "playing" | "gameover">("ready");
@@ -56,17 +56,16 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = W * dpr;
-    canvas.height = H * dpr;
+    canvas.height = CANVAS_H * dpr;
     const ctx = canvas.getContext("2d");
     if (ctx) ctx.scale(dpr, dpr);
-    // Draw initial frame
     drawReady(canvas);
   }, []);
 
   function drawReady(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, CANVAS_H);
     // Ground
     ctx.strokeStyle = "#d1d5db";
     ctx.lineWidth = 2;
@@ -144,7 +143,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
     groundOffset.current = (groundOffset.current + speed.current) % 20;
 
     // --- Draw ---
-    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, CANVAS_H);
 
     // Ground
     ctx.strokeStyle = "#d1d5db";
@@ -190,7 +189,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
 
   function drawGameOver(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = "rgba(0,0,0,0.15)";
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, W, GAME_H);
   }
 
   // --- Input ---
@@ -203,7 +202,6 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
       }
       stateRef.current = "playing";
       setDisplayState("playing");
-      // First jump
       jumping.current = true;
       playerVY.current = JUMP_VEL;
       rafId.current = requestAnimationFrame(gameLoop);
@@ -240,20 +238,23 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full max-w-[600px] mx-auto">
-      {/* Canvas */}
+    <div className="w-full max-w-[600px] mx-auto">
+      {/* Canvas — tall for easy tapping, game draws at top */}
       <div className="relative">
         <canvas
           ref={canvasRef}
-          style={{ width: W, height: H, maxWidth: "100%", touchAction: "none" }}
-          className="block mx-auto rounded-2xl bg-white border border-gray-100 shadow-sm"
+          style={{ width: W, height: CANVAS_H, maxWidth: "100%", touchAction: "none" }}
+          className="block mx-auto bg-transparent"
           onTouchStart={handleInput}
           onMouseDown={handleInput}
         />
 
         {/* Ready overlay */}
         {displayState === "ready" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div
+            className="absolute left-0 right-0 flex flex-col items-center justify-center pointer-events-none"
+            style={{ top: 0, height: GAME_H }}
+          >
             <div className="text-4xl mb-2">🏃</div>
             <div className="text-sm font-bold text-gray-500 bg-white/80 px-3 py-1 rounded-full">
               탭하면 시작!
@@ -263,35 +264,38 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
 
         {/* Game over overlay */}
         {displayState === "gameover" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 rounded-2xl">
+          <div
+            className="absolute left-0 right-0 flex flex-col items-center justify-center bg-black/10"
+            style={{ top: 0, height: GAME_H, borderRadius: 16 }}
+          >
             <div className="text-lg font-black text-gray-700 mb-1">게임 오버</div>
             <div className="text-3xl font-black text-[var(--accent,#6c5ce7)] mb-3">
               {score.current}점
             </div>
           </div>
         )}
-      </div>
 
-      {/* Game over buttons — outside canvas for reliable touch */}
-      {displayState === "gameover" && (
-        <div className="flex gap-3 mt-4 justify-center">
-          <button
-            onClick={() => {
-              reset();
-              // Trigger start on next tap via ready state
-            }}
-            className="px-5 py-2.5 rounded-xl bg-[var(--accent,#6c5ce7)] text-white font-bold text-sm active:opacity-80"
+        {/* Game over buttons — positioned inside canvas area */}
+        {displayState === "gameover" && (
+          <div
+            className="absolute left-0 right-0 flex gap-3 justify-center"
+            style={{ top: GAME_H + 16 }}
           >
-            다시 하기 (1🍬)
-          </button>
-          <button
-            onClick={() => window.history.back()}
-            className="px-5 py-2.5 rounded-xl bg-gray-200 text-gray-600 font-bold text-sm active:opacity-80"
-          >
-            그만하기
-          </button>
-        </div>
-      )}
+            <button
+              onClick={() => reset()}
+              className="px-5 py-2.5 rounded-xl bg-[var(--accent,#6c5ce7)] text-white font-bold text-sm active:opacity-80"
+            >
+              다시 하기 (1🍬)
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="px-5 py-2.5 rounded-xl bg-gray-200 text-gray-600 font-bold text-sm active:opacity-80"
+            >
+              그만하기
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
