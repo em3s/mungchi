@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { MILESTONES } from "@/lib/constants";
-import { isFeatureEnabled } from "@/lib/features";
+import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { BottomNav } from "@/components/BottomNav";
 import { MapNode } from "@/components/MapNode";
 
@@ -18,7 +18,13 @@ export default function MapPage({
   const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
   const [sihyunCount, setSihyunCount] = useState(0);
   const [misongCount, setMisongCount] = useState(0);
-  const featureDisabled = !isFeatureEnabled(childId, "map");
+  const [flagsLoaded, setFlagsLoaded] = useState(false);
+
+  useEffect(() => {
+    loadFeatureFlags().then(() => setFlagsLoaded(true));
+  }, []);
+
+  const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, "map");
 
   useEffect(() => {
     if (featureDisabled) {
@@ -27,7 +33,7 @@ export default function MapPage({
   }, [featureDisabled, childId, router]);
 
   useEffect(() => {
-    if (featureDisabled) return;
+    if (!flagsLoaded || featureDisabled) return;
     async function load() {
       const [total, sihyun, misong] = await Promise.all([
         supabase
@@ -51,9 +57,9 @@ export default function MapPage({
       setMisongCount(misong.count ?? 0);
     }
     load();
-  }, [childId, featureDisabled]);
+  }, [childId, flagsLoaded, featureDisabled]);
 
-  if (featureDisabled) return null;
+  if (!flagsLoaded || featureDisabled) return null;
 
   if (totalCompleted === null) {
     return (

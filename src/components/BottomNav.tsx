@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { isFeatureEnabled } from "@/lib/features";
+import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 
 interface BottomNavProps {
   childId: string;
@@ -10,6 +11,11 @@ interface BottomNavProps {
 
 export function BottomNav({ childId }: BottomNavProps) {
   const pathname = usePathname();
+  const [, setReady] = useState(false);
+
+  useEffect(() => {
+    loadFeatureFlags().then(() => setReady(true));
+  }, []);
 
   const tabs = [
     { href: `/${childId}`, label: "할일", icon: "📋", key: "dashboard" },
