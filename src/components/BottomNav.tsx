@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isFeatureEnabled } from "@/lib/features";
 
 interface BottomNavProps {
   childId: string;
@@ -19,7 +20,10 @@ export function BottomNav({ childId }: BottomNavProps) {
       key: "badges",
     },
     { href: `/${childId}/map`, label: "쌍둥이별", icon: "🌟", key: "map" },
-  ];
+  ].filter((tab) => {
+    if (tab.key === "map") return isFeatureEnabled(childId, "map");
+    return true;
+  });
 
   function isActive(tab: (typeof tabs)[0]) {
     if (tab.key === "dashboard") {
