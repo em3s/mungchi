@@ -362,12 +362,6 @@ export default function VocabPage({
         <>
           {/* Sub-header */}
           <div className="flex items-center gap-2 mb-2">
-            <button
-              onClick={handleBackToHome}
-              className="text-xl px-2 py-1 rounded-xl text-[var(--accent,#6c5ce7)] font-bold active:bg-black/5"
-            >
-              ←
-            </button>
             <input
               type="date"
               value={selectedDate ?? ""}
@@ -456,6 +450,12 @@ export default function VocabPage({
                 )}
               </div>
 
+              <button
+                onClick={handleBackToHome}
+                className="w-full mt-2 py-3 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 active:bg-gray-200"
+              >
+                단어장 목록으로
+              </button>
             </>
           )}
         </>
