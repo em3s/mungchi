@@ -14,8 +14,6 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<DictionaryEntry[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -24,7 +22,6 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
 
   function handleChange(value: string) {
     setQuery(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (value.trim().length < 1) {
       setSuggestions([]);
@@ -32,14 +29,10 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
       return;
     }
 
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      const results = await searchDictionary(value.trim(), 8);
-      const filtered = results.filter((r) => !excludeWords.includes(r.word));
-      setSuggestions(filtered);
-      setShowDropdown(filtered.length > 0);
-      setLoading(false);
-    }, 250);
+    const results = searchDictionary(value.trim(), 8);
+    const filtered = results.filter((r) => !excludeWords.includes(r.word));
+    setSuggestions(filtered);
+    setShowDropdown(filtered.length > 0);
   }
 
   function handleSelect(entry: DictionaryEntry) {
@@ -90,11 +83,6 @@ export function WordInput({ onSelect, onCancel, excludeWords }: WordInputProps) 
         </div>
       )}
 
-      {loading && query.trim().length > 0 && !showDropdown && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-30 px-4 py-3 text-sm text-gray-400">
-          검색 중...
-        </div>
-      )}
     </div>
   );
 }

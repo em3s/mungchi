@@ -26,6 +26,7 @@ import {
 import {
   getVocabConfig,
   setVocabConfig as saveVocabConfig,
+  invalidateDictionary,
 } from "@/lib/vocab";
 import type { CoinReward, CoinTransaction } from "@/lib/types";
 
@@ -774,6 +775,7 @@ export default function AdminPage() {
                   showToast("추가 실패");
                   return;
                 }
+                invalidateDictionary();
                 showToast(`"${dictWord.trim()}" 추가됨!`);
                 setDictWord("");
                 setDictMeaning("");
@@ -827,6 +829,7 @@ export default function AdminPage() {
                 showToast("벌크 추가 실패");
                 return;
               }
+              invalidateDictionary();
               showToast(`${rows.length}개 단어 추가됨!`);
               setDictBulk("");
             }}

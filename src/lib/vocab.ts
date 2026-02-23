@@ -8,21 +8,40 @@ const ENTRIES_TTL = 30_000; // 30초
 const DATES_TTL = 30_000; // 30초
 const CONFIG_TTL = 60_000; // 1분
 
-// --- 사전 검색 (autocomplete) ---
+// --- 사전 전체 캐시 (메모리) ---
 
-export async function searchDictionary(
-  query: string,
-  limit = 8,
-): Promise<DictionaryEntry[]> {
-  if (!query || query.length < 1) return [];
-  const q = query.toLowerCase().trim();
+let dictCache: DictionaryEntry[] | null = null;
+
+export async function loadDictionary(): Promise<DictionaryEntry[]> {
+  if (dictCache) return dictCache;
   const { data } = await supabase
     .from("dictionary")
     .select("*")
-    .ilike("word", `${q}%`)
-    .order("word")
-    .limit(limit);
-  return (data as DictionaryEntry[]) ?? [];
+    .order("word");
+  dictCache = (data as DictionaryEntry[]) ?? [];
+  return dictCache;
+}
+
+export function invalidateDictionary() {
+  dictCache = null;
+}
+
+// --- 사전 검색 (로컬 prefix 매칭) ---
+
+export function searchDictionary(
+  query: string,
+  limit = 8,
+): DictionaryEntry[] {
+  if (!dictCache || !query || query.length < 1) return [];
+  const q = query.toLowerCase().trim();
+  const results: DictionaryEntry[] = [];
+  for (const entry of dictCache) {
+    if (entry.word.startsWith(q)) {
+      results.push(entry);
+      if (results.length >= limit) break;
+    }
+  }
+  return results;
 }
 
 // --- 단어장 목록 조회 ---
@@ -209,22 +228,17 @@ export async function setVocabConfig(
   return true;
 }
 
-// --- 퀴즈 선택지 생성 (객관식용 오답) ---
+// --- 퀴즈 선택지 생성 (로컬 랜덤 선택) ---
 
-export async function getRandomWords(
+export function getRandomWords(
   excludeIds: string[],
   count: number,
-): Promise<DictionaryEntry[]> {
-  const filter =
+): DictionaryEntry[] {
+  if (!dictCache) return [];
+  const pool =
     excludeIds.length > 0
-      ? `(${excludeIds.join(",")})`
-      : "(00000000-0000-0000-0000-000000000000)";
-  const { data } = await supabase
-    .from("dictionary")
-    .select("*")
-    .not("id", "in", filter)
-    .limit(count * 3);
-  if (!data || data.length === 0) return [];
-  const shuffled = (data as DictionaryEntry[]).sort(() => Math.random() - 0.5);
+      ? dictCache.filter((e) => !excludeIds.includes(e.id))
+      : dictCache;
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }

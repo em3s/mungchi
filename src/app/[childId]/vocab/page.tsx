@@ -14,6 +14,7 @@ import {
   hasEarnedToday,
   saveQuizResult,
   getVocabConfig,
+  loadDictionary,
 } from "@/lib/vocab";
 import { addTransaction, getBalance } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
@@ -95,6 +96,7 @@ export default function VocabPage({
   useEffect(() => {
     if (!flagsLoaded || featureDisabled) return;
     loadLists();
+    loadDictionary();
     getVocabConfig().then(setConfig);
     const coins = isFeatureEnabled(childId, "coins");
     setCoinsEnabled(coins);

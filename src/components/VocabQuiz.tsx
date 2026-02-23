@@ -32,37 +32,31 @@ export function VocabQuiz({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function prepare() {
-      const shuffled = [...entries].sort(() => Math.random() - 0.5);
+    const shuffled = [...entries].sort(() => Math.random() - 0.5);
 
-      if (quizType === "basic") {
-        const correctIds = shuffled.map((e) => e.dictionary_id);
-        const distractors = await getRandomWords(
-          correctIds,
-          shuffled.length * 3,
-        );
+    if (quizType === "basic") {
+      const correctIds = shuffled.map((e) => e.dictionary_id);
+      const distractors = getRandomWords(correctIds, shuffled.length * 3);
 
-        const qs: QuizQuestion[] = shuffled.map((entry, i) => {
-          const start = i * 3;
-          const wrongChoices = distractors.slice(start, start + 3);
-          const allChoices = [
-            {
-              id: entry.dictionary_id,
-              word: entry.word,
-              meaning: entry.meaning,
-              level: 1,
-            } as DictionaryEntry,
-            ...wrongChoices,
-          ].sort(() => Math.random() - 0.5);
-          return { entry, choices: allChoices };
-        });
-        setQuestions(qs);
-      } else {
-        setQuestions(shuffled.map((entry) => ({ entry })));
-      }
-      setLoading(false);
+      const qs: QuizQuestion[] = shuffled.map((entry, i) => {
+        const start = i * 3;
+        const wrongChoices = distractors.slice(start, start + 3);
+        const allChoices = [
+          {
+            id: entry.dictionary_id,
+            word: entry.word,
+            meaning: entry.meaning,
+            level: 1,
+          } as DictionaryEntry,
+          ...wrongChoices,
+        ].sort(() => Math.random() - 0.5);
+        return { entry, choices: allChoices };
+      });
+      setQuestions(qs);
+    } else {
+      setQuestions(shuffled.map((entry) => ({ entry })));
     }
-    prepare();
+    setLoading(false);
   }, [entries, quizType]);
 
   if (loading) {
