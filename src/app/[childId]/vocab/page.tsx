@@ -6,7 +6,7 @@ import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { todayKST, WEEKDAYS } from "@/lib/date";
 import {
   getEntries,
-  getVocabDates,
+  getVocabLists,
   addEntry,
   removeEntry,
   hasEarnedToday,
@@ -15,14 +15,13 @@ import {
 } from "@/lib/vocab";
 import { addTransaction, getBalance } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
-import { Calendar } from "@/components/Calendar";
 import { WordInput } from "@/components/WordInput";
 import { VocabQuiz } from "@/components/VocabQuiz";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
-type ViewState = "calendar" | "list" | "adding" | "quiz" | "result";
+type ViewState = "home" | "list" | "adding" | "quiz" | "result";
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
@@ -55,8 +54,9 @@ export default function VocabPage({
   // State
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<ViewState>("calendar");
+  const [view, setView] = useState<ViewState>("home");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [newDate, setNewDate] = useState(today);
   const [quizType, setQuizType] = useState<VocabQuizType>("basic");
   const [quizResult, setQuizResult] = useState<{
     total: number;
@@ -68,18 +68,15 @@ export default function VocabPage({
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [coinsEnabled, setCoinsEnabled] = useState(false);
 
-  // Calendar state
-  const [calYear, setCalYear] = useState(() => parseInt(today.slice(0, 4)));
-  const [calMonth, setCalMonth] = useState(
-    () => parseInt(today.slice(5, 7)) - 1,
-  );
-  const [vocabDates, setVocabDates] = useState<Set<string>>(new Set());
+  // Vocab lists (date + count)
+  const [vocabLists, setVocabLists] = useState<
+    { date: string; count: number }[]
+  >([]);
 
-  // Load vocab dates for calendar
-  const loadVocabDates = useCallback(async () => {
-    const dates = await getVocabDates(childId, calYear, calMonth);
-    setVocabDates(dates);
-  }, [childId, calYear, calMonth]);
+  const loadLists = useCallback(async () => {
+    const lists = await getVocabLists(childId);
+    setVocabLists(lists);
+  }, [childId]);
 
   // Load entries for selected date
   const loadEntries = useCallback(async () => {
@@ -92,12 +89,12 @@ export default function VocabPage({
   // Initial load
   useEffect(() => {
     if (!flagsLoaded || featureDisabled) return;
-    loadVocabDates();
+    loadLists();
     getVocabConfig().then(setConfig);
     const coins = isFeatureEnabled(childId, "coins");
     setCoinsEnabled(coins);
     if (coins) getBalance(childId).then(setCoinBalance);
-  }, [childId, flagsLoaded, featureDisabled, loadVocabDates]);
+  }, [childId, flagsLoaded, featureDisabled, loadLists]);
 
   // Load entries when selectedDate changes
   useEffect(() => {
@@ -106,50 +103,26 @@ export default function VocabPage({
 
   if (!flagsLoaded || featureDisabled) return null;
 
-  const isToday = selectedDate === today;
+  const isEditable = selectedDate === today;
   const minWords = config.min_words ?? 3;
 
-  // Calendar navigation
-  function prevMonthNav() {
-    if (calMonth === 0) {
-      setCalYear(calYear - 1);
-      setCalMonth(11);
-    } else setCalMonth(calMonth - 1);
-  }
-
-  function nextMonthNav() {
-    if (calMonth === 11) {
-      setCalYear(calYear + 1);
-      setCalMonth(0);
-    } else setCalMonth(calMonth + 1);
-  }
-
-  function goToday() {
-    const t = todayKST();
-    setCalYear(parseInt(t.slice(0, 4)));
-    setCalMonth(parseInt(t.slice(5, 7)) - 1);
-  }
-
-  function handleDateClick(date: string) {
-    if (date > today) return;
-    if (vocabDates.has(date)) {
-      setSelectedDate(date);
-      setLoading(true);
-      setView("list");
-    }
-  }
-
-  function handleNewVocabList() {
-    setSelectedDate(today);
+  function handleOpenList(date: string) {
+    setSelectedDate(date);
     setLoading(true);
     setView("list");
   }
 
-  function handleBackToCalendar() {
+  function handleCreateNew() {
+    setSelectedDate(newDate);
+    setLoading(true);
+    setView("list");
+  }
+
+  function handleBackToHome() {
     setSelectedDate(null);
     setEntries([]);
-    setView("calendar");
-    loadVocabDates();
+    setView("home");
+    loadLists();
   }
 
   async function handleAddWord(dictEntry: DictionaryEntry) {
@@ -224,37 +197,56 @@ export default function VocabPage({
         )}
       </div>
 
-      {/* Calendar View */}
-      {view === "calendar" && (
+      {/* Home View — vocab list + create new */}
+      {view === "home" && (
         <>
-          <Calendar
-            year={calYear}
-            month={calMonth}
-            monthData={null}
-            today={today}
-            selectedDate={null}
-            eventDates={vocabDates}
-            onDateClick={handleDateClick}
-            onPrevMonth={prevMonthNav}
-            onNextMonth={nextMonthNav}
-            onGoToday={goToday}
-          />
-
-          <div className="mt-4">
+          {/* New vocab list */}
+          <div className="flex items-center gap-2 mb-6">
+            <input
+              type="date"
+              value={newDate}
+              max={today}
+              onChange={(e) => setNewDate(e.target.value)}
+              className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-700"
+            />
             <button
-              onClick={handleNewVocabList}
-              className="w-full bg-[var(--accent,#6c5ce7)] text-white py-4 rounded-2xl font-bold text-base active:opacity-80"
+              onClick={handleCreateNew}
+              className="bg-[var(--accent,#6c5ce7)] text-white px-4 py-3 rounded-xl font-bold text-sm whitespace-nowrap active:opacity-80"
             >
-              {vocabDates.has(today)
-                ? "📖 오늘의 단어장"
-                : "📖 새 단어장 만들기"}
+              + 새 단어장
             </button>
           </div>
 
-          {vocabDates.size > 0 && (
-            <div className="text-center text-sm text-gray-400 mt-3">
-              이번 달 {vocabDates.size}일 학습
+          {/* Existing vocab lists */}
+          {vocabLists.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">
+              아직 단어장이 없어요
+              <br />
+              <span className="text-sm">새 단어장을 만들어보세요!</span>
             </div>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {vocabLists.map((item) => (
+                <li key={item.date}>
+                  <button
+                    onClick={() => handleOpenList(item.date)}
+                    className="w-full flex items-center justify-between bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] active:bg-gray-50 transition-colors"
+                  >
+                    <div className="text-left">
+                      <div className="font-bold text-base text-gray-800">
+                        {formatDate(item.date)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-400">
+                        {item.count}개
+                      </span>
+                      <span className="text-gray-300">›</span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </>
       )}
@@ -265,7 +257,7 @@ export default function VocabPage({
           {/* Sub-header */}
           <div className="flex items-center gap-2 mb-4">
             <button
-              onClick={handleBackToCalendar}
+              onClick={handleBackToHome}
               className="text-xl px-2 py-1 rounded-xl text-[var(--accent,#6c5ce7)] font-bold active:bg-black/5"
             >
               ←
@@ -287,7 +279,7 @@ export default function VocabPage({
                   <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     단어 ({entries.length})
                   </div>
-                  {isToday && (
+                  {isEditable && (
                     <button
                       onClick={() => setView("adding")}
                       className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)]"
@@ -299,7 +291,7 @@ export default function VocabPage({
 
                 {entries.length === 0 ? (
                   <div className="text-center py-10 text-gray-400">
-                    {isToday
+                    {isEditable
                       ? "영어 단어를 추가해보세요!"
                       : "이 날의 단어가 없어요"}
                   </div>
@@ -318,7 +310,7 @@ export default function VocabPage({
                             {entry.meaning}
                           </div>
                         </div>
-                        {isToday && (
+                        {isEditable && (
                           <button
                             onClick={() => handleRemoveWord(entry.id)}
                             className="text-gray-300 hover:text-red-400 text-lg ml-2"
@@ -411,7 +403,7 @@ export default function VocabPage({
             </div>
           ) : quizResult.alreadyEarned ? (
             <div className="text-sm text-gray-400 mb-4">
-              오늘은 이미 별사탕을 받았어요
+              이미 별사탕을 받았어요
             </div>
           ) : null}
           <button

@@ -25,28 +25,24 @@ export async function searchDictionary(
   return (data as DictionaryEntry[]) ?? [];
 }
 
-// --- 월별 단어장 날짜 조회 (달력용) ---
+// --- 단어장 목록 조회 ---
 
-export async function getVocabDates(
+export async function getVocabLists(
   childId: string,
-  year: number,
-  month: number, // 0-indexed (Calendar 컴포넌트 규격)
-): Promise<Set<string>> {
-  const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
-  return cached(`vocab_dates:${childId}:${monthStr}`, DATES_TTL, async () => {
+): Promise<{ date: string; count: number }[]> {
+  return cached(`vocab_lists:${childId}`, DATES_TTL, async () => {
     const { data } = await supabase
       .from("vocab_entries")
       .select("date")
-      .eq("child_id", childId)
-      .gte("date", `${monthStr}-01`)
-      .lte("date", `${monthStr}-31`);
-    const dates = new Set<string>();
-    if (data) {
-      for (const row of data as { date: string }[]) {
-        dates.add(row.date);
-      }
+      .eq("child_id", childId);
+    if (!data) return [];
+    const counts = new Map<string, number>();
+    for (const row of data as { date: string }[]) {
+      counts.set(row.date, (counts.get(row.date) ?? 0) + 1);
     }
-    return dates;
+    return Array.from(counts.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => b.date.localeCompare(a.date));
   });
 }
 
@@ -85,7 +81,7 @@ export async function addEntry(
     .single();
   if (error) return { ok: false };
   invalidate(`vocab_entries:${childId}:${date}`);
-  invalidate(`vocab_dates:${childId}:${date.slice(0, 7)}`);
+  invalidate(`vocab_lists:${childId}`);
   return { ok: true, entry: data as VocabEntry };
 }
 
@@ -100,7 +96,7 @@ export async function removeEntry(
     .eq("id", entryId);
   if (error) return false;
   invalidate(`vocab_entries:${childId}:${date}`);
-  invalidate(`vocab_dates:${childId}:${date.slice(0, 7)}`);
+  invalidate(`vocab_lists:${childId}`);
   return true;
 }
 
