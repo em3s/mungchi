@@ -14,6 +14,7 @@ interface VocabQuizProps {
   quizType: VocabQuizType;
   onComplete: (total: number, correct: number) => void;
   onCancel: () => void;
+  onSpellingCorrect?: () => void;
 }
 
 function buildBasicQuestions(entries: VocabEntry[]): QuizQuestion[] {
@@ -39,6 +40,7 @@ export function VocabQuiz({
   quizType,
   onComplete,
   onCancel,
+  onSpellingCorrect,
 }: VocabQuizProps) {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -118,6 +120,7 @@ export function VocabQuiz({
       speakWord(current.entry.word);
       setCandyPop(true);
       setTimeout(() => setCandyPop(false), 1200);
+      onSpellingCorrect?.();
     } else {
       setWrongInRound((prev) => [...prev, current.entry]);
     }
@@ -273,7 +276,7 @@ export function VocabQuiz({
           >
             ▶ 발음 듣기
           </button>
-          {!isCorrect && (
+          {!isCorrect && quizType === "basic" && (
             <div className="text-sm text-gray-500 mt-1.5">
               괜찮아! 끝까지 하면 초코는 똑같이 받아 🍪
             </div>

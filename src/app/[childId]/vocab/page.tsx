@@ -237,12 +237,11 @@ export default function VocabPage({
   }
 
   async function handleQuizComplete(total: number, correct: number) {
-    // 객관식: 고정 보상, 스펠링: 1🍪 × 맞춘 수
-    // 매번 완주하면 무조건 보상
+    // 객관식: 완료 시 고정 보상, 스펠링: 이미 맞출 때마다 즉시 지급됨
     const candy =
       quizType === "basic"
         ? (config.basic_reward ?? 1)
-        : correct; // spelling: 1🍪 per correct
+        : correct; // spelling: 이미 지급 완료
 
     await saveQuizResult(
       childId,
@@ -253,12 +252,13 @@ export default function VocabPage({
       candy,
     );
 
-    if (candy > 0 && coinsEnabled) {
+    // 객관식만 완료 시 보상 지급 (스펠링은 onSpellingCorrect에서 즉시 지급)
+    if (quizType === "basic" && candy > 0 && coinsEnabled) {
       const result = await addTransaction(
         childId,
         candy,
         "vocab_quiz",
-        `${quizType === "basic" ? "객관식" : "스펠링"} 퀴즈 ${correct}/${total}`,
+        `객관식 퀴즈 ${correct}/${total}`,
       );
       if (result.ok) setCoinBalance(result.newBalance ?? null);
     }
@@ -564,6 +564,11 @@ export default function VocabPage({
           quizType={quizType}
           onComplete={handleQuizComplete}
           onCancel={() => setView("home")}
+          onSpellingCorrect={async () => {
+            if (!coinsEnabled) return;
+            const result = await addTransaction(childId, 1, "vocab_quiz", "스펠링 정답 +1🍪");
+            if (result.ok) setCoinBalance(result.newBalance ?? null);
+          }}
         />
       )}
 
