@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { getRandomWords } from "@/lib/vocab";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
@@ -16,6 +16,25 @@ interface VocabQuizProps {
   onCancel: () => void;
 }
 
+function buildBasicQuestions(entries: VocabEntry[]): QuizQuestion[] {
+  const correctIds = entries.map((e) => e.dictionary_id).filter((id): id is string => id !== null);
+  const distractors = getRandomWords(correctIds, entries.length * 3);
+  return entries.map((entry, i) => {
+    const start = i * 3;
+    const wrongChoices = distractors.slice(start, start + 3);
+    const allChoices = [
+      {
+        id: entry.dictionary_id ?? entry.id,
+        word: entry.word,
+        meaning: entry.meaning,
+        level: 1,
+      } as DictionaryEntry,
+      ...wrongChoices,
+    ].sort(() => Math.random() - 0.5);
+    return { entry, choices: allChoices };
+  });
+}
+
 export function VocabQuiz({
   entries,
   quizType,
@@ -28,38 +47,33 @@ export function VocabQuiz({
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [retrying, setRetrying] = useState(false);
+  const [round, setRound] = useState(1);
+  const [wrongInRound, setWrongInRound] = useState<VocabEntry[]>([]);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const totalWords = entries.length;
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const shuffled = [...entries].sort(() => Math.random() - 0.5);
-
+  const startRound = useCallback((roundEntries: VocabEntry[], roundNum: number) => {
+    const shuffled = [...roundEntries].sort(() => Math.random() - 0.5);
     if (quizType === "basic") {
-      const correctIds = shuffled.map((e) => e.dictionary_id).filter((id): id is string => id !== null);
-      const distractors = getRandomWords(correctIds, shuffled.length * 3);
-
-      const qs: QuizQuestion[] = shuffled.map((entry, i) => {
-        const start = i * 3;
-        const wrongChoices = distractors.slice(start, start + 3);
-        const allChoices = [
-          {
-            id: entry.dictionary_id ?? entry.id,
-            word: entry.word,
-            meaning: entry.meaning,
-            level: 1,
-          } as DictionaryEntry,
-          ...wrongChoices,
-        ].sort(() => Math.random() - 0.5);
-        return { entry, choices: allChoices };
-      });
-      setQuestions(qs);
+      setQuestions(buildBasicQuestions(shuffled));
     } else {
       setQuestions(shuffled.map((entry) => ({ entry })));
     }
+    setCurrentIdx(0);
+    setRound(roundNum);
+    setWrongInRound([]);
+    setAnswer("");
+    setSelectedChoice(null);
+    setShowResult(false);
+    setIsCorrect(false);
+  }, [quizType]);
+
+  useEffect(() => {
+    startRound(entries, 1);
     setLoading(false);
-  }, [entries, quizType]);
+  }, [entries, startRound]);
 
   if (loading) {
     return (
@@ -70,46 +84,51 @@ export function VocabQuiz({
   const current = questions[currentIdx];
   if (!current) return null;
 
-  const totalQ = questions.length;
-
-  function checkBasicAnswer(selected: string) {
-    const correct =
-      selected.toLowerCase().trim() ===
-      current.entry.word.toLowerCase().trim();
-    setIsCorrect(correct);
-    if (correct) setCorrectCount((prev) => prev + 1);
-    setShowResult(true);
-  }
+  const roundTotal = questions.length;
 
   function handleBasicSelect(word: string) {
     setSelectedChoice(word);
-    checkBasicAnswer(word);
+    const correct = word.toLowerCase().trim() === current.entry.word.toLowerCase().trim();
+    setIsCorrect(correct);
+    if (correct) {
+      setTotalCorrect((prev) => prev + 1);
+    } else {
+      setWrongInRound((prev) => [...prev, current.entry]);
+    }
+    setShowResult(true);
   }
 
   function handleSpellingSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!answer.trim()) return;
-    const correct =
-      answer.toLowerCase().trim() ===
-      current.entry.word.toLowerCase().trim();
-
+    const correct = answer.toLowerCase().trim() === current.entry.word.toLowerCase().trim();
+    setIsCorrect(correct);
     if (correct) {
-      setIsCorrect(true);
-      setCorrectCount((prev) => prev + 1);
-      setShowResult(true);
-      setRetrying(false);
+      setTotalCorrect((prev) => prev + 1);
     } else {
-      // 틀림 → 재시도 (답 보여주고 다시 입력)
-      setRetrying(true);
-      setAnswer("");
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setWrongInRound((prev) => [...prev, current.entry]);
     }
+    setShowResult(true);
   }
 
   function handleNext() {
-    if (currentIdx + 1 >= totalQ) {
-      const finalCorrect = correctCount + (isCorrect ? 1 : 0);
-      onComplete(totalQ, finalCorrect);
+    if (currentIdx + 1 >= roundTotal) {
+      // 라운드 종료
+      const wrongAfterThis = isCorrect ? wrongInRound : [...wrongInRound, current.entry];
+      const correctAfterThis = totalCorrect + (isCorrect ? 1 : 0);
+
+      // 이미 wrongInRound에 추가됐으므로 그걸 사용
+      // (handleBasicSelect/handleSpellingSubmit에서 이미 추가됨)
+      if (wrongInRound.length === 0 && isCorrect) {
+        // 이번 라운드 전부 맞춤 → 완료
+        onComplete(totalWords, correctAfterThis);
+      } else {
+        // 틀린 것만 다음 라운드
+        const nextWrong = isCorrect ? wrongInRound : wrongInRound;
+        // wrongInRound은 이미 틀린 것들이 들어있음 (현재 문제 포함)
+        startRound(wrongInRound, round + 1);
+        setTotalCorrect(correctAfterThis);
+      }
       return;
     }
     setCurrentIdx((prev) => prev + 1);
@@ -117,7 +136,6 @@ export function VocabQuiz({
     setSelectedChoice(null);
     setShowResult(false);
     setIsCorrect(false);
-    setRetrying(false);
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
@@ -126,7 +144,8 @@ export function VocabQuiz({
       {/* Progress */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm font-semibold text-gray-500">
-          {currentIdx + 1} / {totalQ}
+          {round > 1 && <span className="text-amber-500 mr-1">재도전 </span>}
+          {currentIdx + 1} / {roundTotal}
         </span>
         <button onClick={onCancel} className="text-sm text-gray-400">
           그만하기
@@ -137,8 +156,11 @@ export function VocabQuiz({
       <div className="h-1.5 bg-gray-200 rounded-full mb-6 overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] rounded-full transition-all duration-300"
-          style={{ width: `${((currentIdx + 1) / totalQ) * 100}%` }}
+          style={{ width: `${(totalCorrect / totalWords) * 100}%` }}
         />
+      </div>
+      <div className="text-right text-xs text-gray-400 -mt-5 mb-4">
+        {totalCorrect}/{totalWords} 완료
       </div>
 
       {/* Question */}
@@ -178,65 +200,49 @@ export function VocabQuiz({
           })}
         </div>
       ) : (
-        <>
-          {retrying && (
-            <div className="text-center mb-3 text-red-500 font-semibold text-sm">
-              틀렸어요! 다시 입력해보세요
-              <div className="text-xs text-gray-400 mt-1">
-                힌트: <span className="font-mono tracking-wider">{current.entry.word[0]}{"_".repeat(current.entry.word.length - 1)}</span>
-              </div>
-            </div>
+        <form onSubmit={handleSpellingSubmit}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            disabled={showResult}
+            placeholder="영어 단어를 입력하세요"
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3.5 text-base text-center font-semibold focus:border-[#6c5ce7] focus:outline-none"
+            autoFocus
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          {!showResult && (
+            <button
+              type="submit"
+              disabled={!answer.trim()}
+              className="w-full mt-3 bg-[var(--accent,#6c5ce7)] text-white py-3 rounded-xl font-bold disabled:opacity-40"
+            >
+              확인
+            </button>
           )}
-          <form onSubmit={handleSpellingSubmit}>
-            <input
-              ref={inputRef}
-              type="text"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              disabled={showResult}
-              placeholder="영어 단어를 입력하세요"
-              className={`w-full border-2 rounded-xl px-4 py-3.5 text-base text-center font-semibold focus:outline-none ${
-                retrying
-                  ? "border-red-300 focus:border-red-400"
-                  : "border-gray-200 focus:border-[#6c5ce7]"
-              }`}
-              autoFocus
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-            {!showResult && (
-              <button
-                type="submit"
-                disabled={!answer.trim()}
-                className="w-full mt-3 bg-[var(--accent,#6c5ce7)] text-white py-3 rounded-xl font-bold disabled:opacity-40"
-              >
-                확인
-              </button>
-            )}
-          </form>
-        </>
+        </form>
       )}
 
       {/* Result feedback */}
       {showResult && (
         <div className="mt-4 text-center">
-          {quizType === "basic" ? (
-            <div
-              className={`text-lg font-bold ${isCorrect ? "text-green-600" : "text-red-500"}`}
-            >
-              {isCorrect ? "정답! 🎉" : `오답! 정답: ${current.entry.word}`}
-            </div>
-          ) : (
-            <div className="text-lg font-bold text-green-600">
-              정답! 🎉 🍬+1
-            </div>
-          )}
+          <div
+            className={`text-lg font-bold ${isCorrect ? "text-green-600" : "text-red-500"}`}
+          >
+            {isCorrect ? "정답! 🎉" : `오답! 정답: ${current.entry.word}`}
+          </div>
           <button
             onClick={handleNext}
             className="mt-4 w-full bg-[var(--accent,#6c5ce7)] text-white py-3 rounded-xl font-bold"
           >
-            {currentIdx + 1 >= totalQ ? "결과 보기" : "다음 문제"}
+            {currentIdx + 1 >= roundTotal
+              ? wrongInRound.length > 0 || !isCorrect
+                ? "틀린 문제 다시 풀기"
+                : "결과 보기"
+              : "다음 문제"}
           </button>
         </div>
       )}
