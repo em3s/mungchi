@@ -9,6 +9,7 @@ import {
   createList,
   addEntry,
   removeEntry,
+  updateEntry,
   toggleSpelling,
   renameList,
   saveQuizResult,
@@ -18,13 +19,12 @@ import {
 } from "@/lib/vocab";
 import { addTransaction, getBalance } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
-import { TaskItem } from "@/components/TaskItem";
 import { WordInput } from "@/components/WordInput";
 import { VocabQuiz } from "@/components/VocabQuiz";
 import { Toast } from "@/components/Toast";
 import { VocabSettings } from "@/components/VocabSettings";
 import { useToast } from "@/hooks/useToast";
-import type { Task, VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
+import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
 type ViewState = "home" | "list" | "quiz" | "result";
 
@@ -66,6 +66,10 @@ export default function VocabPage({
   const [showSettings, setShowSettings] = useState(false);
   const longPressRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; spelling: boolean }>>(new Map());
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editWord, setEditWord] = useState("");
+  const [editMeaning, setEditMeaning] = useState("");
+  const editWordRef = useRef<HTMLInputElement>(null);
 
   // Vocab lists
   const [vocabLists, setVocabLists] = useState<
@@ -168,6 +172,34 @@ export default function VocabPage({
     } else {
       showToast("이미 추가된 단어예요");
     }
+  }
+
+  function handleStartEdit(entry: VocabEntry) {
+    setEditingEntryId(entry.id);
+    setEditWord(entry.word);
+    setEditMeaning(entry.meaning);
+    setTimeout(() => editWordRef.current?.focus(), 0);
+  }
+
+  async function handleSaveEdit(entryId: string) {
+    const w = editWord.trim();
+    const m = editMeaning.trim();
+    if (!w || !m) return;
+    const entry = entries.find((e) => e.id === entryId);
+    if (entry && w === entry.word && m === entry.meaning) {
+      setEditingEntryId(null);
+      return;
+    }
+    const ok = await updateEntry(childId, selectedListId!, entryId, w, m);
+    if (ok) {
+      setEntries((prev) =>
+        prev.map((e) => (e.id === entryId ? { ...e, word: w, meaning: m } : e)),
+      );
+      showToast("수정 완료!");
+    } else {
+      showToast("수정에 실패했어요");
+    }
+    setEditingEntryId(null);
   }
 
   async function handleRemoveWord(entryId: string) {
@@ -397,34 +429,83 @@ export default function VocabPage({
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {entries.map((entry) => {
-                      const task: Task = {
-                        id: entry.id,
-                        user_id: entry.user_id,
-                        title: `${entry.word}  ${entry.meaning}`,
-                        date: "",
-                        completed: entry.spelling,
-                        completed_at: null,
-                        priority: 0,
-                        notes: null,
-                      };
+                      if (editingEntryId === entry.id) {
+                        return (
+                          <li
+                            key={entry.id}
+                            className="bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+                          >
+                            <input
+                              ref={editWordRef}
+                              value={editWord}
+                              onChange={(e) => setEditWord(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(entry.id); }}
+                              placeholder="단어 / 구문"
+                              className="w-full text-base font-semibold text-gray-800 bg-transparent outline-none border-b border-gray-200 pb-2 mb-2"
+                            />
+                            <input
+                              value={editMeaning}
+                              onChange={(e) => setEditMeaning(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(entry.id); }}
+                              placeholder="뜻"
+                              className="w-full text-sm text-gray-600 bg-transparent outline-none mb-2"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => setEditingEntryId(null)}
+                                className="text-xs text-gray-400 px-3 py-1.5 rounded-lg active:bg-gray-100"
+                              >
+                                취소
+                              </button>
+                              <button
+                                onClick={() => handleSaveEdit(entry.id)}
+                                disabled={!editWord.trim() || !editMeaning.trim()}
+                                className="text-xs font-semibold text-white bg-[var(--accent,#6c5ce7)] px-3 py-1.5 rounded-lg active:opacity-80 disabled:opacity-40"
+                              >
+                                저장
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      }
                       return (
-                        <TaskItem
+                        <li
                           key={entry.id}
-                          task={task}
-                          checkOnly
-                          onToggle={async () => {
-                            const newVal = !entry.spelling;
-                            const ok = await toggleSpelling(childId, selectedListId!, entry.id, newVal);
-                            if (ok) {
-                              setEntries((prev) =>
-                                prev.map((e) =>
-                                  e.id === entry.id ? { ...e, spelling: newVal } : e,
-                                ),
-                              );
-                            }
-                          }}
-                          onDelete={() => handleRemoveWord(entry.id)}
-                        />
+                          className="flex items-center gap-3 bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-[18px] md:gap-4 md:rounded-2xl"
+                        >
+                          <button
+                            onClick={async () => {
+                              const newVal = !entry.spelling;
+                              const ok = await toggleSpelling(childId, selectedListId!, entry.id, newVal);
+                              if (ok) {
+                                setEntries((prev) =>
+                                  prev.map((e) =>
+                                    e.id === entry.id ? { ...e, spelling: newVal } : e,
+                                  ),
+                                );
+                              }
+                            }}
+                            className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm md:w-[34px] md:h-[34px] md:text-base ${
+                              entry.spelling
+                                ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
+                                : "bg-white border-[var(--accent,#6c5ce7)]"
+                            }`}
+                          >
+                            {entry.spelling ? "✓" : ""}
+                          </button>
+                          <span
+                            onClick={() => handleStartEdit(entry)}
+                            className="flex-1 text-base md:text-lg"
+                          >
+                            {entry.word}  <span className="text-gray-400">{entry.meaning}</span>
+                          </span>
+                          <button
+                            onClick={() => handleRemoveWord(entry.id)}
+                            className="text-gray-400 text-sm px-1 active:text-red-500 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </li>
                       );
                     })}
                   </ul>

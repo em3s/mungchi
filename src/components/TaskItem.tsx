@@ -62,6 +62,7 @@ export function TaskItem({ task, onToggle, onEdit, onDelete, checkOnly }: TaskIt
       ) : (
         <span
           onClick={() => {
+            if (!onEdit) return;
             setValue(task.title);
             setEditing(true);
           }}

@@ -221,6 +221,24 @@ export async function removeEntry(
   return true;
 }
 
+// --- 단어 수정 ---
+
+export async function updateEntry(
+  childId: string,
+  listId: string,
+  entryId: string,
+  word: string,
+  meaning: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("vocab_entries")
+    .update({ word, meaning })
+    .eq("id", entryId);
+  if (error) return false;
+  invalidate(`vocab_entries:${childId}:${listId}`);
+  return true;
+}
+
 // --- 스펠링 토글 ---
 
 export async function toggleSpelling(
