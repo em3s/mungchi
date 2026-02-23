@@ -5,7 +5,7 @@
 ## 개요
 
 가족 구성원의 일일 할일을 관리하고, 달성도를 추적하며, 영어 단어 학습을 지원하는 시스템.
-별사탕 화폐로 학습 동기를 부여. 메인 디바이스는 **iPad 9 (PWA)**.
+초코 화폐로 학습 동기를 부여. 메인 디바이스는 **iPad 9 (PWA)**.
 
 ## 유저 구조
 
@@ -44,9 +44,9 @@
   - `page.tsx` — 홈 (유저 선택)
   - `[childId]/page.tsx` — 대시보드 (달력 + 달성률 + 할일)
   - `[childId]/badges/page.tsx` — 뱃지 컬렉션
-  - `[childId]/shop/page.tsx` — 별사탕 상점 (잔액, 별사탕샵, 거래내역 페이지네이션)
+  - `[childId]/shop/page.tsx` — 초코 상점 (잔액, 초코샵, 거래내역 페이지네이션)
   - `[childId]/vocab/page.tsx` — 영어 단어장 (단어 추가, 퀴즈)
-  - `[childId]/game/page.tsx` — 공룡 달리기 게임 (1🍬/판)
+  - `[childId]/game/page.tsx` — 공룡 달리기 게임 (1🍪/판)
   - `[childId]/star/page.tsx` — 개인 달성맵
   - `[childId]/map/page.tsx` — 합산 달성맵 (쌍둥이별, child만 집계)
   - `admin/page.tsx` — 관리 페이지
@@ -67,7 +67,7 @@
   - `features.ts` — feature flag (DB 기반, admin에서 토글)
   - `cache.ts` — 클라이언트 TTL 캐시 (Map 기반)
   - `date.ts` — KST 날짜 유틸 (todayKST, toKSTDate)
-  - `coins.ts` — 별사탕 화폐 시스템
+  - `coins.ts` — 초코 화폐 시스템
   - `vocab.ts` — 영어 단어장 시스템
   - `supabase/client.ts` — Supabase 클라이언트
   - `badges/` — 뱃지 시스템 (definitions, engine, types)
@@ -93,11 +93,11 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 - **쌍둥이별** (합산): 22노드, 최대 5000개 (child role만 합산)
 - **개인별**: 22노드, 최대 2500개
 
-## 별사탕 🍬 화폐 시스템
+## 초코 🍪 화폐 시스템
 
-- DB: `coin_balances` (잔액), `coin_transactions` (거래), `coin_rewards` (별사탕샵 카탈로그)
+- DB: `coin_balances` (잔액), `coin_transactions` (거래), `coin_rewards` (초코샵 카탈로그)
 - 거래 타입: task_complete, task_uncomplete, allclear_bonus, exchange, admin_adjust, vocab_quiz, game
-- 별사탕샵: 보상 아이템 무제한 구매 가능 (잔액 충분 시), emoji-picker-react로 이모지 선택
+- 초코샵: 보상 아이템 무제한 구매 가능 (잔액 충분 시), emoji-picker-react로 이모지 선택
 
 ## 영어 단어장 📖 시스템
 
@@ -106,9 +106,9 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 - `vocab_list_meta`: id(UUID PK), user_id, name, created_at
 - `vocab_entries.list_id`: 단어장 FK, `vocab_entries.spelling`: 스펠링 퀴즈 대상 여부
 - 모든 단어장 항상 편집 가능 (날짜 제한 없음)
-- 퀴즈 보상: 객관식=config.basic_reward(기본1🍬)/완주, 스펠링=1🍬×맞춘수 (매회 지급, 1일 제한 없음)
+- 퀴즈 보상: 객관식=config.basic_reward(기본1🍪)/완주, 스펠링=1🍪×맞춘수 (매회 지급, 1일 제한 없음)
 - 객관식: Levenshtein 편집거리 기반 유사 단어 오답지 생성
-- 스펠링: spelling=true인 단어만 출제, 정답 시 +1🍬 플로팅 애니메이션
+- 스펠링: spelling=true인 단어만 출제, 정답 시 +1🍪 플로팅 애니메이션
 - 퀴즈 구조: 틀린 문제 재출제 (라운드), 전체 정답 시 완료
 - TTS 발음: Web Speech API (`speechSynthesis`, en-US), 단어 리스트에서 ▶ 버튼으로 발음 재생
 
@@ -131,8 +131,8 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 
 - PIN 인증 후 접근
 - 피쳐플래그 토글 (DB)
-- 별사탕 관리 (잔액, 수동 조정, 거래내역)
-- 별사탕샵 카탈로그 (추가/삭제/활성화, emoji-picker-react)
+- 초코 관리 (잔액, 수동 조정, 거래내역)
+- 초코샵 카탈로그 (추가/삭제/활성화, emoji-picker-react)
 - 단어장 보상 설정
 - 사전 관리 (단건/벌크 추가)
 - 벌크 할일 추가 + 템플릿
