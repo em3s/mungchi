@@ -118,10 +118,17 @@ export interface DictionaryEntry {
   created_at?: string;
 }
 
+export interface VocabList {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
+
 export interface VocabEntry {
   id: string;
   user_id: string;
-  date: string;
+  list_id: string;
   dictionary_id: string | null;
   word: string;
   meaning: string;
@@ -132,7 +139,7 @@ export interface VocabEntry {
 export interface VocabQuiz {
   id: string;
   user_id: string;
-  date: string;
+  list_id: string;
   quiz_type: "basic" | "spelling";
   total_questions: number;
   correct_answers: number;

@@ -13,7 +13,7 @@ import {
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
 
 const ENTRIES_TTL = 30_000; // 30초
-const DATES_TTL = 30_000; // 30초
+const LISTS_TTL = 30_000; // 30초
 const CONFIG_TTL = 60_000; // 1분
 
 // --- 사전: IndexedDB(정적+동적) → 메모리 캐시 ---
@@ -90,53 +90,71 @@ export function searchDictionary(
 
 export async function getVocabLists(
   childId: string,
-): Promise<{ date: string; count: number; spellingCount: number; title: string }[]> {
-  return cached(`vocab_lists:${childId}`, DATES_TTL, async () => {
-    const [entriesRes, metaRes] = await Promise.all([
-      supabase.from("vocab_entries").select("date, spelling").eq("user_id", childId),
+): Promise<{ id: string; name: string; count: number; spellingCount: number; createdAt: string }[]> {
+  return cached(`vocab_lists:${childId}`, LISTS_TTL, async () => {
+    const [metaRes, entriesRes] = await Promise.all([
       supabase
         .from("vocab_list_meta")
-        .select("date, title")
+        .select("id, name, created_at")
+        .eq("user_id", childId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("vocab_entries")
+        .select("list_id, spelling")
         .eq("user_id", childId),
     ]);
+
     const counts = new Map<string, { total: number; spelling: number }>();
     if (entriesRes.data) {
-      for (const row of entriesRes.data as { date: string; spelling: boolean }[]) {
-        const prev = counts.get(row.date) ?? { total: 0, spelling: 0 };
+      for (const row of entriesRes.data as { list_id: string; spelling: boolean }[]) {
+        const prev = counts.get(row.list_id) ?? { total: 0, spelling: 0 };
         prev.total += 1;
         if (row.spelling) prev.spelling += 1;
-        counts.set(row.date, prev);
+        counts.set(row.list_id, prev);
       }
     }
-    const titles = new Map<string, string>();
-    if (metaRes.data) {
-      for (const row of metaRes.data as { date: string; title: string }[]) {
-        titles.set(row.date, row.title);
-      }
-    }
-    return Array.from(counts.entries())
-      .map(([date, c]) => ({
-        date,
+
+    const lists = (metaRes.data ?? []) as { id: string; name: string; created_at: string }[];
+    return lists.map((meta) => {
+      const c = counts.get(meta.id) ?? { total: 0, spelling: 0 };
+      return {
+        id: meta.id,
+        name: meta.name,
         count: c.total,
         spellingCount: c.spelling,
-        title: titles.get(date) ?? "",
-      }))
-      .sort((a, b) => b.date.localeCompare(a.date));
+        createdAt: meta.created_at,
+      };
+    });
   });
 }
 
-// --- 단어장 제목 ---
+// --- 단어장 생성 ---
 
-export async function setListTitle(
+export async function createList(
   childId: string,
-  date: string,
-  title: string,
+  name: string,
+): Promise<{ ok: boolean; listId?: string }> {
+  const { data, error } = await supabase
+    .from("vocab_list_meta")
+    .insert({ user_id: childId, name })
+    .select("id")
+    .single();
+  if (error) return { ok: false };
+  invalidate(`vocab_lists:${childId}`);
+  return { ok: true, listId: (data as { id: string }).id };
+}
+
+// --- 단어장 이름 변경 ---
+
+export async function renameList(
+  childId: string,
+  listId: string,
+  name: string,
 ): Promise<boolean> {
-  const { error } = await supabase.from("vocab_list_meta").upsert({
-    user_id: childId,
-    date,
-    title,
-  });
+  const { error } = await supabase
+    .from("vocab_list_meta")
+    .update({ name })
+    .eq("id", listId);
   if (error) return false;
   invalidate(`vocab_lists:${childId}`);
   return true;
@@ -146,14 +164,14 @@ export async function setListTitle(
 
 export async function getEntries(
   childId: string,
-  date: string,
+  listId: string,
 ): Promise<VocabEntry[]> {
-  return cached(`vocab_entries:${childId}:${date}`, ENTRIES_TTL, async () => {
+  return cached(`vocab_entries:${childId}:${listId}`, ENTRIES_TTL, async () => {
     const { data } = await supabase
       .from("vocab_entries")
       .select("*")
       .eq("user_id", childId)
-      .eq("date", date)
+      .eq("list_id", listId)
       .order("created_at");
     return (data as VocabEntry[]) ?? [];
   });
@@ -161,7 +179,7 @@ export async function getEntries(
 
 export async function addEntry(
   childId: string,
-  date: string,
+  listId: string,
   dictEntry: DictionaryEntry | null,
   custom?: { word: string; meaning: string },
 ): Promise<{ ok: boolean; entry?: VocabEntry }> {
@@ -171,7 +189,7 @@ export async function addEntry(
 
   const row: Record<string, unknown> = {
     user_id: childId,
-    date,
+    list_id: listId,
     word,
     meaning,
   };
@@ -183,14 +201,14 @@ export async function addEntry(
     .select()
     .single();
   if (error) return { ok: false };
-  invalidate(`vocab_entries:${childId}:${date}`);
+  invalidate(`vocab_entries:${childId}:${listId}`);
   invalidate(`vocab_lists:${childId}`);
   return { ok: true, entry: data as VocabEntry };
 }
 
 export async function removeEntry(
   childId: string,
-  date: string,
+  listId: string,
   entryId: string,
 ): Promise<boolean> {
   const { error } = await supabase
@@ -198,7 +216,7 @@ export async function removeEntry(
     .delete()
     .eq("id", entryId);
   if (error) return false;
-  invalidate(`vocab_entries:${childId}:${date}`);
+  invalidate(`vocab_entries:${childId}:${listId}`);
   invalidate(`vocab_lists:${childId}`);
   return true;
 }
@@ -207,7 +225,7 @@ export async function removeEntry(
 
 export async function toggleSpelling(
   childId: string,
-  date: string,
+  listId: string,
   entryId: string,
   value: boolean,
 ): Promise<boolean> {
@@ -216,50 +234,30 @@ export async function toggleSpelling(
     .update({ spelling: value })
     .eq("id", entryId);
   if (error) return false;
-  invalidate(`vocab_entries:${childId}:${date}`);
-  invalidate(`vocab_lists:${childId}`);
-  return true;
-}
-
-// --- 날짜 변경 ---
-
-export async function updateVocabDate(
-  childId: string,
-  oldDate: string,
-  newDate: string,
-): Promise<boolean> {
-  const { error } = await supabase
-    .from("vocab_entries")
-    .update({ date: newDate })
-    .eq("user_id", childId)
-    .eq("date", oldDate);
-  if (error) return false;
-  invalidate(`vocab_entries:${childId}:${oldDate}`);
-  invalidate(`vocab_entries:${childId}:${newDate}`);
+  invalidate(`vocab_entries:${childId}:${listId}`);
   invalidate(`vocab_lists:${childId}`);
   return true;
 }
 
 // --- 퀴즈 ---
 
-// 여러 날짜의 퀴즈 완료 상태를 한번에 조회
 export async function getQuizStatuses(
   childId: string,
-  dates: string[],
+  listIds: string[],
 ): Promise<Map<string, { basic: boolean; spelling: boolean }>> {
   const result = new Map<string, { basic: boolean; spelling: boolean }>();
-  for (const d of dates) result.set(d, { basic: false, spelling: false });
-  if (dates.length === 0) return result;
+  for (const id of listIds) result.set(id, { basic: false, spelling: false });
+  if (listIds.length === 0) return result;
 
   const { data } = await supabase
     .from("vocab_quizzes")
-    .select("date, quiz_type")
+    .select("list_id, quiz_type")
     .eq("user_id", childId)
-    .in("date", dates)
+    .in("list_id", listIds)
     .gt("candy_earned", 0);
 
-  for (const row of (data ?? []) as { date: string; quiz_type: string }[]) {
-    const s = result.get(row.date);
+  for (const row of (data ?? []) as { list_id: string; quiz_type: string }[]) {
+    const s = result.get(row.list_id);
     if (s) {
       if (row.quiz_type === "basic") s.basic = true;
       if (row.quiz_type === "spelling") s.spelling = true;
@@ -268,24 +266,9 @@ export async function getQuizStatuses(
   return result;
 }
 
-export async function hasEarnedToday(
-  childId: string,
-  date: string,
-  quizType: VocabQuizType,
-): Promise<boolean> {
-  const { count } = await supabase
-    .from("vocab_quizzes")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", childId)
-    .eq("date", date)
-    .eq("quiz_type", quizType)
-    .gt("candy_earned", 0);
-  return (count ?? 0) > 0;
-}
-
 export async function saveQuizResult(
   childId: string,
-  date: string,
+  listId: string,
   quizType: VocabQuizType,
   totalQuestions: number,
   correctAnswers: number,
@@ -293,7 +276,7 @@ export async function saveQuizResult(
 ): Promise<{ ok: boolean }> {
   const { error } = await supabase.from("vocab_quizzes").insert({
     user_id: childId,
-    date,
+    list_id: listId,
     quiz_type: quizType,
     total_questions: totalQuestions,
     correct_answers: correctAnswers,
@@ -369,4 +352,3 @@ export function getSimilarWords(
   // dist=0 제외 (동일 단어)
   return scored.filter((s) => s.dist > 0).slice(0, count).map((s) => s.entry);
 }
-

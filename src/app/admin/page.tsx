@@ -28,6 +28,7 @@ import {
   setVocabConfig as saveVocabConfig,
   invalidateDictionary,
   loadDictionary,
+  createList,
 } from "@/lib/vocab";
 import type { DictionaryEntry } from "@/lib/types";
 import type { CoinReward, CoinTransaction } from "@/lib/types";
@@ -129,7 +130,6 @@ export default function AdminPage() {
 
   // 랜덤 단어장
   const [randomChildIds, setRandomChildIds] = useState<string[]>(["sihyun", "misong"]);
-  const [randomDate, setRandomDate] = useState(todayKST());
   const [randomCount, setRandomCount] = useState("10");
   const [randomTitle, setRandomTitle] = useState("");
   const [randomLevel, setRandomLevel] = useState<string>("all");
@@ -904,18 +904,19 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* 날짜 + 단어 수 + 레벨 */}
+        {/* 단어장 이름 + 단어 수 + 레벨 */}
+        <div className="mb-4">
+          <label className="text-sm font-semibold text-gray-600 block mb-1">단어장 이름</label>
+          <input
+            type="text"
+            value={randomTitle}
+            onChange={(e) => setRandomTitle(e.target.value)}
+            placeholder="예: 동물 단어, 3월 1주차"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+          />
+        </div>
         <div className="flex gap-2 mb-4">
-          <div className="flex-1">
-            <label className="text-sm font-semibold text-gray-600 block mb-1">날짜</label>
-            <input
-              type="date"
-              value={randomDate}
-              onChange={(e) => setRandomDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="w-20">
+          <div className="w-24">
             <label className="text-sm font-semibold text-gray-600 block mb-1">단어 수</label>
             <input
               type="number"
@@ -937,18 +938,6 @@ export default function AdminPage() {
               <option value="3">어려움</option>
             </select>
           </div>
-        </div>
-
-        {/* 제목 (선택) */}
-        <div className="mb-4">
-          <label className="text-sm font-semibold text-gray-600 block mb-1">제목 (선택)</label>
-          <input
-            type="text"
-            value={randomTitle}
-            onChange={(e) => setRandomTitle(e.target.value)}
-            placeholder="예: 동물 단어, 3월 1주차"
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-          />
         </div>
 
         {/* 미리보기 */}
@@ -988,7 +977,8 @@ export default function AdminPage() {
           <button
             onClick={async () => {
               const count = parseInt(randomCount);
-              if (!count || count <= 0 || randomChildIds.length === 0) return;
+              const listName = randomTitle.trim();
+              if (!count || count <= 0 || randomChildIds.length === 0 || !listName) return;
               setRandomGenerating(true);
               try {
                 const dict = await loadDictionary();
@@ -999,36 +989,22 @@ export default function AdminPage() {
 
                 let created = 0;
                 for (const childId of randomChildIds) {
-                  // 해당 날짜에 이미 있는 단어 제외
-                  const { data: existing } = await supabase
-                    .from("vocab_entries")
-                    .select("word")
-                    .eq("user_id", childId)
-                    .eq("date", randomDate);
-                  const existingWords = new Set(existing?.map((e) => e.word) ?? []);
-                  const available = pool.filter((e) => !existingWords.has(e.word));
+                  const { ok, listId } = await createList(childId, listName);
+                  if (!ok || !listId) continue;
 
-                  const shuffled = [...available].sort(() => Math.random() - 0.5);
+                  const shuffled = [...pool].sort(() => Math.random() - 0.5);
                   const selected = shuffled.slice(0, count);
                   if (selected.length === 0) continue;
 
                   const rows = selected.map((e) => ({
                     user_id: childId,
-                    date: randomDate,
+                    list_id: listId,
                     dictionary_id: e.id,
                     word: e.word,
                     meaning: e.meaning,
                   }));
                   const { error } = await supabase.from("vocab_entries").insert(rows);
                   if (error) throw error;
-
-                  if (randomTitle.trim()) {
-                    await supabase.from("vocab_list_meta").upsert({
-                      user_id: childId,
-                      date: randomDate,
-                      title: randomTitle.trim(),
-                    });
-                  }
                   created += selected.length;
                 }
 
@@ -1043,7 +1019,7 @@ export default function AdminPage() {
                 setRandomGenerating(false);
               }
             }}
-            disabled={randomChildIds.length === 0 || !randomCount || parseInt(randomCount) <= 0 || randomGenerating}
+            disabled={randomChildIds.length === 0 || !randomCount || parseInt(randomCount) <= 0 || !randomTitle.trim() || randomGenerating}
             className="flex-1 bg-[#6c5ce7] text-white py-3 rounded-xl font-bold text-sm disabled:opacity-40 active:opacity-80"
           >
             {randomGenerating ? "생성 중..." : "단어장 생성"}

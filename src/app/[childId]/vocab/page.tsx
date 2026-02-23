@@ -3,15 +3,14 @@
 import { useState, useEffect, useCallback, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
-import { todayKST, WEEKDAYS } from "@/lib/date";
 import {
   getEntries,
   getVocabLists,
+  createList,
   addEntry,
   removeEntry,
   toggleSpelling,
-  updateVocabDate,
-  setListTitle,
+  renameList,
   saveQuizResult,
   getVocabConfig,
   getQuizStatuses,
@@ -29,14 +28,6 @@ import type { Task, VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/typ
 
 type ViewState = "home" | "list" | "quiz" | "result";
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr + "T00:00:00");
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
-  const weekday = WEEKDAYS[d.getDay()];
-  return `${m}월 ${day}일 (${weekday})`;
-}
-
 export default function VocabPage({
   params,
 }: {
@@ -45,7 +36,6 @@ export default function VocabPage({
   const { childId } = use(params);
   const router = useRouter();
   const { message: toastMsg, showToast } = useToast();
-  const today = todayKST();
 
   // Feature flag guard
   const [flagsLoaded, setFlagsLoaded] = useState(false);
@@ -61,8 +51,8 @@ export default function VocabPage({
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<ViewState>("home");
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [newDate, setNewDate] = useState(today);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [newListName, setNewListName] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [quizType, setQuizType] = useState<VocabQuizType>("basic");
   const [quizResult, setQuizResult] = useState<{
@@ -77,9 +67,9 @@ export default function VocabPage({
   const longPressRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; spelling: boolean }>>(new Map());
 
-  // Vocab lists (date + count + spellingCount + title)
+  // Vocab lists
   const [vocabLists, setVocabLists] = useState<
-    { date: string; count: number; spellingCount: number; title: string }[]
+    { id: string; name: string; count: number; spellingCount: number; createdAt: string }[]
   >([]);
   const [listTitle, setListTitleState] = useState("");
 
@@ -87,18 +77,18 @@ export default function VocabPage({
     const lists = await getVocabLists(childId);
     setVocabLists(lists);
     if (lists.length > 0) {
-      const statuses = await getQuizStatuses(childId, lists.map((l) => l.date));
+      const statuses = await getQuizStatuses(childId, lists.map((l) => l.id));
       setQuizStatuses(statuses);
     }
   }, [childId]);
 
-  // Load entries for selected date
+  // Load entries for selected list
   const loadEntries = useCallback(async () => {
-    if (!selectedDate) return;
-    const data = await getEntries(childId, selectedDate);
+    if (!selectedListId) return;
+    const data = await getEntries(childId, selectedListId);
     setEntries(data);
     setLoading(false);
-  }, [childId, selectedDate]);
+  }, [childId, selectedListId]);
 
   // Initial load
   useEffect(() => {
@@ -111,60 +101,57 @@ export default function VocabPage({
     if (coins) getBalance(childId).then(setCoinBalance);
   }, [childId, flagsLoaded, featureDisabled, loadLists]);
 
-  // Load entries when selectedDate changes (list view only)
+  // Load entries when selectedListId changes (list view only)
   useEffect(() => {
-    if (selectedDate && view === "list") loadEntries();
-  }, [selectedDate, loadEntries, view]);
+    if (selectedListId && view === "list") loadEntries();
+  }, [selectedListId, loadEntries, view]);
 
   if (!flagsLoaded || featureDisabled) return null;
 
-  const isEditable = selectedDate === today;
   const minWords = config.min_words ?? 3;
 
-  function handleOpenList(date: string) {
-    const list = vocabLists.find((l) => l.date === date);
-    setListTitleState(list?.title ?? "");
-    setSelectedDate(date);
+  function handleOpenList(listId: string) {
+    const list = vocabLists.find((l) => l.id === listId);
+    setListTitleState(list?.name ?? "");
+    setSelectedListId(listId);
     setLoading(true);
     setView("list");
   }
 
-  function handleCreateNew() {
-    setListTitleState("");
-    setSelectedDate(newDate);
-    setLoading(true);
-    setView("list");
+  async function handleCreateNew() {
+    const name = newListName.trim();
+    if (!name) return;
+    const result = await createList(childId, name);
+    if (result.ok && result.listId) {
+      setListTitleState(name);
+      setSelectedListId(result.listId);
+      setNewListName("");
+      setLoading(true);
+      setView("list");
+    } else {
+      showToast("단어장 생성에 실패했어요");
+    }
   }
 
   function handleBackToHome() {
-    setSelectedDate(null);
+    setSelectedListId(null);
     setEntries([]);
     setListTitleState("");
+    setShowAddForm(false);
     setView("home");
     loadLists();
   }
 
   async function handleTitleSave() {
-    if (!selectedDate) return;
-    const ok = await setListTitle(childId, selectedDate, listTitle);
+    if (!selectedListId) return;
+    const ok = await renameList(childId, selectedListId, listTitle);
     if (ok) {
-      showToast("제목을 저장했어요");
-    }
-  }
-
-  async function handleChangeDate(newDateValue: string) {
-    if (!selectedDate || !newDateValue || newDateValue === selectedDate) return;
-    const ok = await updateVocabDate(childId, selectedDate, newDateValue);
-    if (ok) {
-      setSelectedDate(newDateValue);
-      showToast(`날짜를 ${formatDate(newDateValue)}로 변경했어요`);
-    } else {
-      showToast("날짜 변경에 실패했어요");
+      showToast("이름을 저장했어요");
     }
   }
 
   async function handleAddWord(dictEntry: DictionaryEntry) {
-    const result = await addEntry(childId, selectedDate!, dictEntry);
+    const result = await addEntry(childId, selectedListId!, dictEntry);
     if (result.ok && result.entry) {
       setEntries((prev) => [...prev, result.entry!]);
       showToast(`"${dictEntry.word}" 추가!`);
@@ -174,7 +161,7 @@ export default function VocabPage({
   }
 
   async function handleAddCustom(word: string, meaning: string) {
-    const result = await addEntry(childId, selectedDate!, null, { word, meaning });
+    const result = await addEntry(childId, selectedListId!, null, { word, meaning });
     if (result.ok && result.entry) {
       setEntries((prev) => [...prev, result.entry!]);
       showToast(`"${word}" 추가!`);
@@ -184,7 +171,7 @@ export default function VocabPage({
   }
 
   async function handleRemoveWord(entryId: string) {
-    const ok = await removeEntry(childId, selectedDate!, entryId);
+    const ok = await removeEntry(childId, selectedListId!, entryId);
     if (ok) {
       setEntries((prev) => prev.filter((e) => e.id !== entryId));
     }
@@ -195,11 +182,11 @@ export default function VocabPage({
     setView("quiz");
   }
 
-  async function handleStartQuizFromHome(date: string, type: VocabQuizType) {
-    setSelectedDate(date);
+  async function handleStartQuizFromHome(listId: string, type: VocabQuizType) {
+    setSelectedListId(listId);
     setQuizType(type);
     setLoading(true);
-    const [data] = await Promise.all([getEntries(childId, date), loadDictionary()]);
+    const [data] = await Promise.all([getEntries(childId, listId), loadDictionary()]);
     // 스펠링: spelling 체크된 단어만
     const quizEntries = type === "spelling" ? data.filter((e) => e.spelling) : data;
     setEntries(quizEntries);
@@ -217,7 +204,7 @@ export default function VocabPage({
 
     await saveQuizResult(
       childId,
-      selectedDate!,
+      selectedListId!,
       quizType,
       total,
       correct,
@@ -273,15 +260,17 @@ export default function VocabPage({
           {/* New vocab list */}
           <div className="flex items-center gap-2 mb-6">
             <input
-              type="date"
-              value={newDate}
-              max={today}
-              onChange={(e) => setNewDate(e.target.value)}
+              type="text"
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleCreateNew(); }}
+              placeholder="새 단어장 이름"
               className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-700"
             />
             <button
               onClick={handleCreateNew}
-              className="bg-[var(--accent,#6c5ce7)] text-white px-4 py-3 rounded-xl font-bold text-sm whitespace-nowrap active:opacity-80"
+              disabled={!newListName.trim()}
+              className="bg-[var(--accent,#6c5ce7)] text-white px-4 py-3 rounded-xl font-bold text-sm whitespace-nowrap active:opacity-80 disabled:opacity-40"
             >
               + 새 단어장
             </button>
@@ -297,23 +286,18 @@ export default function VocabPage({
           ) : (
             <ul className="flex flex-col gap-2">
               {vocabLists.map((item) => {
-                const qs = quizStatuses.get(item.date);
+                const qs = quizStatuses.get(item.id);
                 const canQuiz = item.count >= minWords;
                 return (
-                  <li key={item.date} className="bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                  <li key={item.id} className="bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                     <button
-                      onClick={() => handleOpenList(item.date)}
+                      onClick={() => handleOpenList(item.id)}
                       className="w-full flex items-center justify-between px-4 py-3.5 active:bg-gray-50 transition-colors rounded-[14px]"
                     >
                       <div className="text-left min-w-0 flex-1">
                         <div className="font-bold text-base text-gray-800">
-                          {item.title || formatDate(item.date)}
+                          {item.name}
                         </div>
-                        {item.title && (
-                          <div className="text-xs text-gray-400">
-                            {formatDate(item.date)}
-                          </div>
-                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-400">
@@ -325,7 +309,7 @@ export default function VocabPage({
                     {canQuiz && (
                       <div className="flex gap-2 px-4 pb-3 -mt-1">
                         <button
-                          onClick={() => handleStartQuizFromHome(item.date, "basic")}
+                          onClick={() => handleStartQuizFromHome(item.id, "basic")}
                           className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 ${
                             qs?.basic
                               ? "bg-blue-50 text-blue-400"
@@ -335,7 +319,7 @@ export default function VocabPage({
                           📝 객관식 {qs?.basic ? "✓" : `🍬${config.basic_reward ?? 1}`}
                         </button>
                         <button
-                          onClick={() => handleStartQuizFromHome(item.date, "spelling")}
+                          onClick={() => handleStartQuizFromHome(item.id, "spelling")}
                           disabled={item.spellingCount === 0}
                           className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 ${
                             item.spellingCount === 0
@@ -360,15 +344,6 @@ export default function VocabPage({
       {/* List View */}
       {view === "list" && (
         <>
-          {/* Sub-header */}
-          <div className="flex items-center gap-2 mb-2">
-            <input
-              type="date"
-              value={selectedDate ?? ""}
-              onChange={(e) => handleChangeDate(e.target.value)}
-              className="text-sm font-semibold text-gray-600 bg-transparent border-b border-dashed border-gray-300 px-1 py-0.5"
-            />
-          </div>
           {/* Title input */}
           <div className="mb-4">
             <input
@@ -376,7 +351,7 @@ export default function VocabPage({
               value={listTitle}
               onChange={(e) => setListTitleState(e.target.value)}
               onBlur={handleTitleSave}
-              placeholder="제목 없음"
+              placeholder="단어장 이름"
               className="w-full text-lg font-bold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 px-1"
             />
           </div>
@@ -388,7 +363,7 @@ export default function VocabPage({
           ) : (
             <>
               {/* Add Form (inline) */}
-              {isEditable && showAddForm && (
+              {showAddForm && (
                 <div className="mb-3">
                   <WordInput
                     onSelect={handleAddWord}
@@ -405,7 +380,7 @@ export default function VocabPage({
                   <div className="text-xs font-semibold text-gray-500 tracking-wider">
                     단어 ({entries.length}) · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span>
                   </div>
-                  {isEditable && !showAddForm && (
+                  {!showAddForm && (
                     <button
                       onClick={() => setShowAddForm(true)}
                       className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)]"
@@ -417,9 +392,7 @@ export default function VocabPage({
 
                 {entries.length === 0 && !showAddForm ? (
                   <div className="text-center py-10 text-gray-400">
-                    {isEditable
-                      ? "영어 단어를 추가해보세요!"
-                      : "이 날의 단어가 없어요"}
+                    영어 단어를 추가해보세요!
                   </div>
                 ) : (
                   <ul className="flex flex-col gap-2">
@@ -428,7 +401,7 @@ export default function VocabPage({
                         id: entry.id,
                         user_id: entry.user_id,
                         title: `${entry.word}  ${entry.meaning}`,
-                        date: entry.date,
+                        date: "",
                         completed: entry.spelling,
                         completed_at: null,
                         priority: 0,
@@ -439,9 +412,9 @@ export default function VocabPage({
                           key={entry.id}
                           task={task}
                           checkOnly
-                          onToggle={async (t) => {
+                          onToggle={async () => {
                             const newVal = !entry.spelling;
-                            const ok = await toggleSpelling(childId, entry.date, entry.id, newVal);
+                            const ok = await toggleSpelling(childId, selectedListId!, entry.id, newVal);
                             if (ok) {
                               setEntries((prev) =>
                                 prev.map((e) =>
@@ -450,17 +423,32 @@ export default function VocabPage({
                               );
                             }
                           }}
-                          onDelete={
-                            isEditable
-                              ? () => handleRemoveWord(entry.id)
-                              : undefined
-                          }
+                          onDelete={() => handleRemoveWord(entry.id)}
                         />
                       );
                     })}
                   </ul>
                 )}
               </div>
+
+              {/* Quiz buttons */}
+              {entries.length >= minWords && (
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => handleStartQuiz("basic")}
+                    className="flex-1 py-3 rounded-xl bg-blue-500 text-white font-bold text-sm active:opacity-80"
+                  >
+                    📝 객관식 퀴즈
+                  </button>
+                  <button
+                    onClick={() => handleStartQuiz("spelling")}
+                    disabled={entries.filter((e) => e.spelling).length === 0}
+                    className="flex-1 py-3 rounded-xl bg-purple-500 text-white font-bold text-sm active:opacity-80 disabled:opacity-40"
+                  >
+                    ✏️ 스펠링 퀴즈
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={handleBackToHome}
@@ -507,7 +495,7 @@ export default function VocabPage({
           <button
             onClick={() => {
               setQuizResult(null);
-              setSelectedDate(null);
+              setSelectedListId(null);
               setEntries([]);
               setView("home");
               loadLists();

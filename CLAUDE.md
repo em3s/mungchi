@@ -46,6 +46,7 @@
   - `[childId]/badges/page.tsx` — 뱃지 컬렉션
   - `[childId]/shop/page.tsx` — 별사탕 상점 (잔액, 별사탕샵, 거래내역 페이지네이션)
   - `[childId]/vocab/page.tsx` — 영어 단어장 (단어 추가, 퀴즈)
+  - `[childId]/game/page.tsx` — 공룡 달리기 게임 (1🍬/판)
   - `[childId]/star/page.tsx` — 개인 달성맵
   - `[childId]/map/page.tsx` — 합산 달성맵 (쌍둥이별, child만 집계)
   - `admin/page.tsx` — 관리 페이지
@@ -57,6 +58,7 @@
   - `TaskForm.tsx` — 할일 추가 폼
   - `WordInput.tsx` — 영어 단어 자동완성 입력
   - `VocabQuiz.tsx` — 영어 퀴즈 (객관식/스펠링, Levenshtein 기반 유사 단어 오답지)
+  - `DinoGame.tsx` — 공룡 달리기 Canvas 게임 (🏃 달리는 사람 캐릭터)
   - `PinModal.tsx` — PIN 인증 모달
 - `src/hooks/` — 커스텀 훅 (useSession, useToast)
 - `src/lib/` — 유틸리티
@@ -94,13 +96,16 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 ## 별사탕 🍬 화폐 시스템
 
 - DB: `coin_balances` (잔액), `coin_transactions` (거래), `coin_rewards` (별사탕샵 카탈로그)
-- 거래 타입: task_complete, task_uncomplete, allclear_bonus, exchange, admin_adjust, vocab_quiz
+- 거래 타입: task_complete, task_uncomplete, allclear_bonus, exchange, admin_adjust, vocab_quiz, game
 - 별사탕샵: 보상 아이템 무제한 구매 가능 (잔액 충분 시), emoji-picker-react로 이모지 선택
 
 ## 영어 단어장 📖 시스템
 
 - DB: `dictionary`, `vocab_entries`, `vocab_quizzes`, `vocab_config`, `vocab_list_meta`
-- `vocab_entries.spelling` (boolean): 스펠링 퀴즈 대상 여부 (리스트뷰에서 토글)
+- 단어장은 이름(name) 기반, UUID list_id로 관리 (날짜 기반 아님)
+- `vocab_list_meta`: id(UUID PK), user_id, name, created_at
+- `vocab_entries.list_id`: 단어장 FK, `vocab_entries.spelling`: 스펠링 퀴즈 대상 여부
+- 모든 단어장 항상 편집 가능 (날짜 제한 없음)
 - 퀴즈 보상: 객관식=config.basic_reward(기본1🍬)/완주, 스펠링=1🍬×맞춘수 (매회 지급, 1일 제한 없음)
 - 객관식: Levenshtein 편집거리 기반 유사 단어 오답지 생성
 - 스펠링: spelling=true인 단어만 출제, 정답 시 +1🍬 플로팅 애니메이션
