@@ -24,7 +24,7 @@ export function WeatherWidget({ today }: WeatherWidgetProps) {
       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 md:text-sm">
         🌤️ 날씨
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto py-1 -mx-1 px-1 scrollbar-hide">
         {forecast.map((day) => (
           <WeatherCard key={day.date} day={day} isToday={day.date === today} />
         ))}
