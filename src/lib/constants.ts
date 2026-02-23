@@ -6,12 +6,14 @@ export const CHILDREN: Omit<Child, "pin" | "created_at">[] = [
     name: "시현",
     theme: "starry",
     emoji: "⭐",
+    starName: "반짝별",
   },
   {
     id: "misong",
     name: "미송",
     theme: "choco",
     emoji: "🍫",
+    starName: "초코별",
   },
 ];
 

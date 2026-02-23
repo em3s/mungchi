@@ -7,7 +7,7 @@ import { cached } from "@/lib/cache";
 import { MILESTONES } from "@/lib/constants";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { BottomNav } from "@/components/BottomNav";
-import { MapNode } from "@/components/MapNode";
+import { MilestoneMap } from "@/components/MilestoneMap";
 
 export default function MapPage({
   params,
@@ -85,45 +85,25 @@ export default function MapPage({
     );
   }
 
-  const currentNode = MILESTONES.reduce(
-    (acc, m) => (totalCompleted >= m.required ? m.node : acc),
-    0
-  );
-
-  const milestones = MILESTONES.map((m) => ({
-    ...m,
-    unlocked: totalCompleted >= m.required,
-    current: m.node === currentNode,
-  }));
-
   return (
-    <div className="pt-2">
-      {/* Header */}
-      <div className="flex items-center justify-between py-4 sticky top-0 z-10" style={{ background: "var(--bg)" }}>
-        <h1 className="text-xl font-bold md:text-2xl">🌟 쌍둥이별</h1>
-        <span />
-      </div>
-
-      <div className="text-center mb-4 text-gray-500 text-sm">
-        <span>⭐ {sihyunCount}개</span>
-        <span className="mx-1">+</span>
-        <span>🍫 {misongCount}개</span>
-        <span className="mx-1">=</span>
-        <strong className="text-base">🌟 {totalCompleted}개</strong>
-      </div>
-
-      {/* Map Path */}
-      <div className="flex flex-col items-center py-4">
-        {milestones.map((m, i) => (
-          <MapNode
-            key={m.node}
-            milestone={m}
-            isLast={i === milestones.length - 1}
-          />
-        ))}
-      </div>
-
+    <>
+      <MilestoneMap
+        rawMilestones={MILESTONES}
+        completed={totalCompleted}
+        header={
+          <h1 className="text-xl font-bold md:text-2xl">🌟 쌍둥이별</h1>
+        }
+        subheader={
+          <>
+            <span>⭐ {sihyunCount}개</span>
+            <span className="mx-1">+</span>
+            <span>🍫 {misongCount}개</span>
+            <span className="mx-1">=</span>
+            <strong className="text-base">🌟 {totalCompleted}개</strong>
+          </>
+        }
+      />
       <BottomNav childId={childId} />
-    </div>
+    </>
   );
 }

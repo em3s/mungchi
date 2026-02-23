@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
+import { CHILDREN } from "@/lib/constants";
 
 interface BottomNavProps {
   childId: string;
@@ -17,6 +18,8 @@ export function BottomNav({ childId }: BottomNavProps) {
     loadFeatureFlags().then(() => setReady(true));
   }, []);
 
+  const child = CHILDREN.find((c) => c.id === childId);
+
   const tabs = [
     { href: `/${childId}`, label: "할일", icon: "📋", key: "dashboard" },
     {
@@ -27,8 +30,8 @@ export function BottomNav({ childId }: BottomNavProps) {
     },
     {
       href: `/${childId}/star`,
-      label: childId === "sihyun" ? "반짝별" : "초코별",
-      icon: childId === "sihyun" ? "⭐" : "🍫",
+      label: child?.starName ?? "반짝별",
+      icon: child?.emoji ?? "⭐",
       key: "star",
     },
     { href: `/${childId}/map`, label: "쌍둥이별", icon: "🌟", key: "map" },

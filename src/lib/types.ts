@@ -5,6 +5,7 @@ export interface Child {
   name: string;
   theme: "starry" | "choco";
   emoji: string;
+  starName: string;
   pin: string;
   created_at?: string;
 }
