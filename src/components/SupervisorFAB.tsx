@@ -54,12 +54,6 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
     router.push("/admin");
   }
 
-  function handleExit() {
-    sessionStorage.removeItem(SUPERVISOR_KEY);
-    setActive(false);
-    setOpen(false);
-  }
-
   return (
     <div
       ref={fabRef}
@@ -93,7 +87,7 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
           })}
           <button
             onClick={handleNavigateAdmin}
-            className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold border-b border-gray-100 transition-colors ${
+            className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold transition-colors ${
               isAdmin
                 ? "bg-purple-50 text-purple-700"
                 : "text-gray-700 hover:bg-gray-50 active:bg-gray-100"
@@ -106,13 +100,6 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
                 현재
               </span>
             )}
-          </button>
-          <button
-            onClick={handleExit}
-            className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-50 active:bg-red-100 transition-colors"
-          >
-            <span className="text-lg">🚪</span>
-            <span>해제</span>
           </button>
         </div>
       )}
