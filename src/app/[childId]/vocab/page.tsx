@@ -76,7 +76,7 @@ export default function VocabPage({
   const [coinsEnabled, setCoinsEnabled] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const longPressRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; advanced: boolean }>>(new Map());
+  const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; spelling: boolean }>>(new Map());
 
   // Vocab lists (date + count + title)
   const [vocabLists, setVocabLists] = useState<
@@ -207,9 +207,11 @@ export default function VocabPage({
   }
 
   async function handleQuizComplete(total: number, correct: number) {
-    const rewardKey =
-      quizType === "basic" ? "basic_reward" : "advanced_reward";
-    const rewardAmount = config[rewardKey] ?? (quizType === "basic" ? 10 : 20);
+    // 객관식: 고정 보상, 스펠링: 1🍬 × 단어수
+    const rewardAmount =
+      quizType === "basic"
+        ? (config.basic_reward ?? 10)
+        : total; // spelling: 1🍬 per word
 
     const alreadyEarned = await hasEarnedToday(
       childId,
@@ -232,7 +234,7 @@ export default function VocabPage({
         childId,
         candy,
         "vocab_quiz",
-        `${quizType === "basic" ? "객관식" : "주관식"} 퀴즈 ${correct}/${total}`,
+        `${quizType === "basic" ? "객관식" : "스펠링"} 퀴즈 ${correct}/${total}`,
       );
       if (result.ok) setCoinBalance(result.newBalance ?? null);
     }
@@ -338,14 +340,14 @@ export default function VocabPage({
                           📝 객관식 {qs?.basic ? "✓" : `🍬${config.basic_reward ?? 10}`}
                         </button>
                         <button
-                          onClick={() => handleStartQuizFromHome(item.date, "advanced")}
+                          onClick={() => handleStartQuizFromHome(item.date, "spelling")}
                           className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 ${
-                            qs?.advanced
+                            qs?.spelling
                               ? "bg-purple-50 text-purple-400"
                               : "bg-purple-500 text-white"
                           }`}
                         >
-                          ✏️ 주관식 {qs?.advanced ? "✓" : `🍬${config.advanced_reward ?? 20}`}
+                          ✏️ 스펠링 {qs?.spelling ? "✓" : `🍬${item.count}`}
                         </button>
                       </div>
                     )}
@@ -485,7 +487,7 @@ export default function VocabPage({
             {quizResult.correct} / {quizResult.total} 정답
           </div>
           <div className="text-sm text-gray-500 mb-4">
-            {quizType === "basic" ? "객관식" : "주관식"} 퀴즈 완료!
+            {quizType === "basic" ? "객관식" : "스펠링"} 퀴즈 완료!
           </div>
           {quizResult.candy > 0 ? (
             <div className="text-lg font-bold text-amber-500 mb-4">

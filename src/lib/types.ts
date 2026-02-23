@@ -131,14 +131,14 @@ export interface VocabQuiz {
   id: string;
   user_id: string;
   date: string;
-  quiz_type: "basic" | "advanced";
+  quiz_type: "basic" | "spelling";
   total_questions: number;
   correct_answers: number;
   candy_earned: number;
   created_at?: string;
 }
 
-export type VocabQuizType = "basic" | "advanced";
+export type VocabQuizType = "basic" | "spelling";
 
 export interface CalendarEvent {
   uid: string;

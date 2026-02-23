@@ -230,9 +230,9 @@ export async function updateVocabDate(
 export async function getQuizStatuses(
   childId: string,
   dates: string[],
-): Promise<Map<string, { basic: boolean; advanced: boolean }>> {
-  const result = new Map<string, { basic: boolean; advanced: boolean }>();
-  for (const d of dates) result.set(d, { basic: false, advanced: false });
+): Promise<Map<string, { basic: boolean; spelling: boolean }>> {
+  const result = new Map<string, { basic: boolean; spelling: boolean }>();
+  for (const d of dates) result.set(d, { basic: false, spelling: false });
   if (dates.length === 0) return result;
 
   const { data } = await supabase
@@ -246,7 +246,7 @@ export async function getQuizStatuses(
     const s = result.get(row.date);
     if (s) {
       if (row.quiz_type === "basic") s.basic = true;
-      if (row.quiz_type === "advanced") s.advanced = true;
+      if (row.quiz_type === "spelling") s.spelling = true;
     }
   }
   return result;
