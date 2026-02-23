@@ -3,29 +3,40 @@
 import { supabase } from "@/lib/supabase/client";
 import { cached, invalidate } from "@/lib/cache";
 import { STATIC_DICT } from "@/lib/dictionary-data";
+import {
+  seedStatic,
+  syncDynamic,
+  getAllWords,
+  clearDynamicCache,
+  type DictRow,
+} from "@/lib/dict-db";
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
 
 const ENTRIES_TTL = 30_000; // 30초
 const DATES_TTL = 30_000; // 30초
 const CONFIG_TTL = 60_000; // 1분
 
-// --- 사전 캐시: 정적(코드) + 동적(DB) merge ---
+// --- 사전: IndexedDB(정적+동적) → 메모리 캐시 ---
 
 let dictCache: DictionaryEntry[] | null = null;
 
-// 정적 사전 → DictionaryEntry 변환 (word 기반 ID)
-const staticEntries: DictionaryEntry[] = STATIC_DICT.map(([word, meaning, level]) => ({
-  id: `s:${word}`,
-  word,
-  meaning,
-  level,
-}));
-const staticWords = new Set(STATIC_DICT.map(([w]) => w));
+function rowToEntry(r: DictRow): DictionaryEntry {
+  return {
+    id: r.dbId ?? `s:${r.word}`,
+    word: r.word,
+    meaning: r.meaning,
+    level: r.level,
+  };
+}
 
 export async function loadDictionary(): Promise<DictionaryEntry[]> {
   if (dictCache) return dictCache;
 
-  // DB에서 동적 단어만 가져옴 (정적에 없는 것)
+  // 1. 정적 데이터를 IndexedDB에 시드 (최초 1회 또는 버전 변경 시)
+  await seedStatic(STATIC_DICT);
+
+  // 2. Supabase에서 동적 단어 가져와서 IndexedDB에 동기화
+  const staticWords = new Set(STATIC_DICT.map(([w]) => w));
   const { data } = await supabase
     .from("dictionary")
     .select("*")
@@ -33,19 +44,20 @@ export async function loadDictionary(): Promise<DictionaryEntry[]> {
   const dbOnly = ((data as DictionaryEntry[]) ?? []).filter(
     (e) => !staticWords.has(e.word),
   );
+  await syncDynamic(dbOnly);
 
-  // 정적 + 동적 merge (알파벳순)
-  dictCache = [...staticEntries, ...dbOnly].sort((a, b) =>
-    a.word.localeCompare(b.word),
-  );
+  // 3. IndexedDB에서 전체 로드 → 메모리 캐시
+  const rows = await getAllWords();
+  dictCache = rows.map(rowToEntry);
   return dictCache;
 }
 
-export function invalidateDictionary() {
+export async function invalidateDictionary(): Promise<void> {
+  await clearDynamicCache();
   dictCache = null;
 }
 
-// --- 사전 검색 (로컬 prefix 매칭) ---
+// --- 사전 검색 (메모리 prefix 매칭) ---
 
 export function searchDictionary(
   query: string,

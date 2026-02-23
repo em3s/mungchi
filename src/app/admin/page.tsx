@@ -775,7 +775,7 @@ export default function AdminPage() {
                   showToast("추가 실패");
                   return;
                 }
-                invalidateDictionary();
+                await invalidateDictionary();
                 showToast(`"${dictWord.trim()}" 추가됨!`);
                 setDictWord("");
                 setDictMeaning("");

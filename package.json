@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
+    "dexie": "^4.3.0",
     "next": "16.1.6",
     "node-ical": "^0.25.3",
     "react": "19.2.3",
