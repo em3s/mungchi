@@ -243,6 +243,11 @@ export function VocabQuiz({
           >
             {isCorrect ? "정답! 🎉" : `오답! 정답: ${current.entry.word}`}
           </div>
+          {!isCorrect && (
+            <div className="text-sm text-gray-500 mt-1.5">
+              괜찮아! 끝까지 하면 별사탕은 똑같이 받아 🍬
+            </div>
+          )}
           <button
             onClick={handleNext}
             className="mt-4 w-full bg-[var(--accent,#6c5ce7)] text-white py-3 rounded-xl font-bold"
