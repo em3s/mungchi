@@ -687,8 +687,8 @@ export default function AdminPage() {
       <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
         <h2 className="text-lg font-bold mb-4">📖 단어장 보상 설정</h2>
         {[
-          { key: "basic_reward", label: "객관식 퀴즈 보상", def: 10 },
-          { key: "advanced_reward", label: "주관식 퀴즈 보상", def: 20 },
+          { key: "basic_reward", label: "객관식 퀴즈 보상", def: 1 },
+          { key: "advanced_reward", label: "주관식 퀴즈 보상", def: 1 },
           { key: "min_words", label: "퀴즈 최소 단어 수", def: 3 },
         ].map(({ key, label, def }) => (
           <div
