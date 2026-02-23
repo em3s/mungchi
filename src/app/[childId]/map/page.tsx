@@ -2,9 +2,10 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
+import { cached } from "@/lib/cache";
 import { MILESTONES } from "@/lib/constants";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
-import { cached } from "@/lib/cache";
 import { BottomNav } from "@/components/BottomNav";
 import { MapNode } from "@/components/MapNode";
 
@@ -35,11 +36,33 @@ export default function MapPage({
   useEffect(() => {
     if (!flagsLoaded || featureDisabled) return;
     async function load() {
-      const counts = await cached("map_counts", 60_000, async () => {
-        const res = await fetch("/api/tasks/counts");
-        return res.ok ? res.json() : null;
-      });
-      if (!counts) return;
+      const counts = await cached(
+        "map_counts",
+        60_000,
+        async () => {
+          const [total, sihyun, misong] = await Promise.all([
+            supabase
+              .from("tasks")
+              .select("*", { count: "exact", head: true })
+              .eq("completed", true),
+            supabase
+              .from("tasks")
+              .select("*", { count: "exact", head: true })
+              .eq("child_id", "sihyun")
+              .eq("completed", true),
+            supabase
+              .from("tasks")
+              .select("*", { count: "exact", head: true })
+              .eq("child_id", "misong")
+              .eq("completed", true),
+          ]);
+          return {
+            total: total.count ?? 0,
+            sihyun: sihyun.count ?? 0,
+            misong: misong.count ?? 0,
+          };
+        },
+      );
 
       setTotalCompleted(counts.total);
       setSihyunCount(counts.sihyun);

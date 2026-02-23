@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { cached } from "@/lib/cache";
 import { CHILDREN, CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/constants";
 import type { BadgeInfo } from "@/lib/types";
 import type { DayTaskSummary } from "@/lib/badges/types";
 import { evaluateBadges, getBadgesForDisplay } from "@/lib/badges/engine";
-import { cached } from "@/lib/cache";
 import { BottomNav } from "@/components/BottomNav";
 import { TrophyShelf } from "@/components/TrophyShelf";
 import { BadgeCard } from "@/components/BadgeCard";
@@ -25,11 +26,15 @@ export default function BadgesPage({
       const siblingId =
         CHILDREN.find((c) => c.id !== childId)?.id ?? "";
 
-      // 모든 할일 데이터 로드 (클라이언트 1분 캐시)
+      // 모든 할일 데이터 로드 (1분 캐시)
       const fetchTasks = (id: string) =>
         cached(`badge_tasks:${id}`, 60_000, async () => {
-          const res = await fetch(`/api/tasks/badges?childId=${id}`);
-          return res.ok ? res.json() : null;
+          const { data } = await supabase
+            .from("tasks")
+            .select("date, completed, completed_at")
+            .eq("child_id", id)
+            .order("date");
+          return data;
         });
 
       const [childData, siblingData] = await Promise.all([

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, use } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 import { todayKST, formatMonth, WEEKDAYS } from "@/lib/date";
 import { getCheer, CHILDREN } from "@/lib/constants";
 import type { Task, MonthDays, CalendarEvent } from "@/lib/types";
@@ -51,11 +52,14 @@ export default function DashboardPage({
 
   // 오늘 할일 로드
   const loadTasks = useCallback(async () => {
-    const res = await fetch(`/api/tasks?childId=${childId}&date=${today}`);
-    if (res.ok) {
-      const data = await res.json();
-      setTasks(data);
-    }
+    const { data } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("child_id", childId)
+      .eq("date", today)
+      .order("priority", { ascending: false })
+      .order("created_at");
+    if (data) setTasks(data);
     setLoading(false);
   }, [childId, today]);
 
@@ -65,34 +69,40 @@ export default function DashboardPage({
     const startDate = `${monthStr}-01`;
     const endDate = `${monthStr}-31`;
 
-    const res = await fetch(
-      `/api/tasks/monthly?childId=${childId}&from=${startDate}&to=${endDate}`,
-    );
-    if (!res.ok) return;
-    const data = await res.json();
+    const { data } = await supabase
+      .from("tasks")
+      .select("date, completed")
+      .eq("child_id", childId)
+      .gte("date", startDate)
+      .lte("date", endDate);
 
-    const days: MonthDays = {};
-    for (const task of data) {
-      if (!days[task.date]) {
-        days[task.date] = { total: 0, completed: 0, rate: 0 };
+    if (data) {
+      const days: MonthDays = {};
+      for (const task of data) {
+        if (!days[task.date]) {
+          days[task.date] = { total: 0, completed: 0, rate: 0 };
+        }
+        days[task.date].total++;
+        if (task.completed) days[task.date].completed++;
       }
-      days[task.date].total++;
-      if (task.completed) days[task.date].completed++;
+      for (const d of Object.values(days)) {
+        d.rate = d.total > 0 ? d.completed / d.total : 0;
+      }
+      setMonthData(days);
     }
-    for (const d of Object.values(days)) {
-      d.rate = d.total > 0 ? d.completed / d.total : 0;
-    }
-    setMonthData(days);
   }, [childId, calYear, calMonth]);
 
   // 선택된 날짜의 할일 로드
   const loadDayTasks = useCallback(
     async (date: string) => {
-      const res = await fetch(`/api/tasks?childId=${childId}&date=${date}`);
-      if (res.ok) {
-        const data = await res.json();
-        setDayTasks(data);
-      }
+      const { data } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("child_id", childId)
+        .eq("date", date)
+        .order("priority", { ascending: false })
+        .order("created_at");
+      if (data) setDayTasks(data);
     },
     [childId]
   );
@@ -157,14 +167,13 @@ export default function DashboardPage({
 
   async function doToggle(task: Task) {
     const newCompleted = !task.completed;
-    await fetch(`/api/tasks/${task.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await supabase
+      .from("tasks")
+      .update({
         completed: newCompleted,
         completed_at: newCompleted ? new Date().toISOString() : null,
-      }),
-    });
+      })
+      .eq("id", task.id);
 
     // 로컬 상태 업데이트
     const updateList = (list: Task[]) =>
@@ -190,17 +199,16 @@ export default function DashboardPage({
   // 할일 추가
   async function handleAddTask(title: string) {
     const targetDate = selectedDate || today;
-    const res = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const { data } = await supabase
+      .from("tasks")
+      .insert({
         child_id: childId,
         title,
         date: targetDate,
         priority: 0,
-      }),
-    });
-    const data = res.ok ? await res.json() : null;
+      })
+      .select()
+      .single();
 
     if (data) {
       if (selectedDate && dayTasks) {
@@ -217,11 +225,7 @@ export default function DashboardPage({
 
   // 할일 수정
   async function handleEdit(task: Task, newTitle: string) {
-    await fetch(`/api/tasks/${task.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newTitle }),
-    });
+    await supabase.from("tasks").update({ title: newTitle }).eq("id", task.id);
 
     const updateList = (list: Task[]) =>
       list.map((t) => (t.id === task.id ? { ...t, title: newTitle } : t));
@@ -239,7 +243,7 @@ export default function DashboardPage({
   }
 
   async function doDelete(task: Task) {
-    await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
+    await supabase.from("tasks").delete().eq("id", task.id);
 
     if (selectedDate && dayTasks) {
       setDayTasks(dayTasks.filter((t) => t.id !== task.id));
