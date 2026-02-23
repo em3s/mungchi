@@ -1,14 +1,19 @@
 // === DB 스키마 타입 ===
 
-export interface Child {
+export interface User {
   id: string;
   name: string;
+  role: "child" | "parent";
   theme: "starry" | "choco" | "shield" | "heart";
   emoji: string;
   starName: string;
+  descriptor: string;
   pin: string;
   created_at?: string;
 }
+
+/** @deprecated Use User instead */
+export type Child = User;
 
 export interface Task {
   id: string;

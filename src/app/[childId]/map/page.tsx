@@ -4,10 +4,12 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { cached } from "@/lib/cache";
-import { MILESTONES } from "@/lib/constants";
+import { USERS, MILESTONES } from "@/lib/constants";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { BottomNav } from "@/components/BottomNav";
 import { MilestoneMap } from "@/components/MilestoneMap";
+
+const CHILD_USERS = USERS.filter((u) => u.role === "child");
 
 export default function MapPage({
   params,
@@ -17,8 +19,9 @@ export default function MapPage({
   const { childId } = use(params);
   const router = useRouter();
   const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
-  const [sihyunCount, setSihyunCount] = useState(0);
-  const [misongCount, setMisongCount] = useState(0);
+  const [childCounts, setChildCounts] = useState<
+    { id: string; emoji: string; count: number }[]
+  >([]);
   const [flagsLoaded, setFlagsLoaded] = useState(false);
 
   useEffect(() => {
@@ -41,33 +44,25 @@ export default function MapPage({
           "map_counts",
           60_000,
           async () => {
-            const [total, sihyun, misong] = await Promise.all([
-              supabase
-                .from("tasks")
-                .select("*", { count: "exact", head: true })
-                .eq("completed", true),
-              supabase
-                .from("tasks")
-                .select("*", { count: "exact", head: true })
-                .eq("child_id", "sihyun")
-                .eq("completed", true),
-              supabase
-                .from("tasks")
-                .select("*", { count: "exact", head: true })
-                .eq("child_id", "misong")
-                .eq("completed", true),
-            ]);
-            return {
-              total: total.count ?? 0,
-              sihyun: sihyun.count ?? 0,
-              misong: misong.count ?? 0,
-            };
+            const results = await Promise.all(
+              CHILD_USERS.map((child) =>
+                supabase
+                  .from("tasks")
+                  .select("*", { count: "exact", head: true })
+                  .eq("child_id", child.id)
+                  .eq("completed", true),
+              ),
+            );
+            return CHILD_USERS.map((child, i) => ({
+              id: child.id,
+              emoji: child.emoji,
+              count: results[i].count ?? 0,
+            }));
           },
         );
 
-        setTotalCompleted(counts.total);
-        setSihyunCount(counts.sihyun);
-        setMisongCount(counts.misong);
+        setChildCounts(counts);
+        setTotalCompleted(counts.reduce((sum, c) => sum + c.count, 0));
       } catch {
         setTotalCompleted(0);
       }
@@ -95,9 +90,12 @@ export default function MapPage({
         }
         subheader={
           <>
-            <span>⭐ {sihyunCount}개</span>
-            <span className="mx-1">+</span>
-            <span>🍫 {misongCount}개</span>
+            {childCounts.map((c, i) => (
+              <span key={c.id}>
+                {i > 0 && <span className="mx-1">+</span>}
+                {c.emoji} {c.count}개
+              </span>
+            ))}
             <span className="mx-1">=</span>
             <strong className="text-base">🌟 {totalCompleted}개</strong>
           </>

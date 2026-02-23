@@ -1,35 +1,46 @@
-import type { Child } from "./types";
+import type { User } from "./types";
 
-export const CHILDREN: Omit<Child, "pin" | "created_at">[] = [
+export const USERS: Omit<User, "pin" | "created_at">[] = [
   {
     id: "sihyun",
     name: "시현",
+    role: "child",
     theme: "starry",
     emoji: "⭐",
     starName: "반짝별",
+    descriptor: "반짝별 수호자",
   },
   {
     id: "misong",
     name: "미송",
+    role: "child",
     theme: "choco",
     emoji: "🍫",
     starName: "초코별",
+    descriptor: "초코별 탐험가",
   },
   {
     id: "dad",
     name: "아빠",
+    role: "parent",
     theme: "shield",
     emoji: "🛡️",
-    starName: "방패별",
+    starName: "든든별",
+    descriptor: "쌍둥이별 수호자",
   },
   {
     id: "mom",
     name: "엄마",
+    role: "parent",
     theme: "heart",
     emoji: "💖",
-    starName: "하트별",
+    starName: "따뜻별",
+    descriptor: "쌍둥이별 지킴이",
   },
 ];
+
+/** @deprecated Use USERS instead */
+export const CHILDREN = USERS;
 
 export const PIN = "999999";
 

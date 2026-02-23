@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { CHILDREN } from "@/lib/constants";
+import { USERS } from "@/lib/constants";
 import { PinModal } from "@/components/PinModal";
 import { useSession } from "@/hooks/useSession";
 
@@ -10,7 +10,7 @@ export default function HomePage() {
   const router = useRouter();
   const { childId, loaded, login } = useSession();
   const [selectedChild, setSelectedChild] = useState<
-    (typeof CHILDREN)[0] | null
+    (typeof USERS)[0] | null
   >(null);
 
   // 롱프레스 → 관리 페이지 진입
@@ -54,7 +54,7 @@ export default function HomePage() {
       <p className="text-gray-500 mb-8 md:text-lg">누구의 할일을 볼까요?</p>
 
       <div className="flex flex-col gap-4">
-        {CHILDREN.map((child) => (
+        {USERS.map((child) => (
           <button
             key={child.id}
             onClick={() => setSelectedChild(child)}
@@ -64,13 +64,7 @@ export default function HomePage() {
             <div>
               <div className="text-xl font-bold md:text-2xl">{child.name}</div>
               <div className="text-gray-500 text-sm mt-1 md:text-base">
-                {child.theme === "starry"
-                  ? "반짝별 수호자"
-                  : child.theme === "choco"
-                    ? "초코별 탐험가"
-                    : child.theme === "shield"
-                      ? "방패별 수호자"
-                      : "하트별 수호자"}
+                {child.descriptor}
               </div>
             </div>
           </button>
