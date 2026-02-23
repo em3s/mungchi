@@ -5,7 +5,7 @@ import type { Task } from "@/lib/types";
 
 interface TaskItemProps {
   task: Task;
-  onToggle: (task: Task) => void;
+  onToggle?: (task: Task) => void;
   onEdit?: (task: Task, newTitle: string) => void;
   onDelete?: (task: Task) => void;
 }
@@ -35,16 +35,18 @@ export function TaskItem({ task, onToggle, onEdit, onDelete }: TaskItemProps) {
         task.completed ? "opacity-55" : ""
       }`}
     >
-      <button
-        onClick={() => onToggle(task)}
-        className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm md:w-[34px] md:h-[34px] md:text-base ${
-          task.completed
-            ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
-            : "bg-white border-[var(--accent,#6c5ce7)]"
-        }`}
-      >
-        {task.completed ? "✓" : ""}
-      </button>
+      {onToggle && (
+        <button
+          onClick={() => onToggle(task)}
+          className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm md:w-[34px] md:h-[34px] md:text-base ${
+            task.completed
+              ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
+              : "bg-white border-[var(--accent,#6c5ce7)]"
+          }`}
+        >
+          {task.completed ? "✓" : ""}
+        </button>
+      )}
       {editing ? (
         <input
           ref={inputRef}

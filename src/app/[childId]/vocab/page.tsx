@@ -17,11 +17,12 @@ import {
 } from "@/lib/vocab";
 import { addTransaction, getBalance } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
+import { TaskItem } from "@/components/TaskItem";
 import { WordInput } from "@/components/WordInput";
 import { VocabQuiz } from "@/components/VocabQuiz";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
-import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
+import type { Task, VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
 type ViewState = "home" | "list" | "quiz" | "result";
 
@@ -354,27 +355,29 @@ export default function VocabPage({
                   </div>
                 ) : (
                   <ul className="flex flex-col gap-2">
-                    {entries.map((entry) => (
-                      <li
-                        key={entry.id}
-                        className="flex items-center gap-3 bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-[18px] md:gap-4 md:rounded-2xl"
-                      >
-                        <span className="flex-1 text-base md:text-lg">
-                          {entry.word}
-                          <span className="text-sm text-gray-400 ml-2">
-                            {entry.meaning}
-                          </span>
-                        </span>
-                        {isEditable && (
-                          <button
-                            onClick={() => handleRemoveWord(entry.id)}
-                            className="text-gray-400 text-sm px-1 active:text-red-500 transition-colors"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </li>
-                    ))}
+                    {entries.map((entry) => {
+                      const task: Task = {
+                        id: entry.id,
+                        child_id: entry.child_id,
+                        title: `${entry.word}  ${entry.meaning}`,
+                        date: entry.date,
+                        completed: false,
+                        completed_at: null,
+                        priority: 0,
+                        notes: null,
+                      };
+                      return (
+                        <TaskItem
+                          key={entry.id}
+                          task={task}
+                          onDelete={
+                            isEditable
+                              ? () => handleRemoveWord(entry.id)
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
                   </ul>
                 )}
               </div>
