@@ -27,7 +27,9 @@ import {
   getVocabConfig,
   setVocabConfig as saveVocabConfig,
   invalidateDictionary,
+  loadDictionary,
 } from "@/lib/vocab";
+import type { DictionaryEntry } from "@/lib/types";
 import type { CoinReward, CoinTransaction } from "@/lib/types";
 
 const ADMIN_SESSION_KEY = "mungchi_admin";
@@ -120,6 +122,15 @@ export default function AdminPage() {
   const [dictMeaning, setDictMeaning] = useState("");
   const [dictLevel, setDictLevel] = useState(1);
   const [dictBulk, setDictBulk] = useState("");
+
+  // 랜덤 단어장
+  const [randomChildIds, setRandomChildIds] = useState<string[]>(["sihyun", "misong"]);
+  const [randomDate, setRandomDate] = useState(todayKST());
+  const [randomCount, setRandomCount] = useState("10");
+  const [randomTitle, setRandomTitle] = useState("");
+  const [randomLevel, setRandomLevel] = useState<string>("all");
+  const [randomGenerating, setRandomGenerating] = useState(false);
+  const [randomPreview, setRandomPreview] = useState<DictionaryEntry[]>([]);
 
   // 날짜 복제
   const [cloneChildId, setCloneChildId] = useState("sihyun");
@@ -837,6 +848,184 @@ export default function AdminPage() {
             className="w-full bg-[#6c5ce7] text-white py-3 rounded-xl font-bold text-base disabled:opacity-40"
           >
             벌크 추가
+          </button>
+        </div>
+      </section>
+
+      {/* === 랜덤 단어장 생성 === */}
+      <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <h2 className="text-lg font-bold mb-4">🎲 랜덤 단어장 생성</h2>
+
+        {/* 대상 아이 */}
+        <div className="mb-4">
+          <label className="text-sm font-semibold text-gray-600 block mb-2">대상 아이</label>
+          <div className="flex gap-3">
+            {USERS.filter((u) => u.role === "child").map((child) => (
+              <button
+                key={child.id}
+                onClick={() =>
+                  setRandomChildIds((prev) =>
+                    prev.includes(child.id)
+                      ? prev.filter((c) => c !== child.id)
+                      : [...prev, child.id],
+                  )
+                }
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  randomChildIds.includes(child.id)
+                    ? "bg-[#6c5ce7] text-white shadow-md"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                <span>{child.emoji}</span>
+                <span>{child.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 날짜 + 단어 수 + 레벨 */}
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1">
+            <label className="text-sm font-semibold text-gray-600 block mb-1">날짜</label>
+            <input
+              type="date"
+              value={randomDate}
+              onChange={(e) => setRandomDate(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="w-20">
+            <label className="text-sm font-semibold text-gray-600 block mb-1">단어 수</label>
+            <input
+              type="number"
+              value={randomCount}
+              onChange={(e) => setRandomCount(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-center"
+            />
+          </div>
+          <div className="w-24">
+            <label className="text-sm font-semibold text-gray-600 block mb-1">난이도</label>
+            <select
+              value={randomLevel}
+              onChange={(e) => setRandomLevel(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-2 py-2 text-sm"
+            >
+              <option value="all">전체</option>
+              <option value="1">쉬움</option>
+              <option value="2">보통</option>
+              <option value="3">어려움</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 제목 (선택) */}
+        <div className="mb-4">
+          <label className="text-sm font-semibold text-gray-600 block mb-1">제목 (선택)</label>
+          <input
+            type="text"
+            value={randomTitle}
+            onChange={(e) => setRandomTitle(e.target.value)}
+            placeholder="예: 동물 단어, 3월 1주차"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+          />
+        </div>
+
+        {/* 미리보기 */}
+        {randomPreview.length > 0 && (
+          <div className="mb-4 bg-gray-50 rounded-xl p-3 max-h-48 overflow-y-auto">
+            <div className="text-xs text-gray-500 mb-2">{randomPreview.length}개 단어 미리보기:</div>
+            <div className="flex flex-col gap-1">
+              {randomPreview.map((entry) => (
+                <div key={entry.id} className="flex justify-between text-sm">
+                  <span className="font-semibold text-gray-700">{entry.word}</span>
+                  <span className="text-gray-500">{entry.meaning}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 버튼 */}
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              const count = parseInt(randomCount);
+              if (!count || count <= 0) return;
+              const dict = await loadDictionary();
+              let pool = dict;
+              if (randomLevel !== "all") {
+                pool = dict.filter((e) => e.level === parseInt(randomLevel));
+              }
+              const shuffled = [...pool].sort(() => Math.random() - 0.5);
+              setRandomPreview(shuffled.slice(0, count));
+            }}
+            disabled={!randomCount || parseInt(randomCount) <= 0}
+            className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm active:bg-gray-200 disabled:opacity-40"
+          >
+            미리보기
+          </button>
+          <button
+            onClick={async () => {
+              const count = parseInt(randomCount);
+              if (!count || count <= 0 || randomChildIds.length === 0) return;
+              setRandomGenerating(true);
+              try {
+                const dict = await loadDictionary();
+                let pool = dict;
+                if (randomLevel !== "all") {
+                  pool = dict.filter((e) => e.level === parseInt(randomLevel));
+                }
+
+                let created = 0;
+                for (const childId of randomChildIds) {
+                  // 해당 날짜에 이미 있는 단어 제외
+                  const { data: existing } = await supabase
+                    .from("vocab_entries")
+                    .select("word")
+                    .eq("user_id", childId)
+                    .eq("date", randomDate);
+                  const existingWords = new Set(existing?.map((e) => e.word) ?? []);
+                  const available = pool.filter((e) => !existingWords.has(e.word));
+
+                  const shuffled = [...available].sort(() => Math.random() - 0.5);
+                  const selected = shuffled.slice(0, count);
+                  if (selected.length === 0) continue;
+
+                  const rows = selected.map((e) => ({
+                    user_id: childId,
+                    date: randomDate,
+                    dictionary_id: e.id,
+                    word: e.word,
+                    meaning: e.meaning,
+                  }));
+                  const { error } = await supabase.from("vocab_entries").insert(rows);
+                  if (error) throw error;
+
+                  if (randomTitle.trim()) {
+                    await supabase.from("vocab_list_meta").upsert({
+                      user_id: childId,
+                      date: randomDate,
+                      title: randomTitle.trim(),
+                    });
+                  }
+                  created += selected.length;
+                }
+
+                const names = randomChildIds
+                  .map((id) => USERS.find((u) => u.id === id)?.name)
+                  .join(", ");
+                showToast(`${names}에게 ${created}개 랜덤 단어 추가!`);
+                setRandomPreview([]);
+              } catch {
+                showToast("생성 실패");
+              } finally {
+                setRandomGenerating(false);
+              }
+            }}
+            disabled={randomChildIds.length === 0 || !randomCount || parseInt(randomCount) <= 0 || randomGenerating}
+            className="flex-1 bg-[#6c5ce7] text-white py-3 rounded-xl font-bold text-sm disabled:opacity-40 active:opacity-80"
+          >
+            {randomGenerating ? "생성 중..." : "단어장 생성"}
           </button>
         </div>
       </section>
