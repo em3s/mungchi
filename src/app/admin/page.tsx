@@ -484,7 +484,7 @@ export default function AdminPage() {
         {/* 수동 조정 */}
         <div className="mb-4">
           <label className="text-sm font-semibold text-gray-600 block mb-2">수동 조정</label>
-          <div className="flex gap-2 mb-2">
+          <div className="flex flex-wrap gap-2 mb-2">
             {USERS.map((child) => (
               <button
                 key={child.id}
@@ -505,14 +505,14 @@ export default function AdminPage() {
               value={adjustAmount}
               onChange={(e) => setAdjustAmount(e.target.value)}
               placeholder="금액 (+/-)"
-              className="w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+              className="w-20 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm"
             />
             <input
               type="text"
               value={adjustReason}
               onChange={(e) => setAdjustReason(e.target.value)}
               placeholder="사유"
-              className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+              className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm"
             />
             <button
               onClick={async () => {
@@ -537,7 +537,7 @@ export default function AdminPage() {
                 }
               }}
               disabled={!adjustAmount || isNaN(parseInt(adjustAmount))}
-              className="bg-amber-500 text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-40 active:opacity-80"
+              className="bg-amber-500 text-white px-3 py-2 rounded-xl text-sm font-semibold shrink-0 disabled:opacity-40 active:opacity-80"
             >
               적용
             </button>
@@ -596,12 +596,12 @@ export default function AdminPage() {
                 key={r.id}
                 className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2"
               >
-                <span className="text-sm">
+                <span className="text-sm min-w-0 flex-1 truncate">
                   {r.emoji} {r.name}
                   <span className="text-amber-500 ml-2">🍬 {r.cost}</span>
                   {!r.active && <span className="text-red-400 ml-1">(비활성)</span>}
                 </span>
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0">
                   <button
                     onClick={async () => {
                       await supabase
@@ -638,14 +638,7 @@ export default function AdminPage() {
         )}
 
         {/* 보상 추가 */}
-        <div className="flex gap-2 relative">
-          <button
-            type="button"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="w-12 border border-gray-200 rounded-xl px-2 py-2 text-xl text-center bg-white active:bg-gray-50"
-          >
-            {newRewardEmoji}
-          </button>
+        <div className="relative">
           {showEmojiPicker && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
               onClick={() => setShowEmojiPicker(false)}>
@@ -662,45 +655,56 @@ export default function AdminPage() {
               </div>
             </div>
           )}
-          <input
-            type="text"
-            value={newRewardName}
-            onChange={(e) => setNewRewardName(e.target.value)}
-            placeholder="보상 이름"
-            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
-          />
-          <input
-            type="number"
-            value={newRewardCost}
-            onChange={(e) => setNewRewardCost(e.target.value)}
-            placeholder="가격"
-            className="w-20 border border-gray-200 rounded-xl px-3 py-2 text-sm"
-          />
-          <button
-            onClick={async () => {
-              const cost = parseInt(newRewardCost);
-              if (!newRewardName.trim() || !cost || cost <= 0) return;
-              const { error } = await supabase.from("coin_rewards").insert({
-                name: newRewardName.trim(),
-                emoji: newRewardEmoji || "🎁",
-                cost,
-              });
-              if (error) {
-                showToast("추가 실패");
-                return;
-              }
-              invalidateRewardsCache();
-              loadCoinData();
-              setNewRewardName("");
-              setNewRewardEmoji("🎁");
-              setNewRewardCost("");
-              showToast("보상 추가됨!");
-            }}
-            disabled={!newRewardName.trim() || !newRewardCost}
-            className="bg-amber-500 text-white px-3 py-2 rounded-xl text-sm font-semibold disabled:opacity-40 active:opacity-80"
-          >
-            +
-          </button>
+          <div className="flex gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="w-12 shrink-0 border border-gray-200 rounded-xl px-2 py-2 text-xl text-center bg-white active:bg-gray-50"
+            >
+              {newRewardEmoji}
+            </button>
+            <input
+              type="text"
+              value={newRewardName}
+              onChange={(e) => setNewRewardName(e.target.value)}
+              placeholder="보상 이름"
+              className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={newRewardCost}
+              onChange={(e) => setNewRewardCost(e.target.value)}
+              placeholder="가격"
+              className="w-24 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+            />
+            <button
+              onClick={async () => {
+                const cost = parseInt(newRewardCost);
+                if (!newRewardName.trim() || !cost || cost <= 0) return;
+                const { error } = await supabase.from("coin_rewards").insert({
+                  name: newRewardName.trim(),
+                  emoji: newRewardEmoji || "🎁",
+                  cost,
+                });
+                if (error) {
+                  showToast("추가 실패");
+                  return;
+                }
+                invalidateRewardsCache();
+                loadCoinData();
+                setNewRewardName("");
+                setNewRewardEmoji("🎁");
+                setNewRewardCost("");
+                showToast("보상 추가됨!");
+              }}
+              disabled={!newRewardName.trim() || !newRewardCost}
+              className="bg-amber-500 text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-40 active:opacity-80"
+            >
+              추가
+            </button>
+          </div>
         </div>
       </section>
 
