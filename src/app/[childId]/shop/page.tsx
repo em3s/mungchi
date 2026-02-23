@@ -22,6 +22,7 @@ const TYPE_LABELS: Record<string, string> = {
   exchange: "교환",
   admin_adjust: "관리자 조정",
   vocab_quiz: "단어 퀴즈",
+  game: "게임",
 };
 
 export default function ShopPage({
@@ -104,6 +105,18 @@ export default function ShopPage({
         </div>
         <div className="text-sm text-gray-400">모은 별사탕</div>
       </div>
+
+      {/* Game Banner */}
+      <button
+        onClick={() => router.push(`/${childId}/game`)}
+        className="w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-white rounded-2xl p-4 mb-6 flex items-center justify-between active:opacity-80"
+      >
+        <div className="text-left">
+          <div className="font-bold text-base">🦖 공룡 달리기</div>
+          <div className="text-xs opacity-80">1🍬로 한 판 플레이!</div>
+        </div>
+        <div className="text-2xl">▶</div>
+      </button>
 
       {/* Rewards Grid */}
       {rewards.length > 0 && (

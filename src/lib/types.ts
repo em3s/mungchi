@@ -79,7 +79,8 @@ export type CoinTransactionType =
   | "allclear_bonus"
   | "exchange"
   | "admin_adjust"
-  | "vocab_quiz";
+  | "vocab_quiz"
+  | "game";
 
 export interface CoinTransaction {
   id: string;
