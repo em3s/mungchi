@@ -37,8 +37,9 @@ export default function ShopPage({
   const [rewards, setRewards] = useState<CoinReward[]>([]);
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [confirmReward, setConfirmReward] = useState<CoinReward | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
   const [exchanging, setExchanging] = useState(false);
+  const [txPage, setTxPage] = useState(0);
+  const TX_PER_PAGE = 10;
 
   useEffect(() => {
     loadFeatureFlags().then(() => setFlagsLoaded(true));
@@ -55,7 +56,7 @@ export default function ShopPage({
     Promise.all([
       getBalance(childId).then(setBalance),
       getRewards().then(setRewards),
-      getTransactions(childId, 20).then(setTransactions),
+      getTransactions(childId, 200).then(setTransactions),
     ]);
   }, [childId, flagsLoaded, featureDisabled]);
 
@@ -78,7 +79,7 @@ export default function ShopPage({
     if (result.ok) {
       setBalance(result.newBalance ?? null);
       showToast(`${reward.emoji} ${reward.name} 교환 완료!`);
-      getTransactions(childId, 20).then(setTransactions);
+      getTransactions(childId, 200).then(setTransactions);
     } else {
       showToast("별사탕이 부족해요!");
     }
@@ -128,45 +129,67 @@ export default function ShopPage({
 
       {/* Transaction History */}
       <div className="mb-20">
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 md:text-sm"
-        >
-          📋 최근 내역 {showHistory ? "▲" : "▼"}
-        </button>
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 md:text-sm">
+          📋 최근 내역
+        </div>
 
-        {showHistory && (
-          <div className="flex flex-col gap-2">
-            {transactions.length === 0 ? (
-              <div className="text-center py-4 text-gray-400 text-sm">
-                아직 내역이 없어요
-              </div>
-            ) : (
-              transactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-sm"
-                >
-                  <div>
-                    <div className="text-sm font-semibold text-gray-700">
-                      {TYPE_LABELS[tx.type] ?? tx.type}
-                    </div>
-                    {tx.reason && (
-                      <div className="text-xs text-gray-400">{tx.reason}</div>
-                    )}
-                  </div>
-                  <div
-                    className={`text-sm font-bold ${
-                      tx.amount > 0 ? "text-green-500" : "text-red-400"
-                    }`}
-                  >
-                    {tx.amount > 0 ? "+" : ""}
-                    {tx.amount}
-                  </div>
-                </div>
-              ))
-            )}
+        {transactions.length === 0 ? (
+          <div className="text-center py-4 text-gray-400 text-sm">
+            아직 내역이 없어요
           </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2">
+              {transactions
+                .slice(txPage * TX_PER_PAGE, (txPage + 1) * TX_PER_PAGE)
+                .map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-sm"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold text-gray-700">
+                        {TYPE_LABELS[tx.type] ?? tx.type}
+                      </div>
+                      {tx.reason && (
+                        <div className="text-xs text-gray-400">{tx.reason}</div>
+                      )}
+                    </div>
+                    <div
+                      className={`text-sm font-bold ${
+                        tx.amount > 0 ? "text-green-500" : "text-red-400"
+                      }`}
+                    >
+                      {tx.amount > 0 ? "+" : ""}
+                      {tx.amount}
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Pagination */}
+            {transactions.length > TX_PER_PAGE && (
+              <div className="flex items-center justify-between mt-3">
+                <button
+                  onClick={() => setTxPage((p) => p - 1)}
+                  disabled={txPage === 0}
+                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-100 text-gray-600 active:bg-gray-200 disabled:opacity-30 disabled:active:bg-gray-100"
+                >
+                  ← 이전
+                </button>
+                <span className="text-xs text-gray-400">
+                  {txPage + 1} / {Math.ceil(transactions.length / TX_PER_PAGE)}
+                </span>
+                <button
+                  onClick={() => setTxPage((p) => p + 1)}
+                  disabled={(txPage + 1) * TX_PER_PAGE >= transactions.length}
+                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-100 text-gray-600 active:bg-gray-200 disabled:opacity-30 disabled:active:bg-gray-100"
+                >
+                  다음 →
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
