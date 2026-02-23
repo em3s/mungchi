@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, use } from "react";
+import { useState, useEffect, useCallback, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { todayKST, WEEKDAYS } from "@/lib/date";
@@ -22,6 +22,7 @@ import { TaskItem } from "@/components/TaskItem";
 import { WordInput } from "@/components/WordInput";
 import { VocabQuiz } from "@/components/VocabQuiz";
 import { Toast } from "@/components/Toast";
+import { VocabSettings } from "@/components/VocabSettings";
 import { useToast } from "@/hooks/useToast";
 import type { Task, VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
@@ -72,6 +73,8 @@ export default function VocabPage({
   const [config, setConfig] = useState<Record<string, number>>({});
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [coinsEnabled, setCoinsEnabled] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const longPressRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Vocab lists (date + count + title)
   const [vocabLists, setVocabLists] = useState<
@@ -219,7 +222,21 @@ export default function VocabPage({
         className="flex items-center justify-between py-4 sticky top-0 z-10"
         style={{ background: "var(--bg)" }}
       >
-        <h1 className="text-xl font-bold md:text-2xl">📖 영어 단어</h1>
+        <h1
+          className="text-xl font-bold md:text-2xl select-none"
+          onTouchStart={() => {
+            longPressRef.current = setTimeout(() => setShowSettings(true), 800);
+          }}
+          onTouchEnd={() => clearTimeout(longPressRef.current)}
+          onTouchCancel={() => clearTimeout(longPressRef.current)}
+          onMouseDown={() => {
+            longPressRef.current = setTimeout(() => setShowSettings(true), 800);
+          }}
+          onMouseUp={() => clearTimeout(longPressRef.current)}
+          onMouseLeave={() => clearTimeout(longPressRef.current)}
+        >
+          📖 영어 단어
+        </h1>
         {coinsEnabled && coinBalance !== null && (
           <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">
             🍬 {coinBalance}
@@ -471,6 +488,12 @@ export default function VocabPage({
 
       <BottomNav childId={childId} />
       <Toast message={toastMsg} />
+      {showSettings && (
+        <VocabSettings
+          onClose={() => setShowSettings(false)}
+          onToast={showToast}
+        />
+      )}
     </div>
   );
 }

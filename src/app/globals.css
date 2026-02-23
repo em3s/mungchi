@@ -168,6 +168,15 @@ body {
   }
 }
 
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 .animate-spin-slow {
   animation: spin 1s linear infinite;
 }
@@ -178,6 +187,10 @@ body {
 
 .animate-pop-in {
   animation: popIn 0.2s;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.25s ease-out;
 }
 
 .animate-pin-shake {

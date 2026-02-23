@@ -8,6 +8,7 @@ import {
   syncDynamic,
   getAllWords,
   clearDynamicCache,
+  resetAll,
   type DictRow,
 } from "@/lib/dict-db";
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
@@ -67,6 +68,14 @@ export async function loadDictionary(): Promise<DictionaryEntry[]> {
 export async function invalidateDictionary(): Promise<void> {
   await clearDynamicCache();
   dictCache = null;
+}
+
+// IndexedDB 전체 초기화 + 재로드 (설정에서 사전 리로드)
+export async function reloadDictionary(): Promise<number> {
+  await resetAll();
+  dictCache = null;
+  const entries = await loadDictionary();
+  return entries.length;
 }
 
 // --- 사전 검색 (메모리 prefix 매칭) ---

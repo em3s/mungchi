@@ -76,3 +76,10 @@ export async function getAllWords(): Promise<DictRow[]> {
 export async function clearDynamicCache(): Promise<void> {
   await getDb().words.where("source").equals("dynamic").delete();
 }
+
+// 전체 초기화 (정적+동적+메타 모두 삭제, 재시드 강제)
+export async function resetAll(): Promise<void> {
+  const db = getDb();
+  await db.words.clear();
+  await db.meta.clear();
+}
