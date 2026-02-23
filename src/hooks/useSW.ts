@@ -9,6 +9,8 @@ export function useSW() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
+    let interval: ReturnType<typeof setInterval>;
+
     navigator.serviceWorker.register("/sw.js").then((reg) => {
       // 이미 waiting 중인 SW 감지 (앱 재진입 시)
       if (reg.waiting) {
@@ -30,6 +32,9 @@ export function useSW() {
           }
         });
       });
+
+      // 60초마다 새 SW 체크 (iPad PWA 대응)
+      interval = setInterval(() => reg.update(), 60_000);
     });
 
     // controllerchange 시 페이지 리로드
@@ -39,6 +44,8 @@ export function useSW() {
       refreshing = true;
       window.location.reload();
     });
+
+    return () => clearInterval(interval);
   }, []);
 
   const applyUpdate = useCallback(() => {
