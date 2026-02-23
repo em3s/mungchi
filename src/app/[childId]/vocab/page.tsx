@@ -11,7 +11,6 @@ import {
   removeEntry,
   updateVocabDate,
   setListTitle,
-  hasEarnedToday,
   saveQuizResult,
   getVocabConfig,
   getQuizStatuses,
@@ -69,7 +68,6 @@ export default function VocabPage({
     total: number;
     correct: number;
     candy: number;
-    alreadyEarned: boolean;
   } | null>(null);
   const [config, setConfig] = useState<Record<string, number>>({});
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
@@ -208,17 +206,11 @@ export default function VocabPage({
 
   async function handleQuizComplete(total: number, correct: number) {
     // 객관식: 고정 보상, 스펠링: 1🍬 × 맞춘 수
-    const rewardAmount =
+    // 매번 완주하면 무조건 보상
+    const candy =
       quizType === "basic"
         ? (config.basic_reward ?? 1)
         : correct; // spelling: 1🍬 per correct
-
-    const alreadyEarned = await hasEarnedToday(
-      childId,
-      selectedDate!,
-      quizType,
-    );
-    const candy = alreadyEarned ? 0 : rewardAmount;
 
     await saveQuizResult(
       childId,
@@ -239,7 +231,7 @@ export default function VocabPage({
       if (result.ok) setCoinBalance(result.newBalance ?? null);
     }
 
-    setQuizResult({ total, correct, candy, alreadyEarned });
+    setQuizResult({ total, correct, candy });
     setView("result");
   }
 
@@ -489,15 +481,11 @@ export default function VocabPage({
           <div className="text-sm text-gray-500 mb-4">
             {quizType === "basic" ? "객관식" : "스펠링"} 퀴즈 완료!
           </div>
-          {quizResult.candy > 0 ? (
+          {quizResult.candy > 0 && (
             <div className="text-lg font-bold text-amber-500 mb-4">
               🍬 별사탕 +{quizResult.candy}!
             </div>
-          ) : quizResult.alreadyEarned ? (
-            <div className="text-sm text-gray-400 mb-4">
-              이미 별사탕을 받았어요
-            </div>
-          ) : null}
+          )}
           <button
             onClick={() => {
               setQuizResult(null);
