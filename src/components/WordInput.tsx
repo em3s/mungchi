@@ -12,30 +12,26 @@ interface WordInputProps {
 }
 
 export function WordInput({ onSelect, onCustom, onCancel, excludeWords }: WordInputProps) {
-  const [query, setQuery] = useState("");
+  const [word, setWord] = useState("");
+  const [meaning, setMeaning] = useState("");
   const [suggestions, setSuggestions] = useState<DictionaryEntry[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [customMode, setCustomMode] = useState(false);
-  const [customMeaning, setCustomMeaning] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [matched, setMatched] = useState<DictionaryEntry | null>(null);
+  const wordRef = useRef<HTMLInputElement>(null);
   const meaningRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
+    wordRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    if (customMode) meaningRef.current?.focus();
-  }, [customMode]);
-
-  function handleChange(value: string) {
-    setQuery(value);
-    setCustomMode(false);
-    setCustomMeaning("");
+  function handleWordChange(value: string) {
+    setWord(value);
+    setMatched(null);
 
     if (value.trim().length < 1) {
       setSuggestions([]);
       setShowDropdown(false);
+      setMeaning("");
       return;
     }
 
@@ -43,92 +39,102 @@ export function WordInput({ onSelect, onCustom, onCancel, excludeWords }: WordIn
     const filtered = results.filter((r) => !excludeWords.includes(r.word));
     setSuggestions(filtered);
     setShowDropdown(filtered.length > 0);
+
+    // 정확히 일치하는 단어가 있으면 뜻 자동 채우기
+    const exact = filtered.find((r) => r.word === value.trim().toLowerCase());
+    if (exact) {
+      setMeaning(exact.meaning);
+      setMatched(exact);
+    } else {
+      setMeaning("");
+    }
   }
 
-  function handleSelect(entry: DictionaryEntry) {
-    onSelect(entry);
-    setQuery("");
+  function handleSelectSuggestion(entry: DictionaryEntry) {
+    setWord(entry.word);
+    setMeaning(entry.meaning);
+    setMatched(entry);
     setSuggestions([]);
     setShowDropdown(false);
-    setCustomMode(false);
-    setCustomMeaning("");
-    inputRef.current?.focus();
+    meaningRef.current?.focus();
   }
 
-  function handleCustomMode() {
-    setShowDropdown(false);
-    setCustomMode(true);
-  }
+  function handleSubmit() {
+    const w = word.trim();
+    const m = meaning.trim();
+    if (!w || !m) return;
 
-  function handleCustomSubmit() {
-    const word = query.trim();
-    const meaning = customMeaning.trim();
-    if (!word || !meaning) return;
-    onCustom(word, meaning);
-    setQuery("");
-    setCustomMeaning("");
-    setCustomMode(false);
+    if (matched && matched.word === w) {
+      // 사전 단어 (뜻이 수정됐을 수 있음)
+      if (m === matched.meaning) {
+        onSelect(matched);
+      } else {
+        onCustom(w, m);
+      }
+    } else {
+      onCustom(w, m);
+    }
+
+    setWord("");
+    setMeaning("");
+    setMatched(null);
     setSuggestions([]);
-    inputRef.current?.focus();
+    setShowDropdown(false);
+    wordRef.current?.focus();
   }
-
-  const trimmed = query.trim();
-  const showCustomButton = trimmed.length >= 1 && !customMode;
 
   return (
     <div className="relative">
-      <div className="flex gap-2 bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-4">
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder="영어 단어를 입력하세요"
-          className="flex-1 text-base outline-none bg-transparent md:text-lg"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-        />
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-1.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 active:bg-gray-200"
-        >
-          취소
-        </button>
-      </div>
-
-      {/* 직접 입력 모드: 뜻 입력 */}
-      {customMode && (
-        <div className="flex gap-2 mt-2 bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+      <div className="bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-4">
+        <div className="flex gap-2 items-center">
+          <input
+            ref={wordRef}
+            type="text"
+            value={word}
+            onChange={(e) => handleWordChange(e.target.value)}
+            placeholder="영어 단어"
+            className="flex-1 text-base outline-none bg-transparent font-semibold md:text-lg"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-1.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 active:bg-gray-200 shrink-0"
+          >
+            취소
+          </button>
+        </div>
+        <div className="flex gap-2 items-center mt-2 pt-2 border-t border-gray-100">
           <input
             ref={meaningRef}
             type="text"
-            value={customMeaning}
-            onChange={(e) => setCustomMeaning(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCustomSubmit()}
-            placeholder="뜻을 입력하세요"
-            className="flex-1 text-base outline-none bg-transparent"
+            value={meaning}
+            onChange={(e) => { setMeaning(e.target.value); setMatched(null); }}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            placeholder="뜻"
+            className="flex-1 text-sm outline-none bg-transparent text-gray-600"
             autoComplete="off"
           />
           <button
             type="button"
-            onClick={handleCustomSubmit}
-            disabled={!customMeaning.trim()}
-            className="px-3 py-1.5 rounded-xl text-sm font-semibold text-white bg-[var(--accent,#6c5ce7)] disabled:opacity-40 active:opacity-80"
+            onClick={handleSubmit}
+            disabled={!word.trim() || !meaning.trim()}
+            className="px-3 py-1.5 rounded-xl text-sm font-semibold text-white bg-[var(--accent,#6c5ce7)] disabled:opacity-40 active:opacity-80 shrink-0"
           >
             추가
           </button>
         </div>
-      )}
+      </div>
 
       {/* 자동완성 드롭다운 */}
       {showDropdown && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-30 max-h-64 overflow-y-auto">
+        <div className="absolute left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-30 max-h-64 overflow-y-auto">
           {suggestions.map((entry) => (
             <button
               key={entry.id}
-              onClick={() => handleSelect(entry)}
+              onClick={() => handleSelectSuggestion(entry)}
               className="w-full text-left px-4 py-3 hover:bg-gray-50 active:bg-gray-100 border-b border-gray-50 last:border-0"
             >
               <div className="font-semibold text-sm text-gray-800">
@@ -138,16 +144,6 @@ export function WordInput({ onSelect, onCustom, onCancel, excludeWords }: WordIn
             </button>
           ))}
         </div>
-      )}
-
-      {/* 직접 입력 버튼 */}
-      {showCustomButton && (
-        <button
-          onClick={handleCustomMode}
-          className="w-full mt-1 text-left px-4 py-2.5 text-sm text-gray-400 active:text-gray-600"
-        >
-          &quot;{trimmed}&quot; 직접 입력하기 →
-        </button>
       )}
     </div>
   );
