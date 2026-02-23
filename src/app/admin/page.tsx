@@ -860,7 +860,7 @@ export default function AdminPage() {
         <div className="mb-4">
           <label className="text-sm font-semibold text-gray-600 block mb-2">대상 아이</label>
           <div className="flex gap-3">
-            {USERS.filter((u) => u.role === "child").map((child) => (
+            {USERS.map((child) => (
               <button
                 key={child.id}
                 onClick={() =>
