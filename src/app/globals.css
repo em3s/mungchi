@@ -216,3 +216,22 @@ body {
 .animate-toast-in {
   animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
 }
+
+@keyframes candyFloat {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(-10px) scale(1.2);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(-40px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-70px) scale(0.8);
+    opacity: 0;
+  }
+}

@@ -50,6 +50,7 @@ export function VocabQuiz({
   const [round, setRound] = useState(1);
   const [wrongInRound, setWrongInRound] = useState<VocabEntry[]>([]);
   const [totalCorrect, setTotalCorrect] = useState(0);
+  const [candyPop, setCandyPop] = useState(false);
   const totalWords = entries.length;
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -104,6 +105,8 @@ export function VocabQuiz({
     setIsCorrect(correct);
     if (correct) {
       setTotalCorrect((prev) => prev + 1);
+      setCandyPop(true);
+      setTimeout(() => setCandyPop(false), 1200);
     } else {
       setWrongInRound((prev) => [...prev, current.entry]);
     }
@@ -233,6 +236,16 @@ export function VocabQuiz({
             </button>
           )}
         </form>
+      )}
+
+      {/* Candy pop animation */}
+      {candyPop && quizType === "spelling" && (
+        <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-50">
+          <div className="animate-bounce text-3xl font-black text-amber-500 drop-shadow-lg"
+            style={{ animation: "candyFloat 1.2s ease-out forwards" }}>
+            +1 🍬
+          </div>
+        </div>
       )}
 
       {/* Result feedback */}

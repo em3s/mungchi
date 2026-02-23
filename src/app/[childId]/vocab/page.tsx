@@ -111,10 +111,10 @@ export default function VocabPage({
     if (coins) getBalance(childId).then(setCoinBalance);
   }, [childId, flagsLoaded, featureDisabled, loadLists]);
 
-  // Load entries when selectedDate changes
+  // Load entries when selectedDate changes (list view only)
   useEffect(() => {
-    if (selectedDate) loadEntries();
-  }, [selectedDate, loadEntries]);
+    if (selectedDate && view === "list") loadEntries();
+  }, [selectedDate, loadEntries, view]);
 
   if (!flagsLoaded || featureDisabled) return null;
 
@@ -438,6 +438,7 @@ export default function VocabPage({
                         <TaskItem
                           key={entry.id}
                           task={task}
+                          checkOnly
                           onToggle={async (t) => {
                             const newVal = !entry.spelling;
                             const ok = await toggleSpelling(childId, entry.date, entry.id, newVal);

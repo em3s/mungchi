@@ -8,9 +8,10 @@ interface TaskItemProps {
   onToggle?: (task: Task) => void;
   onEdit?: (task: Task, newTitle: string) => void;
   onDelete?: (task: Task) => void;
+  checkOnly?: boolean;
 }
 
-export function TaskItem({ task, onToggle, onEdit, onDelete }: TaskItemProps) {
+export function TaskItem({ task, onToggle, onEdit, onDelete, checkOnly }: TaskItemProps) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(task.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +33,7 @@ export function TaskItem({ task, onToggle, onEdit, onDelete }: TaskItemProps) {
   return (
     <li
       className={`flex items-center gap-3 bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-opacity md:px-5 md:py-[18px] md:gap-4 md:rounded-2xl ${
-        task.completed ? "opacity-55" : ""
+        task.completed && !checkOnly ? "opacity-55" : ""
       }`}
     >
       {onToggle && (
@@ -65,7 +66,7 @@ export function TaskItem({ task, onToggle, onEdit, onDelete }: TaskItemProps) {
             setEditing(true);
           }}
           className={`flex-1 text-base md:text-lg ${
-            task.completed ? "line-through" : ""
+            task.completed && !checkOnly ? "line-through" : ""
           }`}
         >
           {task.title}
