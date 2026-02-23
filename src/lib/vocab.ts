@@ -29,21 +29,48 @@ export async function searchDictionary(
 
 export async function getVocabLists(
   childId: string,
-): Promise<{ date: string; count: number }[]> {
+): Promise<{ date: string; count: number; title: string }[]> {
   return cached(`vocab_lists:${childId}`, DATES_TTL, async () => {
-    const { data } = await supabase
-      .from("vocab_entries")
-      .select("date")
-      .eq("child_id", childId);
-    if (!data) return [];
+    const [entriesRes, metaRes] = await Promise.all([
+      supabase.from("vocab_entries").select("date").eq("child_id", childId),
+      supabase
+        .from("vocab_list_meta")
+        .select("date, title")
+        .eq("child_id", childId),
+    ]);
     const counts = new Map<string, number>();
-    for (const row of data as { date: string }[]) {
-      counts.set(row.date, (counts.get(row.date) ?? 0) + 1);
+    if (entriesRes.data) {
+      for (const row of entriesRes.data as { date: string }[]) {
+        counts.set(row.date, (counts.get(row.date) ?? 0) + 1);
+      }
+    }
+    const titles = new Map<string, string>();
+    if (metaRes.data) {
+      for (const row of metaRes.data as { date: string; title: string }[]) {
+        titles.set(row.date, row.title);
+      }
     }
     return Array.from(counts.entries())
-      .map(([date, count]) => ({ date, count }))
+      .map(([date, count]) => ({ date, count, title: titles.get(date) ?? "" }))
       .sort((a, b) => b.date.localeCompare(a.date));
   });
+}
+
+// --- 단어장 제목 ---
+
+export async function setListTitle(
+  childId: string,
+  date: string,
+  title: string,
+): Promise<boolean> {
+  const { error } = await supabase.from("vocab_list_meta").upsert({
+    child_id: childId,
+    date,
+    title,
+  });
+  if (error) return false;
+  invalidate(`vocab_lists:${childId}`);
+  return true;
 }
 
 // --- 단어 목록 ---

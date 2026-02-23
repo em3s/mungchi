@@ -10,6 +10,7 @@ import {
   addEntry,
   removeEntry,
   updateVocabDate,
+  setListTitle,
   hasEarnedToday,
   saveQuizResult,
   getVocabConfig,
@@ -69,10 +70,11 @@ export default function VocabPage({
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const [coinsEnabled, setCoinsEnabled] = useState(false);
 
-  // Vocab lists (date + count)
+  // Vocab lists (date + count + title)
   const [vocabLists, setVocabLists] = useState<
-    { date: string; count: number }[]
+    { date: string; count: number; title: string }[]
   >([]);
+  const [listTitle, setListTitleState] = useState("");
 
   const loadLists = useCallback(async () => {
     const lists = await getVocabLists(childId);
@@ -108,12 +110,15 @@ export default function VocabPage({
   const minWords = config.min_words ?? 3;
 
   function handleOpenList(date: string) {
+    const list = vocabLists.find((l) => l.date === date);
+    setListTitleState(list?.title ?? "");
     setSelectedDate(date);
     setLoading(true);
     setView("list");
   }
 
   function handleCreateNew() {
+    setListTitleState("");
     setSelectedDate(newDate);
     setLoading(true);
     setView("list");
@@ -122,8 +127,17 @@ export default function VocabPage({
   function handleBackToHome() {
     setSelectedDate(null);
     setEntries([]);
+    setListTitleState("");
     setView("home");
     loadLists();
+  }
+
+  async function handleTitleSave() {
+    if (!selectedDate) return;
+    const ok = await setListTitle(childId, selectedDate, listTitle);
+    if (ok) {
+      showToast("제목을 저장했어요");
+    }
   }
 
   async function handleChangeDate(newDateValue: string) {
@@ -244,10 +258,15 @@ export default function VocabPage({
                     onClick={() => handleOpenList(item.date)}
                     className="w-full flex items-center justify-between bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] active:bg-gray-50 transition-colors"
                   >
-                    <div className="text-left">
+                    <div className="text-left min-w-0 flex-1">
                       <div className="font-bold text-base text-gray-800">
-                        {formatDate(item.date)}
+                        {item.title || formatDate(item.date)}
                       </div>
+                      {item.title && (
+                        <div className="text-xs text-gray-400">
+                          {formatDate(item.date)}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-400">
@@ -267,7 +286,7 @@ export default function VocabPage({
       {view === "list" && (
         <>
           {/* Sub-header */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2">
             <button
               onClick={handleBackToHome}
               className="text-xl px-2 py-1 rounded-xl text-[var(--accent,#6c5ce7)] font-bold active:bg-black/5"
@@ -279,6 +298,17 @@ export default function VocabPage({
               value={selectedDate ?? ""}
               onChange={(e) => handleChangeDate(e.target.value)}
               className="text-sm font-semibold text-gray-600 bg-transparent border-b border-dashed border-gray-300 px-1 py-0.5"
+            />
+          </div>
+          {/* Title input */}
+          <div className="mb-4">
+            <input
+              type="text"
+              value={listTitle}
+              onChange={(e) => setListTitleState(e.target.value)}
+              onBlur={handleTitleSave}
+              placeholder="제목 없음"
+              className="w-full text-lg font-bold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 px-1"
             />
           </div>
 
