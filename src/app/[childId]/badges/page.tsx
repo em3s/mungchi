@@ -5,6 +5,7 @@ import { CHILDREN, CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/constants";
 import type { BadgeInfo } from "@/lib/types";
 import type { DayTaskSummary } from "@/lib/badges/types";
 import { evaluateBadges, getBadgesForDisplay } from "@/lib/badges/engine";
+import { cached } from "@/lib/cache";
 import { BottomNav } from "@/components/BottomNav";
 import { TrophyShelf } from "@/components/TrophyShelf";
 import { BadgeCard } from "@/components/BadgeCard";
@@ -24,11 +25,12 @@ export default function BadgesPage({
       const siblingId =
         CHILDREN.find((c) => c.id !== childId)?.id ?? "";
 
-      // 모든 할일 데이터 로드 (서버 1분 캐시)
-      const fetchTasks = async (id: string) => {
-        const res = await fetch(`/api/tasks/badges?childId=${id}`);
-        return res.ok ? res.json() : null;
-      };
+      // 모든 할일 데이터 로드 (클라이언트 1분 캐시)
+      const fetchTasks = (id: string) =>
+        cached(`badge_tasks:${id}`, 60_000, async () => {
+          const res = await fetch(`/api/tasks/badges?childId=${id}`);
+          return res.ok ? res.json() : null;
+        });
 
       const [childData, siblingData] = await Promise.all([
         fetchTasks(childId),

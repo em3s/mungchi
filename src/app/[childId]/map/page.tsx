@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { MILESTONES } from "@/lib/constants";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
+import { cached } from "@/lib/cache";
 import { BottomNav } from "@/components/BottomNav";
 import { MapNode } from "@/components/MapNode";
 
@@ -34,9 +35,11 @@ export default function MapPage({
   useEffect(() => {
     if (!flagsLoaded || featureDisabled) return;
     async function load() {
-      const res = await fetch("/api/tasks/counts");
-      if (!res.ok) return;
-      const counts = await res.json();
+      const counts = await cached("map_counts", 60_000, async () => {
+        const res = await fetch("/api/tasks/counts");
+        return res.ok ? res.json() : null;
+      });
+      if (!counts) return;
 
       setTotalCompleted(counts.total);
       setSihyunCount(counts.sihyun);

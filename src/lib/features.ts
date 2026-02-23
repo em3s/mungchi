@@ -1,6 +1,8 @@
 // 피쳐플래그 — API Route 경유 DB 기본값 + localStorage override
 // 우선순위: localStorage override > DB값 > 코드 기본값
 
+import { cached, invalidate } from "./cache";
+
 const CODE_DEFAULTS = {
   sihyun: { map: true },
   misong: { map: false },
@@ -20,8 +22,10 @@ type FlagMap = Record<string, Record<string, boolean>>;
 let flagsSnapshot: FlagMap = {};
 
 export async function loadFeatureFlags(): Promise<FlagMap> {
-  const res = await fetch("/api/features");
-  const flags: FlagMap = res.ok ? await res.json() : {};
+  const flags = await cached<FlagMap>("feature_flags", 60_000, async () => {
+    const res = await fetch("/api/features");
+    return res.ok ? await res.json() : {};
+  });
   flagsSnapshot = flags;
   return flags;
 }
@@ -67,9 +71,10 @@ export async function setFeatureFlag(
     body: JSON.stringify({ child_id: childId, feature, enabled }),
   });
   if (!res.ok) return false;
-  // 스냅샷 즉시 갱신
+  // 스냅샷 즉시 갱신 + 캐시 무효화
   if (!flagsSnapshot[childId]) flagsSnapshot[childId] = {};
   flagsSnapshot[childId][feature] = enabled;
+  invalidate("feature_flags");
   return true;
 }
 
