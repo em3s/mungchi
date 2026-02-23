@@ -1,26 +1,11 @@
 -- mungchi Supabase 스키마
 -- Supabase SQL Editor에서 실행
-
--- 유저 정보
-CREATE TABLE users (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  theme TEXT NOT NULL,
-  emoji TEXT NOT NULL,
-  pin TEXT NOT NULL DEFAULT '999999',
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
-INSERT INTO users (id, name, theme, emoji) VALUES
-  ('sihyun', '시현', 'starry', '⭐'),
-  ('misong', '미송', 'choco', '🍫'),
-  ('dad', '아빠', 'shield', '🛡️'),
-  ('mom', '엄마', 'heart', '💖');
+-- 참고: users 테이블은 없음 (유저 정보는 코드 상수 USERS로 관리)
 
 -- 할일
 CREATE TABLE tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL REFERENCES users(id),
+  user_id TEXT NOT NULL,
   title TEXT NOT NULL,
   date DATE NOT NULL,
   completed BOOLEAN NOT NULL DEFAULT false,
@@ -32,19 +17,6 @@ CREATE TABLE tasks (
 );
 
 CREATE INDEX idx_tasks_user_date ON tasks(user_id, date);
-
--- 뱃지 기록
-CREATE TABLE badge_records (
-  id TEXT PRIMARY KEY,
-  badge_id TEXT NOT NULL,
-  user_id TEXT NOT NULL REFERENCES users(id),
-  earned_at TIMESTAMPTZ NOT NULL,
-  earned_date DATE NOT NULL,
-  context JSONB,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE INDEX idx_badge_records_user ON badge_records(user_id);
 
 -- updated_at 자동 갱신 트리거
 CREATE OR REPLACE FUNCTION update_updated_at()

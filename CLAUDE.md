@@ -18,9 +18,9 @@
 
 - `User` 타입 (`src/lib/types.ts`): role="child"|"parent", 모든 기능 동일
 - `USERS` 상수 (`src/lib/constants.ts`): 앱 전체에서 사용
-- DB `users` 테이블: 외래키 참조용 (tasks, badge_records 등)
+- DB에 users 테이블 없음 (유저 정보는 코드 상수 USERS로 관리)
 - 쌍둥이별(합산 달성맵): child role만 집계
-- 유저 추가 시: User 타입 + USERS 상수 + CODE_DEFAULTS + DB users 테이블 모두 업데이트
+- 유저 추가 시: User 타입 + USERS 상수 + CODE_DEFAULTS 업데이트
 
 ## 기술 스택
 
