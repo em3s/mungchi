@@ -137,6 +137,13 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 - 벌크 할일 추가 + 템플릿
 - 날짜 복제
 
+## 자동 업데이트 (PWA)
+
+- `public/sw.js`: network-first 캐시, 사용자 제어 업데이트
+- `scripts/stamp-sw.js`: prebuild에서 sw.js에 빌드 타임스탬프 주입 → 배포마다 SW 변경
+- `src/hooks/useSW.ts`: SW 업데이트 + 피쳐플래그 변경 감지 (각 60초 폴링)
+- `src/components/UpdateButton.tsx`: "새 버전이 있어요! 업데이트" 배너 (SW 업데이트, 플래그 변경 동일)
+
 ## 주의사항
 
 - KST 타임존 (UTC+9) 일관 사용
