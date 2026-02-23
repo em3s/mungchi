@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
 import { CHILDREN } from "@/lib/constants";
 import { PinModal } from "@/components/PinModal";
+import { SupervisorFAB } from "@/components/SupervisorFAB";
 
 export default function ChildLayout({
   children,
@@ -60,6 +61,7 @@ export default function ChildLayout({
       <div className="max-w-[480px] mx-auto px-4 pb-20 md:max-w-[640px] md:px-6 md:pb-24">
         {children}
       </div>
+      <SupervisorFAB currentChildId={childId} />
     </div>
   );
 }

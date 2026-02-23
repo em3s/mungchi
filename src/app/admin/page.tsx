@@ -15,6 +15,7 @@ import {
 } from "@/lib/features";
 
 import { PinModal } from "@/components/PinModal";
+import { SupervisorFAB } from "@/components/SupervisorFAB";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -145,7 +146,10 @@ export default function AdminPage() {
   // 세션 확인
   useEffect(() => {
     const session = localStorage.getItem(ADMIN_SESSION_KEY);
-    if (session === "true") setAuthed(true);
+    if (session === "true") {
+      setAuthed(true);
+      sessionStorage.setItem("mungchi_supervisor", "true");
+    }
     setLoaded(true);
   }, []);
 
@@ -184,6 +188,7 @@ export default function AdminPage() {
   // PIN 성공
   const handlePinSuccess = useCallback(() => {
     localStorage.setItem(ADMIN_SESSION_KEY, "true");
+    sessionStorage.setItem("mungchi_supervisor", "true");
     setAuthed(true);
   }, []);
 
@@ -1211,6 +1216,7 @@ export default function AdminPage() {
         </div>
       )}
 
+      <SupervisorFAB />
       <Toast message={message} />
     </div>
   );
