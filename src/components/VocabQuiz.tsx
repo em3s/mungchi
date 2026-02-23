@@ -75,6 +75,15 @@ export function VocabQuiz({
     setLoading(false);
   }, [entries, startRound]);
 
+  function speakWord(word: string) {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = "en-US";
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  }
+
   if (loading) {
     return (
       <div className="text-center py-10 text-gray-400">퀴즈 준비 중...</div>
@@ -256,6 +265,12 @@ export function VocabQuiz({
           >
             {isCorrect ? "정답! 🎉" : `오답! 정답: ${current.entry.word}`}
           </div>
+          <button
+            onClick={() => speakWord(current.entry.word)}
+            className="mt-2 inline-flex items-center gap-1.5 text-sm text-gray-500 active:text-[var(--accent,#6c5ce7)] transition-colors px-3 py-1.5 rounded-lg bg-gray-100 active:bg-gray-200"
+          >
+            ▶ 발음 듣기
+          </button>
           {!isCorrect && (
             <div className="text-sm text-gray-500 mt-1.5">
               괜찮아! 끝까지 하면 별사탕은 똑같이 받아 🍬
