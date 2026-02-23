@@ -9,7 +9,6 @@ import {
   getAllWords,
   clearDynamicCache,
   resetAll,
-  type DictRow,
 } from "@/lib/dict-db";
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
 
@@ -20,15 +19,6 @@ const CONFIG_TTL = 60_000; // 1분
 // --- 사전: IndexedDB(정적+동적) → 메모리 캐시 ---
 
 let dictCache: DictionaryEntry[] | null = null;
-
-function rowToEntry(r: DictRow): DictionaryEntry {
-  return {
-    id: r.dbId ?? `s:${r.word}`,
-    word: r.word,
-    meaning: r.meaning,
-    level: r.level,
-  };
-}
 
 export async function loadDictionary(): Promise<DictionaryEntry[]> {
   if (dictCache) return dictCache;
@@ -379,15 +369,3 @@ export function getSimilarWords(
   return scored.filter((s) => s.dist > 0).slice(0, count).map((s) => s.entry);
 }
 
-export function getRandomWords(
-  excludeIds: string[],
-  count: number,
-): DictionaryEntry[] {
-  if (!dictCache) return [];
-  const pool =
-    excludeIds.length > 0
-      ? dictCache.filter((e) => !excludeIds.includes(e.id))
-      : dictCache;
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
-}

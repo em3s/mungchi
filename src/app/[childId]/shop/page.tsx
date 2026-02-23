@@ -21,6 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
   allclear_bonus: "올클리어 보너스",
   exchange: "교환",
   admin_adjust: "관리자 조정",
+  vocab_quiz: "단어 퀴즈",
 };
 
 export default function ShopPage({

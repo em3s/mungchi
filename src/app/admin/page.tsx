@@ -647,16 +647,19 @@ export default function AdminPage() {
             {newRewardEmoji}
           </button>
           {showEmojiPicker && (
-            <div className="absolute top-12 left-0 z-50">
-              <EmojiPicker
-                onEmojiClick={(emojiData) => {
-                  setNewRewardEmoji(emojiData.emoji);
-                  setShowEmojiPicker(false);
-                }}
-                searchPlaceholder="이모지 검색..."
-                width={300}
-                height={400}
-              />
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
+              onClick={() => setShowEmojiPicker(false)}>
+              <div className="animate-slide-up" onClick={(e) => e.stopPropagation()}>
+                <EmojiPicker
+                  onEmojiClick={(emojiData) => {
+                    setNewRewardEmoji(emojiData.emoji);
+                    setShowEmojiPicker(false);
+                  }}
+                  searchPlaceholder="이모지 검색..."
+                  width={320}
+                  height={380}
+                />
+              </div>
             </div>
           )}
           <input

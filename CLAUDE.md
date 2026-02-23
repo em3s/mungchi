@@ -44,7 +44,7 @@
   - `page.tsx` — 홈 (유저 선택)
   - `[childId]/page.tsx` — 대시보드 (달력 + 달성률 + 할일)
   - `[childId]/badges/page.tsx` — 뱃지 컬렉션
-  - `[childId]/shop/page.tsx` — 별사탕 상점 (잔액, 거래내역)
+  - `[childId]/shop/page.tsx` — 별사탕 상점 (잔액, 별사탕샵, 거래내역 페이지네이션)
   - `[childId]/vocab/page.tsx` — 영어 단어장 (단어 추가, 퀴즈)
   - `[childId]/star/page.tsx` — 개인 달성맵
   - `[childId]/map/page.tsx` — 합산 달성맵 (쌍둥이별, child만 집계)
@@ -53,10 +53,10 @@
   - `BottomNav.tsx` — 하단 네비게이션 (최대 6탭, feature flag 제어)
   - `MilestoneMap.tsx` — 달성맵 공통 컴포넌트
   - `SupervisorFAB.tsx` — 관리자 플로팅 버튼 (유저 전환, 관리 이동)
-  - `TaskItem.tsx` — 할일/단어 공용 리스트 항목 (onToggle 없으면 체크박스 숨김)
+  - `TaskItem.tsx` — 할일/단어 공용 리스트 항목 (onToggle 없으면 체크박스 숨김, checkOnly=스타일 없이 체크만)
   - `TaskForm.tsx` — 할일 추가 폼
   - `WordInput.tsx` — 영어 단어 자동완성 입력
-  - `VocabQuiz.tsx` — 영어 퀴즈 (객관식/주관식)
+  - `VocabQuiz.tsx` — 영어 퀴즈 (객관식/스펠링, Levenshtein 기반 유사 단어 오답지)
   - `PinModal.tsx` — PIN 인증 모달
 - `src/hooks/` — 커스텀 훅 (useSession, useToast)
 - `src/lib/` — 유틸리티
@@ -93,13 +93,18 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 
 ## 별사탕 🍬 화폐 시스템
 
-- DB: `coin_balances` (잔액), `coin_transactions` (거래), `coin_rewards` (보상 카탈로그)
+- DB: `coin_balances` (잔액), `coin_transactions` (거래), `coin_rewards` (별사탕샵 카탈로그)
 - 거래 타입: task_complete, task_uncomplete, allclear_bonus, exchange, admin_adjust, vocab_quiz
+- 별사탕샵: 보상 아이템 무제한 구매 가능 (잔액 충분 시), emoji-picker-react로 이모지 선택
 
 ## 영어 단어장 📖 시스템
 
 - DB: `dictionary`, `vocab_entries`, `vocab_quizzes`, `vocab_config`, `vocab_list_meta`
-- 퀴즈: 객관식(4지선다, 10🍬) / 주관식(직접입력, 20🍬), 하루 타입별 1회
+- `vocab_entries.spelling` (boolean): 스펠링 퀴즈 대상 여부 (리스트뷰에서 토글)
+- 퀴즈 보상: 객관식=config.basic_reward(기본1🍬)/완주, 스펠링=1🍬×맞춘수 (매회 지급, 1일 제한 없음)
+- 객관식: Levenshtein 편집거리 기반 유사 단어 오답지 생성
+- 스펠링: spelling=true인 단어만 출제, 정답 시 +1🍬 플로팅 애니메이션
+- 퀴즈 구조: 틀린 문제 재출제 (라운드), 전체 정답 시 완료
 
 ## Feature Flag 시스템
 
@@ -121,7 +126,7 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 - PIN 인증 후 접근
 - 피쳐플래그 토글 (DB)
 - 별사탕 관리 (잔액, 수동 조정, 거래내역)
-- 보상 카탈로그 (추가/삭제/활성화)
+- 별사탕샵 카탈로그 (추가/삭제/활성화, emoji-picker-react)
 - 단어장 보상 설정
 - 사전 관리 (단건/벌크 추가)
 - 벌크 할일 추가 + 템플릿
