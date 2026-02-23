@@ -418,7 +418,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="max-w-[640px] mx-auto px-4 pt-6 pb-20 overflow-x-hidden">
+    <div className="max-w-[640px] mx-auto px-4 pt-6 pb-20">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">🔧 관리</h1>

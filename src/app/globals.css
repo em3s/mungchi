@@ -25,13 +25,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Noto Sans KR", sans-serif;
   background: var(--bg);
   color: #2d3436;
   min-height: 100dvh;
-  overflow-x: hidden;
 }
 
 .theme-starry {
