@@ -578,7 +578,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     emoji: "👼",
     grade: "legendary",
     category: "milestone",
-    condition: (ctx) => ctx.totalActiveDays >= 100,
+    condition: (ctx) => ctx.totalActiveDays >= 270,
     repeatable: false,
   },
 

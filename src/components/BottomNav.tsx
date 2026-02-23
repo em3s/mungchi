@@ -13,10 +13,10 @@ interface BottomNavProps {
 
 export function BottomNav({ childId }: BottomNavProps) {
   const pathname = usePathname();
-  const [, setReady] = useState(false);
+  const [, setFlagsReady] = useState(false);
 
   useEffect(() => {
-    loadFeatureFlags().then(() => setReady(true));
+    loadFeatureFlags().then(() => setFlagsReady(true));
   }, []);
 
   const child = USERS.find((c) => c.id === childId);

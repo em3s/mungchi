@@ -23,6 +23,24 @@ function getRateClass(rate: number): string {
   return "bg-gray-200";
 }
 
+function getDateTextClass(
+  isSelected: boolean,
+  isToday: boolean,
+  hasData: boolean,
+  isSun: boolean,
+  isSat: boolean,
+): string {
+  if (isSelected) return "!text-white font-bold";
+  if (isToday) return "!text-[var(--accent,#6c5ce7)] font-bold";
+  if (hasData) {
+    const color = isSun ? "text-[#e17055]" : isSat ? "text-[#0984e3]" : "text-gray-800";
+    return `font-semibold ${color}`;
+  }
+  if (isSun) return "text-[#fab1a0]";
+  if (isSat) return "text-[#74b9ff]";
+  return "text-gray-400";
+}
+
 export function Calendar({
   year,
   month,
@@ -115,19 +133,7 @@ export function Calendar({
               }`}
             >
               <span
-                className={`text-sm font-medium md:text-base ${
-                  isSelected
-                    ? "!text-white font-bold"
-                    : isToday
-                      ? "!text-[var(--accent,#6c5ce7)] font-bold"
-                      : hasData
-                        ? `font-semibold ${isSun ? "text-[#e17055]" : isSat ? "text-[#0984e3]" : "text-gray-800"}`
-                        : isSun
-                          ? "text-[#fab1a0]"
-                          : isSat
-                            ? "text-[#74b9ff]"
-                            : "text-gray-400"
-                }`}
+                className={`text-sm font-medium md:text-base ${getDateTextClass(isSelected, isToday, hasData, isSun, isSat)}`}
               >
                 {cell.day}
               </span>

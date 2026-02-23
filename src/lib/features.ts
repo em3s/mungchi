@@ -34,7 +34,8 @@ let flagsSnapshot: FlagMap = {};
 
 export async function loadFeatureFlags(): Promise<FlagMap> {
   const flags = await cached<FlagMap>("feature_flags", CACHE_TTL, async () => {
-    const { data } = await supabase.from("feature_flags").select("*");
+    const { data, error } = await supabase.from("feature_flags").select("*");
+    if (error) return flagsSnapshot;
     const map: FlagMap = {};
     if (data) {
       for (const row of data) {

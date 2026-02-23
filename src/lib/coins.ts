@@ -38,13 +38,16 @@ export async function addTransaction(
   });
   if (txErr) return { ok: false };
 
-  const { data: current } = await supabase
-    .from("coin_balances")
-    .select("balance")
-    .eq("user_id", childId)
-    .single();
+  // SUM 집계로 잔액 재계산 (레이스 컨디션 방지)
+  const { data: sumData } = await supabase
+    .from("coin_transactions")
+    .select("amount")
+    .eq("user_id", childId);
 
-  const newBalance = Math.max(0, (current?.balance ?? 0) + amount);
+  const newBalance = Math.max(
+    0,
+    (sumData ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0),
+  );
   const { error: balErr } = await supabase
     .from("coin_balances")
     .upsert({

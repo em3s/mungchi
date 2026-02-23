@@ -19,9 +19,23 @@ const CONFIG_TTL = 60_000; // 1분
 // --- 사전: IndexedDB(정적+동적) → 메모리 캐시 ---
 
 let dictCache: DictionaryEntry[] | null = null;
+let dictPromise: Promise<DictionaryEntry[]> | null = null;
 
 export async function loadDictionary(): Promise<DictionaryEntry[]> {
   if (dictCache) return dictCache;
+  if (dictPromise) return dictPromise;
+
+  dictPromise = (async () => {
+    try {
+      return await _loadDictionaryImpl();
+    } finally {
+      dictPromise = null;
+    }
+  })();
+  return dictPromise;
+}
+
+async function _loadDictionaryImpl(): Promise<DictionaryEntry[]> {
 
   // 1. 정적 데이터를 IndexedDB에 시드 (최초 1회 또는 버전 변경 시)
   await seedStatic(STATIC_DICT);

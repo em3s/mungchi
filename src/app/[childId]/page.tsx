@@ -74,7 +74,9 @@ export default function DashboardPage({
   }, [childId, today]);
 
   // 월간 데이터 로드
+  const monthReqRef = useRef(0);
   const loadMonth = useCallback(async () => {
+    const reqId = ++monthReqRef.current;
     const monthStr = formatMonth(calYear, calMonth);
     const startDate = `${monthStr}-01`;
     const endDate = `${monthStr}-31`;
@@ -85,6 +87,8 @@ export default function DashboardPage({
       .eq("user_id", childId)
       .gte("date", startDate)
       .lte("date", endDate);
+
+    if (reqId !== monthReqRef.current) return; // stale 응답 무시
 
     if (data) {
       const days: MonthDays = {};
