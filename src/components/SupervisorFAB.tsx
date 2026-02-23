@@ -60,6 +60,11 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
     loadStates();
   }
 
+  function handleClearOverride(childId: string, feature: FeatureKey) {
+    setFeatureOverride(childId, feature, null);
+    loadStates();
+  }
+
   function handleOpenMenu() {
     setOpen(true);
     loadFeatureFlags().then(() => loadStates());
@@ -160,23 +165,40 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
                   <div className="text-[0.65rem] font-bold text-gray-400 uppercase mb-1">
                     {child.emoji} {child.name}
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     {ALL_FEATURES.map((f) => {
                       const state = featureStates[child.id]?.[f.key];
                       const isOn = state?.effective ?? false;
                       const hasOverride = state?.override !== undefined;
                       return (
-                        <button
-                          key={f.key}
-                          onClick={() => handleToggle(child.id, f.key)}
-                          className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${
-                            isOn
-                              ? "bg-purple-100 text-purple-700"
-                              : "bg-gray-100 text-gray-400"
-                          } ${hasOverride ? "ring-1 ring-purple-400" : ""}`}
-                        >
-                          {FEATURE_EMOJI[f.key]} {f.label}
-                        </button>
+                        <div key={f.key} className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleToggle(child.id, f.key)}
+                            className={`flex-1 flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg font-medium transition-colors ${
+                              isOn
+                                ? "bg-purple-100 text-purple-700"
+                                : "bg-gray-100 text-gray-400"
+                            }`}
+                          >
+                            <span>{FEATURE_EMOJI[f.key]}</span>
+                            <span>{f.label}</span>
+                            {hasOverride && (
+                              <span className="ml-auto text-[0.6rem] bg-orange-100 text-orange-600 px-1 py-0.5 rounded">
+                                override
+                              </span>
+                            )}
+                          </button>
+                          {hasOverride && (
+                            <button
+                              onClick={() =>
+                                handleClearOverride(child.id, f.key)
+                              }
+                              className="text-[0.6rem] text-gray-400 hover:text-red-400 px-1"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
