@@ -23,7 +23,7 @@ import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
-type ViewState = "home" | "list" | "adding" | "quiz" | "result";
+type ViewState = "home" | "list" | "quiz" | "result";
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
@@ -59,6 +59,7 @@ export default function VocabPage({
   const [view, setView] = useState<ViewState>("home");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [newDate, setNewDate] = useState(today);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [quizType, setQuizType] = useState<VocabQuizType>("basic");
   const [quizResult, setQuizResult] = useState<{
     total: number;
@@ -318,15 +319,26 @@ export default function VocabPage({
             </div>
           ) : (
             <>
+              {/* Add Form (inline) */}
+              {isEditable && showAddForm && (
+                <div className="mb-3">
+                  <WordInput
+                    onSelect={handleAddWord}
+                    onCancel={() => setShowAddForm(false)}
+                    excludeWords={entries.map((e) => e.word)}
+                  />
+                </div>
+              )}
+
               {/* Word List */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     단어 ({entries.length})
                   </div>
-                  {isEditable && (
+                  {isEditable && !showAddForm && (
                     <button
-                      onClick={() => setView("adding")}
+                      onClick={() => setShowAddForm(true)}
                       className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)]"
                     >
                       + 추가
@@ -334,7 +346,7 @@ export default function VocabPage({
                   )}
                 </div>
 
-                {entries.length === 0 ? (
+                {entries.length === 0 && !showAddForm ? (
                   <div className="text-center py-10 text-gray-400">
                     {isEditable
                       ? "영어 단어를 추가해보세요!"
@@ -403,15 +415,6 @@ export default function VocabPage({
             </>
           )}
         </>
-      )}
-
-      {/* Adding View */}
-      {view === "adding" && (
-        <WordInput
-          onSelect={handleAddWord}
-          onCancel={() => setView("list")}
-          excludeWords={entries.map((e) => e.word)}
-        />
       )}
 
       {/* Quiz View */}
