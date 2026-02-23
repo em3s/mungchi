@@ -5,8 +5,8 @@ import { supabase } from "@/lib/supabase/client";
 import { cached, invalidate } from "@/lib/cache";
 
 const CODE_DEFAULTS = {
-  sihyun: { map: true, star: true },
-  misong: { map: false, star: true },
+  sihyun: { map: false, star: false },
+  misong: { map: false, star: false },
 } as const;
 
 type ChildId = keyof typeof CODE_DEFAULTS;
