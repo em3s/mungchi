@@ -528,25 +528,6 @@ export default function VocabPage({
                 )}
               </div>
 
-              {/* Quiz buttons */}
-              {entries.length >= minWords && (
-                <div className="flex gap-2 mb-3">
-                  <button
-                    onClick={() => handleStartQuiz("basic")}
-                    className="flex-1 py-3 rounded-xl bg-blue-500 text-white font-bold text-sm active:opacity-80"
-                  >
-                    📝 객관식 퀴즈
-                  </button>
-                  <button
-                    onClick={() => handleStartQuiz("spelling")}
-                    disabled={entries.filter((e) => e.spelling).length === 0}
-                    className="flex-1 py-3 rounded-xl bg-purple-500 text-white font-bold text-sm active:opacity-80 disabled:opacity-40"
-                  >
-                    ✏️ 스펠링 퀴즈
-                  </button>
-                </div>
-              )}
-
               <button
                 onClick={handleBackToHome}
                 className="w-full mt-2 py-3 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 active:bg-gray-200"
