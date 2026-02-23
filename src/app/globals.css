@@ -1,18 +1,30 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-accent-starry: #6c5ce7;
-  --color-accent-starry-light: #a29bfe;
-  --color-accent-sparkle: #e17055;
-  --color-accent-sparkle-light: #fab1a0;
-  --color-accent-shield: #4a69bd;
-  --color-accent-shield-light: #7d9fd6;
-  --color-accent-heart: #f78fb3;
-  --color-accent-heart-light: #ffb8d0;
-  --color-bg-starry: #f5f3ff;
-  --color-bg-sparkle: #fdf5f0;
-  --color-bg-shield: #f0f3ff;
-  --color-bg-heart: #fff5f9;
+  --color-accent-purple: #6c5ce7;
+  --color-accent-purple-light: #a29bfe;
+  --color-accent-orange: #e17055;
+  --color-accent-orange-light: #fab1a0;
+  --color-accent-navy: #4a69bd;
+  --color-accent-navy-light: #7d9fd6;
+  --color-accent-rose: #f78fb3;
+  --color-accent-rose-light: #ffb8d0;
+  --color-accent-yellow: #f39c12;
+  --color-accent-yellow-light: #f8c471;
+  --color-accent-pink: #e84393;
+  --color-accent-pink-light: #fd79a8;
+  --color-accent-green: #00b894;
+  --color-accent-green-light: #55efc4;
+  --color-accent-sky: #0984e3;
+  --color-accent-sky-light: #74b9ff;
+  --color-bg-purple: #f5f3ff;
+  --color-bg-orange: #fdf5f0;
+  --color-bg-navy: #f0f3ff;
+  --color-bg-rose: #fff5f9;
+  --color-bg-yellow: #fefcf3;
+  --color-bg-pink: #fff0f6;
+  --color-bg-green: #f0fff4;
+  --color-bg-sky: #f0f8ff;
 }
 
 :root {
@@ -37,28 +49,52 @@ body {
   min-height: 100dvh;
 }
 
-.theme-starry {
+.theme-preset-purple {
   --accent: #6c5ce7;
   --accent-light: #a29bfe;
   --bg: #f5f3ff;
 }
 
-.theme-sparkle {
+.theme-preset-orange {
   --accent: #e17055;
   --accent-light: #fab1a0;
   --bg: #fdf5f0;
 }
 
-.theme-shield {
+.theme-preset-navy {
   --accent: #4a69bd;
   --accent-light: #7d9fd6;
   --bg: #f0f3ff;
 }
 
-.theme-heart {
+.theme-preset-rose {
   --accent: #f78fb3;
   --accent-light: #ffb8d0;
   --bg: #fff5f9;
+}
+
+.theme-preset-yellow {
+  --accent: #f39c12;
+  --accent-light: #f8c471;
+  --bg: #fefcf3;
+}
+
+.theme-preset-pink {
+  --accent: #e84393;
+  --accent-light: #fd79a8;
+  --bg: #fff0f6;
+}
+
+.theme-preset-green {
+  --accent: #00b894;
+  --accent-light: #55efc4;
+  --bg: #f0fff4;
+}
+
+.theme-preset-sky {
+  --accent: #0984e3;
+  --accent-light: #74b9ff;
+  --bg: #f0f8ff;
 }
 
 /* Progress Ring */

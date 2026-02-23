@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { getBalance, addTransaction } from "@/lib/coins";
 import { USERS } from "@/lib/constants";
+import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { BottomNav } from "@/components/BottomNav";
 import { DinoGame } from "@/components/DinoGame";
 import { Toast } from "@/components/Toast";
@@ -18,6 +19,7 @@ export default function GamePage({
   const { childId } = use(params);
   const router = useRouter();
   const { message: toastMsg, showToast } = useToast();
+  const { override: themeOverride } = useThemeOverride(childId);
   const user = USERS.find((u) => u.id === childId);
 
   const [flagsLoaded, setFlagsLoaded] = useState(false);
@@ -63,7 +65,7 @@ export default function GamePage({
   }
 
   return (
-    <div className={`theme-${user.theme} min-h-screen bg-[var(--bg)] pb-24`}>
+    <div className={`theme-preset-${themeOverride || user.theme} min-h-screen bg-[var(--bg)] pb-24`}>
       {/* Header */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <button

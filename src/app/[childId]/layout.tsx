@@ -3,6 +3,7 @@
 import { use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
+import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { USERS } from "@/lib/constants";
 import { PinModal } from "@/components/PinModal";
 import { SupervisorFAB } from "@/components/SupervisorFAB";
@@ -17,6 +18,7 @@ export default function ChildLayout({
   const { childId } = use(params);
   const router = useRouter();
   const { childId: sessionChildId, loaded, login } = useSession();
+  const { override: themeOverride } = useThemeOverride(childId);
 
   const child = USERS.find((c) => c.id === childId);
 
@@ -51,7 +53,7 @@ export default function ChildLayout({
     );
   }
 
-  const themeClass = `theme-${child.theme}`;
+  const themeClass = `theme-preset-${themeOverride || child.theme}`;
 
   return (
     <div

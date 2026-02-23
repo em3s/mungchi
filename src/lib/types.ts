@@ -4,7 +4,7 @@ export interface User {
   id: string;
   name: string;
   role: "child" | "parent";
-  theme: "starry" | "sparkle" | "shield" | "heart";
+  theme: "purple" | "orange" | "navy" | "rose";
   emoji: string;
   starName: string;
   descriptor: string;

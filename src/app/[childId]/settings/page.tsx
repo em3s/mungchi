@@ -1,0 +1,79 @@
+"use client";
+
+import { use } from "react";
+import { useRouter } from "next/navigation";
+import { USERS, THEME_PRESETS } from "@/lib/constants";
+import { useThemeOverride } from "@/hooks/useThemeOverride";
+import { BottomNav } from "@/components/BottomNav";
+
+export default function SettingsPage({
+  params,
+}: {
+  params: Promise<{ childId: string }>;
+}) {
+  const { childId } = use(params);
+  const router = useRouter();
+  const user = USERS.find((u) => u.id === childId);
+  const { override, loaded, setTheme } = useThemeOverride(childId);
+
+  if (!user) {
+    router.replace("/");
+    return null;
+  }
+
+  const activeTheme = override || user.theme;
+
+  return (
+    <>
+      <div className="pt-6 pb-4">
+        <h1 className="text-xl font-bold text-center">⚙️ 설정</h1>
+      </div>
+
+      <section className="bg-white rounded-2xl p-5 shadow-sm">
+        <h2 className="text-base font-bold mb-4">🎨 테마 색상</h2>
+
+        {loaded && (
+          <div className="grid grid-cols-4 gap-4">
+            {THEME_PRESETS.map((preset) => {
+              const isActive = activeTheme === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() =>
+                    setTheme(preset.id === user.theme ? null : preset.id)
+                  }
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <div
+                    className="w-12 h-12 rounded-full border-3 transition-all md:w-14 md:h-14"
+                    style={{
+                      backgroundColor: preset.accent,
+                      borderColor: isActive ? "#2d3436" : "transparent",
+                      transform: isActive ? "scale(1.15)" : "scale(1)",
+                    }}
+                  />
+                  <span
+                    className={`text-xs font-semibold ${isActive ? "text-[var(--accent)]" : "text-gray-500"}`}
+                  >
+                    {preset.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {override && (
+          <button
+            onClick={() => setTheme(null)}
+            className="mt-4 w-full text-sm text-gray-400 underline"
+          >
+            기본 테마로 되돌리기
+          </button>
+        )}
+      </section>
+
+      <BottomNav childId={childId} />
+    </>
+  );
+}

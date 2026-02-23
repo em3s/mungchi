@@ -47,6 +47,7 @@ export function BottomNav({ childId }: BottomNavProps) {
       key: "star",
     },
     { href: `/${childId}/map`, label: "쌍둥이별", icon: "🌟", key: "map" },
+    { href: `/${childId}/settings`, label: "설정", icon: "⚙️", key: "settings" },
   ].filter((tab) => {
     if (tab.key === "map") return isFeatureEnabled(childId, "map");
     if (tab.key === "star") return isFeatureEnabled(childId, "star");
