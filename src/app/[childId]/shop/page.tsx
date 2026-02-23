@@ -108,7 +108,7 @@ export default function ShopPage({
       {rewards.length > 0 && (
         <>
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 md:text-sm">
-            🎁 보상 교환
+            🍬 별사탕샵
           </div>
           <div className="grid grid-cols-2 gap-3 mb-6 md:grid-cols-3">
             {rewards.map((r) => (
