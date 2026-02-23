@@ -33,7 +33,7 @@ export default function BadgesPage({
             const { data } = await supabase
               .from("tasks")
               .select("date, completed, completed_at")
-              .eq("child_id", id)
+              .eq("user_id", id)
               .order("date");
             return data;
           });

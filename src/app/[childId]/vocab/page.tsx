@@ -358,7 +358,7 @@ export default function VocabPage({
                     {entries.map((entry) => {
                       const task: Task = {
                         id: entry.id,
-                        child_id: entry.child_id,
+                        user_id: entry.user_id,
                         title: `${entry.word}  ${entry.meaning}`,
                         date: entry.date,
                         completed: false,

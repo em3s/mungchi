@@ -32,11 +32,11 @@ export async function getVocabLists(
 ): Promise<{ date: string; count: number; title: string }[]> {
   return cached(`vocab_lists:${childId}`, DATES_TTL, async () => {
     const [entriesRes, metaRes] = await Promise.all([
-      supabase.from("vocab_entries").select("date").eq("child_id", childId),
+      supabase.from("vocab_entries").select("date").eq("user_id", childId),
       supabase
         .from("vocab_list_meta")
         .select("date, title")
-        .eq("child_id", childId),
+        .eq("user_id", childId),
     ]);
     const counts = new Map<string, number>();
     if (entriesRes.data) {
@@ -64,7 +64,7 @@ export async function setListTitle(
   title: string,
 ): Promise<boolean> {
   const { error } = await supabase.from("vocab_list_meta").upsert({
-    child_id: childId,
+    user_id: childId,
     date,
     title,
   });
@@ -83,7 +83,7 @@ export async function getEntries(
     const { data } = await supabase
       .from("vocab_entries")
       .select("*")
-      .eq("child_id", childId)
+      .eq("user_id", childId)
       .eq("date", date)
       .order("created_at");
     return (data as VocabEntry[]) ?? [];
@@ -98,7 +98,7 @@ export async function addEntry(
   const { data, error } = await supabase
     .from("vocab_entries")
     .insert({
-      child_id: childId,
+      user_id: childId,
       date,
       dictionary_id: dictEntry.id,
       word: dictEntry.word,
@@ -137,7 +137,7 @@ export async function updateVocabDate(
   const { error } = await supabase
     .from("vocab_entries")
     .update({ date: newDate })
-    .eq("child_id", childId)
+    .eq("user_id", childId)
     .eq("date", oldDate);
   if (error) return false;
   invalidate(`vocab_entries:${childId}:${oldDate}`);
@@ -156,7 +156,7 @@ export async function hasEarnedToday(
   const { count } = await supabase
     .from("vocab_quizzes")
     .select("*", { count: "exact", head: true })
-    .eq("child_id", childId)
+    .eq("user_id", childId)
     .eq("date", date)
     .eq("quiz_type", quizType)
     .gt("candy_earned", 0);
@@ -172,7 +172,7 @@ export async function saveQuizResult(
   candyEarned: number,
 ): Promise<{ ok: boolean }> {
   const { error } = await supabase.from("vocab_quizzes").insert({
-    child_id: childId,
+    user_id: childId,
     date,
     quiz_type: quizType,
     total_questions: totalQuestions,

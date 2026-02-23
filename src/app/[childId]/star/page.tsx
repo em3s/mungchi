@@ -44,7 +44,7 @@ export default function StarPage({
             const { count } = await supabase
               .from("tasks")
               .select("*", { count: "exact", head: true })
-              .eq("child_id", childId)
+              .eq("user_id", childId)
               .eq("completed", true);
             return count ?? 0;
           },

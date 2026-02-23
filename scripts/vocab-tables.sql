@@ -14,20 +14,20 @@ CREATE INDEX idx_dict_prefix ON dictionary(word text_pattern_ops);
 -- 2. vocab_entries: 아이별 일일 단어 목록
 CREATE TABLE vocab_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  child_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
   date TEXT NOT NULL,                -- YYYY-MM-DD (KST)
   dictionary_id UUID NOT NULL REFERENCES dictionary(id),
   word TEXT NOT NULL,
   meaning TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX idx_ve_child_date ON vocab_entries(child_id, date);
-CREATE UNIQUE INDEX idx_ve_unique ON vocab_entries(child_id, date, dictionary_id);
+CREATE INDEX idx_ve_child_date ON vocab_entries(user_id, date);
+CREATE UNIQUE INDEX idx_ve_unique ON vocab_entries(user_id, date, dictionary_id);
 
 -- 3. vocab_quizzes: 퀴즈 결과
 CREATE TABLE vocab_quizzes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  child_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
   date TEXT NOT NULL,
   quiz_type TEXT NOT NULL,           -- 'basic' | 'advanced'
   total_questions INTEGER NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE vocab_quizzes (
   candy_earned INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX idx_vq_child_date ON vocab_quizzes(child_id, date);
+CREATE INDEX idx_vq_child_date ON vocab_quizzes(user_id, date);
 
 -- 4. vocab_config: 보상 설정 (admin 조정 가능)
 CREATE TABLE vocab_config (

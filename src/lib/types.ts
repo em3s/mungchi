@@ -14,7 +14,7 @@ export interface User {
 
 export interface Task {
   id: string;
-  child_id: string;
+  user_id: string;
   title: string;
   date: string; // YYYY-MM-DD (KST)
   completed: boolean;
@@ -28,7 +28,7 @@ export interface Task {
 export interface BadgeRecord {
   id: string;
   badge_id: string;
-  child_id: string;
+  user_id: string;
   earned_at: string;
   earned_date: string; // YYYY-MM-DD (KST)
   context: Record<string, unknown> | null;
@@ -83,7 +83,7 @@ export type CoinTransactionType =
 
 export interface CoinTransaction {
   id: string;
-  child_id: string;
+  user_id: string;
   amount: number;
   type: CoinTransactionType;
   reason: string | null;
@@ -102,7 +102,7 @@ export interface CoinReward {
 }
 
 export interface CoinBalance {
-  child_id: string;
+  user_id: string;
   balance: number;
   updated_at: string;
 }
@@ -119,7 +119,7 @@ export interface DictionaryEntry {
 
 export interface VocabEntry {
   id: string;
-  child_id: string;
+  user_id: string;
   date: string;
   dictionary_id: string;
   word: string;
@@ -129,7 +129,7 @@ export interface VocabEntry {
 
 export interface VocabQuiz {
   id: string;
-  child_id: string;
+  user_id: string;
   date: string;
   quiz_type: "basic" | "advanced";
   total_questions: number;

@@ -208,7 +208,7 @@ export default function AdminPage() {
       const rows = selectedChildren.flatMap((childId) =>
         selectedDates.flatMap((date) =>
           lines.map((title) => ({
-            child_id: childId,
+            user_id: childId,
             title,
             date,
             priority: 0,
@@ -315,7 +315,7 @@ export default function AdminPage() {
     const { data } = await supabase
       .from("tasks")
       .select("title")
-      .eq("child_id", cloneChildId)
+      .eq("user_id", cloneChildId)
       .eq("date", cloneSourceDate)
       .order("priority", { ascending: false })
       .order("created_at");
@@ -344,7 +344,7 @@ export default function AdminPage() {
       const { data: source } = await supabase
         .from("tasks")
         .select("title, priority")
-        .eq("child_id", cloneChildId)
+        .eq("user_id", cloneChildId)
         .eq("date", cloneSourceDate);
       if (!source || source.length === 0) {
         showToast("복제할 할일이 없습니다");
@@ -352,7 +352,7 @@ export default function AdminPage() {
       }
       const copies = cloneTargetDates.flatMap((date) =>
         source.map((t) => ({
-          child_id: cloneChildId,
+          user_id: cloneChildId,
           title: t.title,
           date,
           priority: t.priority,

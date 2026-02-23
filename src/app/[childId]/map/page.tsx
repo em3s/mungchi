@@ -49,7 +49,7 @@ export default function MapPage({
                 supabase
                   .from("tasks")
                   .select("*", { count: "exact", head: true })
-                  .eq("child_id", child.id)
+                  .eq("user_id", child.id)
                   .eq("completed", true),
               ),
             );

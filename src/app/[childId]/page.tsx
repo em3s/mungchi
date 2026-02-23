@@ -62,7 +62,7 @@ export default function DashboardPage({
     const { data, error } = await supabase
       .from("tasks")
       .select("*")
-      .eq("child_id", childId)
+      .eq("user_id", childId)
       .eq("date", today)
       .order("priority", { ascending: false })
       .order("created_at");
@@ -79,7 +79,7 @@ export default function DashboardPage({
     const { data } = await supabase
       .from("tasks")
       .select("date, completed")
-      .eq("child_id", childId)
+      .eq("user_id", childId)
       .gte("date", startDate)
       .lte("date", endDate);
 
@@ -105,7 +105,7 @@ export default function DashboardPage({
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
-        .eq("child_id", childId)
+        .eq("user_id", childId)
         .eq("date", date)
         .order("priority", { ascending: false })
         .order("created_at");
@@ -262,7 +262,7 @@ export default function DashboardPage({
     const { data, error } = await supabase
       .from("tasks")
       .insert({
-        child_id: childId,
+        user_id: childId,
         title,
         date: targetDate,
         priority: 0,

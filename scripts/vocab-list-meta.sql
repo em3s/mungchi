@@ -1,10 +1,10 @@
 -- 단어장 제목 메타데이터
 CREATE TABLE vocab_list_meta (
-  child_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
   date TEXT NOT NULL,
   title TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (child_id, date)
+  PRIMARY KEY (user_id, date)
 );
 
 ALTER TABLE vocab_list_meta ENABLE ROW LEVEL SECURITY;

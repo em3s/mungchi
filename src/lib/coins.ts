@@ -14,7 +14,7 @@ export async function getBalance(childId: string): Promise<number> {
     const { data } = await supabase
       .from("coin_balances")
       .select("balance")
-      .eq("child_id", childId)
+      .eq("user_id", childId)
       .single();
     return data?.balance ?? 0;
   });
@@ -30,7 +30,7 @@ export async function addTransaction(
   refId?: string,
 ): Promise<{ ok: boolean; newBalance?: number }> {
   const { error: txErr } = await supabase.from("coin_transactions").insert({
-    child_id: childId,
+    user_id: childId,
     amount,
     type,
     reason: reason ?? null,
@@ -41,14 +41,14 @@ export async function addTransaction(
   const { data: current } = await supabase
     .from("coin_balances")
     .select("balance")
-    .eq("child_id", childId)
+    .eq("user_id", childId)
     .single();
 
   const newBalance = Math.max(0, (current?.balance ?? 0) + amount);
   const { error: balErr } = await supabase
     .from("coin_balances")
     .upsert({
-      child_id: childId,
+      user_id: childId,
       balance: newBalance,
       updated_at: new Date().toISOString(),
     });
@@ -68,7 +68,7 @@ export async function getTransactions(
   const { data } = await supabase
     .from("coin_transactions")
     .select("*")
-    .eq("child_id", childId)
+    .eq("user_id", childId)
     .order("created_at", { ascending: false })
     .limit(limit);
   return (data as CoinTransaction[]) ?? [];

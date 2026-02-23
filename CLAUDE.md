@@ -18,9 +18,9 @@
 
 - `User` 타입 (`src/lib/types.ts`): role="child"|"parent", 모든 기능 동일
 - `USERS` 상수 (`src/lib/constants.ts`): 앱 전체에서 사용
-- DB `children` 테이블: 외래키 참조용 (tasks, badge_records 등)
+- DB `users` 테이블: 외래키 참조용 (tasks, badge_records 등)
 - 쌍둥이별(합산 달성맵): child role만 집계
-- 유저 추가 시: User 타입 + USERS 상수 + CODE_DEFAULTS + DB children 테이블 모두 업데이트
+- 유저 추가 시: User 타입 + USERS 상수 + CODE_DEFAULTS + DB users 테이블 모두 업데이트
 
 ## 기술 스택
 
@@ -103,7 +103,7 @@ CSS 커스텀 프로퍼티 기반 (`src/app/globals.css`):
 
 ## Feature Flag 시스템
 
-- DB 테이블: `feature_flags` (child_id, feature, enabled)
+- DB 테이블: `feature_flags` (user_id, feature, enabled)
 - 코드 기본값: false (testing) → DB에서 true로 활성화
 - 현재 피쳐: `map`, `star`, `coins`, `vocab`
 - admin 페이지에서 DB 토글

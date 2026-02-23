@@ -37,8 +37,8 @@ export async function loadFeatureFlags(): Promise<FlagMap> {
     const map: FlagMap = {};
     if (data) {
       for (const row of data) {
-        if (!map[row.child_id]) map[row.child_id] = {};
-        map[row.child_id][row.feature] = row.enabled;
+        if (!map[row.user_id]) map[row.user_id] = {};
+        map[row.user_id][row.feature] = row.enabled;
       }
     }
     return map;
@@ -74,7 +74,7 @@ export async function setFeatureFlag(
 ): Promise<boolean> {
   const { error } = await supabase
     .from("feature_flags")
-    .upsert({ child_id: userId, feature, enabled });
+    .upsert({ user_id: userId, feature, enabled });
   if (error) return false;
   invalidate("feature_flags");
   if (!flagsSnapshot[userId]) flagsSnapshot[userId] = {};
