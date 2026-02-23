@@ -100,6 +100,25 @@ export async function removeEntry(
   return true;
 }
 
+// --- 날짜 변경 ---
+
+export async function updateVocabDate(
+  childId: string,
+  oldDate: string,
+  newDate: string,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("vocab_entries")
+    .update({ date: newDate })
+    .eq("child_id", childId)
+    .eq("date", oldDate);
+  if (error) return false;
+  invalidate(`vocab_entries:${childId}:${oldDate}`);
+  invalidate(`vocab_entries:${childId}:${newDate}`);
+  invalidate(`vocab_lists:${childId}`);
+  return true;
+}
+
 // --- 퀴즈 ---
 
 export async function hasEarnedToday(

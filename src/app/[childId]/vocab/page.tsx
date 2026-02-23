@@ -9,6 +9,7 @@ import {
   getVocabLists,
   addEntry,
   removeEntry,
+  updateVocabDate,
   hasEarnedToday,
   saveQuizResult,
   getVocabConfig,
@@ -123,6 +124,17 @@ export default function VocabPage({
     setEntries([]);
     setView("home");
     loadLists();
+  }
+
+  async function handleChangeDate(newDateValue: string) {
+    if (!selectedDate || !newDateValue || newDateValue === selectedDate) return;
+    const ok = await updateVocabDate(childId, selectedDate, newDateValue);
+    if (ok) {
+      setSelectedDate(newDateValue);
+      showToast(`날짜를 ${formatDate(newDateValue)}로 변경했어요`);
+    } else {
+      showToast("날짜 변경에 실패했어요");
+    }
   }
 
   async function handleAddWord(dictEntry: DictionaryEntry) {
@@ -262,9 +274,12 @@ export default function VocabPage({
             >
               ←
             </button>
-            <span className="text-sm font-semibold text-gray-600">
-              {selectedDate && formatDate(selectedDate)}
-            </span>
+            <input
+              type="date"
+              value={selectedDate ?? ""}
+              onChange={(e) => handleChangeDate(e.target.value)}
+              className="text-sm font-semibold text-gray-600 bg-transparent border-b border-dashed border-gray-300 px-1 py-0.5"
+            />
           </div>
 
           {loading ? (
