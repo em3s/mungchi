@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
-import { CHILDREN } from "@/lib/constants";
+import { USERS } from "@/lib/constants";
 
 interface BottomNavProps {
   childId: string;
@@ -18,7 +18,7 @@ export function BottomNav({ childId }: BottomNavProps) {
     loadFeatureFlags().then(() => setReady(true));
   }, []);
 
-  const child = CHILDREN.find((c) => c.id === childId);
+  const child = USERS.find((c) => c.id === childId);
 
   const tabs = [
     { href: `/${childId}`, label: "할일", icon: "📋", key: "dashboard" },

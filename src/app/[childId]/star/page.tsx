@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { cached } from "@/lib/cache";
-import { CHILDREN, PERSONAL_MILESTONES } from "@/lib/constants";
+import { USERS, PERSONAL_MILESTONES } from "@/lib/constants";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { BottomNav } from "@/components/BottomNav";
 import { MilestoneMap } from "@/components/MilestoneMap";
@@ -19,7 +19,7 @@ export default function StarPage({
   const [completed, setCompleted] = useState<number | null>(null);
   const [flagsLoaded, setFlagsLoaded] = useState(false);
 
-  const child = CHILDREN.find((c) => c.id === childId);
+  const child = USERS.find((c) => c.id === childId);
 
   useEffect(() => {
     loadFeatureFlags().then(() => setFlagsLoaded(true));

@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { cached } from "@/lib/cache";
-import { CHILDREN, CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/constants";
+import { USERS, CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/constants";
 import type { BadgeInfo } from "@/lib/types";
 import type { DayTaskSummary } from "@/lib/badges/types";
 import { evaluateBadges, getBadgesForDisplay } from "@/lib/badges/engine";
@@ -25,7 +25,7 @@ export default function BadgesPage({
     async function load() {
       try {
         const siblingId =
-          CHILDREN.find((c) => c.id !== childId)?.id ?? "";
+          USERS.find((c) => c.id !== childId)?.id ?? "";
 
         // 모든 할일 데이터 로드 (1분 캐시)
         const fetchTasks = (id: string) =>

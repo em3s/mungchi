@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CHILDREN } from "@/lib/constants";
+import { USERS } from "@/lib/constants";
 
 const SESSION_KEY = "mungchi_session";
 const ADMIN_KEY = "mungchi_admin";
@@ -63,7 +63,7 @@ export function SupervisorFAB({ currentChildId }: SupervisorFABProps) {
     >
       {open && (
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden min-w-[160px]">
-          {CHILDREN.map((child) => {
+          {USERS.map((child) => {
             const isCurrent = child.id === currentChildId;
             return (
               <button

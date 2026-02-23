@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { todayKST, formatMonth, WEEKDAYS } from "@/lib/date";
-import { getCheer, CHILDREN } from "@/lib/constants";
+import { getCheer, USERS } from "@/lib/constants";
 import type { Task, MonthDays, CalendarEvent } from "@/lib/types";
 import { ProgressRing } from "@/components/ProgressRing";
 import { TaskItem } from "@/components/TaskItem";
@@ -55,7 +55,7 @@ export default function DashboardPage({
   const [dayTasks, setDayTasks] = useState<Task[] | null>(null);
   const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
 
-  const child = CHILDREN.find((c) => c.id === childId);
+  const child = USERS.find((c) => c.id === childId);
 
   // 오늘 할일 로드
   const loadTasks = useCallback(async () => {

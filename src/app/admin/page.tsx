@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { CHILDREN, PIN } from "@/lib/constants";
+import { USERS, PIN } from "@/lib/constants";
 import { todayKST } from "@/lib/date";
 import {
   ALL_FEATURES,
@@ -148,11 +148,10 @@ export default function AdminPage() {
   }, []);
 
   const loadCoinData = useCallback(async () => {
-    const [sihyun, misong] = await Promise.all([
-      getBalance("sihyun"),
-      getBalance("misong"),
-    ]);
-    setCoinBalances({ sihyun, misong });
+    const entries = await Promise.all(
+      USERS.map(async (u) => [u.id, await getBalance(u.id)] as const)
+    );
+    setCoinBalances(Object.fromEntries(entries));
     const { data } = await supabase
       .from("coin_rewards")
       .select("*")
@@ -220,7 +219,7 @@ export default function AdminPage() {
       if (error) throw error;
 
       const childNames = selectedChildren
-        .map((id) => CHILDREN.find((c) => c.id === id)?.name)
+        .map((id) => USERS.find((c) => c.id === id)?.name)
         .join(", ");
       showToast(`${childNames}에게 ${rows.length}개 할일 추가 완료!`);
       setTaskText("");
@@ -362,7 +361,7 @@ export default function AdminPage() {
       const { error } = await supabase.from("tasks").insert(copies);
       if (error) throw error;
 
-      const childName = CHILDREN.find((c) => c.id === cloneChildId)?.name;
+      const childName = USERS.find((c) => c.id === cloneChildId)?.name;
       showToast(
         `${childName}: ${cloneTargetDates.length}일 × ${source.length}개 = ${copies.length}개 복제 완료!`
       );
@@ -422,7 +421,7 @@ export default function AdminPage() {
           <div className="text-sm text-gray-400">불러오는 중...</div>
         ) : (
           <div className="flex flex-col gap-2">
-            {CHILDREN.map((child) => (
+            {USERS.map((child) => (
               <div key={child.id} className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-600 w-16 shrink-0">
                   {child.emoji} {child.name}
@@ -458,7 +457,7 @@ export default function AdminPage() {
         {/* 잔액 */}
         <div className="mb-4">
           <label className="text-sm font-semibold text-gray-600 block mb-2">잔액</label>
-          {CHILDREN.map((child) => (
+          {USERS.map((child) => (
             <div key={child.id} className="flex items-center justify-between py-2">
               <span className="text-sm">{child.emoji} {child.name}</span>
               <span className="font-bold text-amber-600">🍬 {coinBalances[child.id] ?? 0}</span>
@@ -470,7 +469,7 @@ export default function AdminPage() {
         <div className="mb-4">
           <label className="text-sm font-semibold text-gray-600 block mb-2">수동 조정</label>
           <div className="flex gap-2 mb-2">
-            {CHILDREN.map((child) => (
+            {USERS.map((child) => (
               <button
                 key={child.id}
                 onClick={() => setAdjustChildId(child.id)}
@@ -533,7 +532,7 @@ export default function AdminPage() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <label className="text-sm font-semibold text-gray-600">최근 거래</label>
-            {CHILDREN.map((child) => (
+            {USERS.map((child) => (
               <button
                 key={child.id}
                 onClick={async () => {
@@ -849,7 +848,7 @@ export default function AdminPage() {
             대상 아이
           </label>
           <div className="flex gap-3">
-            {CHILDREN.map((child) => (
+            {USERS.map((child) => (
               <button
                 key={child.id}
                 onClick={() => toggleChild(child.id)}
@@ -1029,7 +1028,7 @@ export default function AdminPage() {
             대상 아이
           </label>
           <div className="flex gap-3">
-            {CHILDREN.map((child) => (
+            {USERS.map((child) => (
               <button
                 key={child.id}
                 onClick={() => setCloneChildId(child.id)}

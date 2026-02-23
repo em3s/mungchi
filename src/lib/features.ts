@@ -1,5 +1,5 @@
-// 피쳐플래그 — DB 기본값 + localStorage override
-// 우선순위: localStorage override > DB값 > 코드 기본값
+// 피쳐플래그 — DB 기반 토글
+// 우선순위: DB값 > 코드 기본값
 
 import { supabase } from "@/lib/supabase/client";
 import { cached, invalidate } from "@/lib/cache";
@@ -15,10 +15,9 @@ const CODE_DEFAULTS = {
   mom: { map: "testing", star: "testing", coins: "testing", vocab: "testing" },
 } as const;
 
-type ChildId = keyof typeof CODE_DEFAULTS;
-export type FeatureKey = keyof (typeof CODE_DEFAULTS)[ChildId];
+type UserId = keyof typeof CODE_DEFAULTS;
+export type FeatureKey = keyof (typeof CODE_DEFAULTS)[UserId];
 
-const STORAGE_KEY = "mungchi_feature_overrides";
 const CACHE_TTL = 60_000; // 1분
 
 export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
@@ -48,20 +47,8 @@ export async function loadFeatureFlags(): Promise<FlagMap> {
   return flags;
 }
 
-function getDbValue(childId: string, feature: string): boolean | undefined {
-  return flagsSnapshot[childId]?.[feature];
-}
-
-// --- localStorage override ---
-type Overrides = Partial<Record<string, Partial<Record<string, boolean>>>>;
-
-function getOverrides(): Overrides {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  } catch {
-    return {};
-  }
+function getDbValue(userId: string, feature: string): boolean | undefined {
+  return flagsSnapshot[userId]?.[feature];
 }
 
 function stageToDefault(stage: Stage): boolean {
@@ -69,71 +56,39 @@ function stageToDefault(stage: Stage): boolean {
 }
 
 export function isFeatureEnabled(
-  childId: string,
+  userId: string,
   feature: FeatureKey,
 ): boolean {
-  const override = getOverrides()[childId]?.[feature];
-  if (override !== undefined) return override;
-  const db = getDbValue(childId, feature);
+  const db = getDbValue(userId, feature);
   if (db !== undefined) return db;
-  const flags = CODE_DEFAULTS[childId as ChildId];
+  const flags = CODE_DEFAULTS[userId as UserId];
   if (!flags) return false;
   return stageToDefault(flags[feature] ?? "testing");
 }
 
 // --- DB 토글 (admin용) ---
 export async function setFeatureFlag(
-  childId: string,
+  userId: string,
   feature: FeatureKey,
   enabled: boolean
 ): Promise<boolean> {
   const { error } = await supabase
     .from("feature_flags")
-    .upsert({ child_id: childId, feature, enabled });
+    .upsert({ child_id: userId, feature, enabled });
   if (error) return false;
   invalidate("feature_flags");
-  // 스냅샷도 즉시 갱신
-  if (!flagsSnapshot[childId]) flagsSnapshot[childId] = {};
-  flagsSnapshot[childId][feature] = enabled;
+  if (!flagsSnapshot[userId]) flagsSnapshot[userId] = {};
+  flagsSnapshot[userId][feature] = enabled;
   return true;
 }
 
-// --- localStorage override (세션용) ---
-export function setFeatureOverride(
-  childId: string,
-  feature: FeatureKey,
-  value: boolean | null
-): void {
-  const overrides = getOverrides();
-  if (value === null) {
-    if (overrides[childId]) {
-      delete overrides[childId]![feature];
-      if (Object.keys(overrides[childId]!).length === 0)
-        delete overrides[childId];
-    }
-  } else {
-    if (!overrides[childId]) overrides[childId] = {};
-    overrides[childId]![feature] = value;
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-}
-
 export function getFeatureState(
-  childId: string,
+  userId: string,
   feature: FeatureKey
-): {
-  db: boolean;
-  override: boolean | undefined;
-  effective: boolean;
-} {
-  const dbVal = getDbValue(childId, feature);
-  const stage = CODE_DEFAULTS[childId as ChildId]?.[feature] ?? "testing";
+): { db: boolean; effective: boolean } {
+  const dbVal = getDbValue(userId, feature);
+  const stage = CODE_DEFAULTS[userId as UserId]?.[feature] ?? "testing";
   const codeDefault = stageToDefault(stage);
   const db = dbVal !== undefined ? dbVal : codeDefault;
-  const override = getOverrides()[childId]?.[feature];
-  return {
-    db,
-    override,
-    effective: override !== undefined ? override : db,
-  };
+  return { db, effective: db };
 }

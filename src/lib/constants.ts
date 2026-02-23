@@ -39,9 +39,6 @@ export const USERS: Omit<User, "pin" | "created_at">[] = [
   },
 ];
 
-/** @deprecated Use USERS instead */
-export const CHILDREN = USERS;
-
 export const PIN = "999999";
 
 export const CHEERS = {

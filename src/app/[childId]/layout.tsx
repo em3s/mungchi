@@ -3,7 +3,7 @@
 import { use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
-import { CHILDREN } from "@/lib/constants";
+import { USERS } from "@/lib/constants";
 import { PinModal } from "@/components/PinModal";
 import { SupervisorFAB } from "@/components/SupervisorFAB";
 
@@ -18,7 +18,7 @@ export default function ChildLayout({
   const router = useRouter();
   const { childId: sessionChildId, loaded, login } = useSession();
 
-  const child = CHILDREN.find((c) => c.id === childId);
+  const child = USERS.find((c) => c.id === childId);
 
   const handlePinSuccess = useCallback(() => {
     login(childId);

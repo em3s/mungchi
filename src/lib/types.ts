@@ -12,9 +12,6 @@ export interface User {
   created_at?: string;
 }
 
-/** @deprecated Use User instead */
-export type Child = User;
-
 export interface Task {
   id: string;
   child_id: string;
