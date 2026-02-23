@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { CHILDREN, PIN } from "@/lib/constants";
 import { todayKST } from "@/lib/date";
+import {
+  ALL_FEATURES,
+  getFeatureState,
+  setFeatureOverride,
+  type FeatureKey,
+} from "@/lib/features";
 
 import { PinModal } from "@/components/PinModal";
 import { Toast } from "@/components/Toast";
@@ -51,6 +57,24 @@ export default function AdminPage() {
   const [editTemplate, setEditTemplate] = useState<CustomTemplate | null>(null);
   const [editName, setEditName] = useState("");
   const [editTasks, setEditTasks] = useState("");
+
+  // 피쳐플래그
+  const [, setFlagTick] = useState(0);
+  const toggleFlag = useCallback(
+    (childId: string, feature: FeatureKey) => {
+      const state = getFeatureState(childId, feature);
+      if (state.override !== undefined) {
+        // override 있음 → 제거 (코드 기본값 복원)
+        setFeatureOverride(childId, feature, null);
+      } else {
+        // override 없음 → 기본값 반전으로 override
+        setFeatureOverride(childId, feature, !state.default);
+      }
+      setFlagTick((t) => t + 1);
+      showToast("피쳐플래그 변경됨 (새로고침 시 적용)");
+    },
+    [showToast]
+  );
 
   // 날짜 복제
   const [cloneChildId, setCloneChildId] = useState("sihyun");
@@ -319,6 +343,43 @@ export default function AdminPage() {
           홈으로
         </button>
       </div>
+
+      {/* === 피쳐플래그 섹션 === */}
+      <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <h2 className="text-lg font-bold mb-4">🚩 피쳐플래그</h2>
+        <div className="flex flex-col gap-3">
+          {CHILDREN.map((child) => (
+            <div key={child.id}>
+              <div className="text-sm font-semibold text-gray-600 mb-2">
+                {child.emoji} {child.name}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {ALL_FEATURES.map((feat) => {
+                  const state = getFeatureState(child.id, feat.key);
+                  return (
+                    <button
+                      key={feat.key}
+                      onClick={() => toggleFlag(child.id, feat.key)}
+                      className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                        state.effective
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-600"
+                      }`}
+                    >
+                      {feat.label}: {state.effective ? "ON" : "OFF"}
+                      {state.override !== undefined && (
+                        <span className="ml-1 text-xs opacity-60">
+                          (override)
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* === 벌크 추가 섹션 === */}
       <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
