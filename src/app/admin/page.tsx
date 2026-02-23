@@ -436,47 +436,40 @@ export default function AdminPage() {
         {!flagsLoaded ? (
           <div className="text-sm text-gray-400">불러오는 중...</div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             {CHILDREN.map((child) => (
-              <div key={child.id}>
-                <div className="text-sm font-semibold text-gray-600 mb-2">
+              <div key={child.id} className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-600 w-16 shrink-0">
                   {child.emoji} {child.name}
-                </div>
-                <div className="flex flex-col gap-2">
+                </span>
+                <div className="flex gap-1.5 flex-wrap">
                   {ALL_FEATURES.map((feat) => {
                     const state = getFeatureState(child.id, feat.key);
+                    const hasOverride = state.override !== undefined;
                     return (
-                      <div key={feat.key} className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleDbFlag(child.id, feat.key)}
-                          className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
-                            state.db
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-600"
-                          }`}
-                        >
-                          {feat.label}: {state.db ? "ON" : "OFF"}
-                        </button>
-                        <button
-                          onClick={() => toggleOverride(child.id, feat.key)}
-                          className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${
-                            state.override !== undefined
-                              ? state.override
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-orange-100 text-orange-600"
-                              : "bg-gray-100 text-gray-400"
-                          }`}
-                        >
-                          {state.override !== undefined
-                            ? `override: ${state.override ? "ON" : "OFF"}`
-                            : "override: -"}
-                        </button>
-                      </div>
+                      <button
+                        key={feat.key}
+                        onClick={() => toggleDbFlag(child.id, feat.key)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          toggleOverride(child.id, feat.key);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                          state.effective
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-400"
+                        } ${hasOverride ? "ring-1 ring-orange-300" : ""}`}
+                      >
+                        {feat.label}
+                      </button>
                     );
                   })}
                 </div>
               </div>
             ))}
+            <div className="text-[0.65rem] text-gray-400 mt-1">
+              탭: DB 토글 · 꾹 눌러서: override 토글
+            </div>
           </div>
         )}
       </section>
