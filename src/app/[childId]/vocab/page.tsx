@@ -6,12 +6,12 @@ import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { todayKST, WEEKDAYS } from "@/lib/date";
 import {
   getEntries,
+  getVocabDates,
   addEntry,
   removeEntry,
   hasEarnedToday,
   saveQuizResult,
   getVocabConfig,
-  getVocabDates,
 } from "@/lib/vocab";
 import { addTransaction, getBalance } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
@@ -23,6 +23,14 @@ import { useToast } from "@/hooks/useToast";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
 type ViewState = "calendar" | "list" | "adding" | "quiz" | "result";
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const weekday = WEEKDAYS[d.getDay()];
+  return `${m}월 ${day}일 (${weekday})`;
+}
 
 export default function VocabPage({
   params,
@@ -76,7 +84,6 @@ export default function VocabPage({
   // Load entries for selected date
   const loadEntries = useCallback(async () => {
     if (!selectedDate) return;
-    setLoading(true);
     const data = await getEntries(childId, selectedDate);
     setEntries(data);
     setLoading(false);
@@ -92,24 +99,15 @@ export default function VocabPage({
     if (coins) getBalance(childId).then(setCoinBalance);
   }, [childId, flagsLoaded, featureDisabled, loadVocabDates]);
 
-  // Load entries when date selected
+  // Load entries when selectedDate changes
   useEffect(() => {
-    if (selectedDate && view !== "calendar") {
-      loadEntries();
-    }
-  }, [selectedDate, view, loadEntries]);
-
-  // Reload calendar dots on month change
-  useEffect(() => {
-    if (flagsLoaded && !featureDisabled) {
-      loadVocabDates();
-    }
-  }, [calYear, calMonth, flagsLoaded, featureDisabled, loadVocabDates]);
+    if (selectedDate) loadEntries();
+  }, [selectedDate, loadEntries]);
 
   if (!flagsLoaded || featureDisabled) return null;
 
-  const minWords = config.min_words ?? 3;
   const isToday = selectedDate === today;
+  const minWords = config.min_words ?? 3;
 
   // Calendar navigation
   function prevMonthNav() {
@@ -136,12 +134,14 @@ export default function VocabPage({
     if (date > today) return;
     if (vocabDates.has(date)) {
       setSelectedDate(date);
+      setLoading(true);
       setView("list");
     }
   }
 
-  function handleOpenToday() {
+  function handleNewVocabList() {
     setSelectedDate(today);
+    setLoading(true);
     setView("list");
   }
 
@@ -150,11 +150,6 @@ export default function VocabPage({
     setEntries([]);
     setView("calendar");
     loadVocabDates();
-  }
-
-  function formatDate(dateStr: string) {
-    const d = new Date(dateStr + "T00:00:00");
-    return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
   }
 
   async function handleAddWord(dictEntry: DictionaryEntry) {
@@ -247,7 +242,7 @@ export default function VocabPage({
 
           <div className="mt-4">
             <button
-              onClick={handleOpenToday}
+              onClick={handleNewVocabList}
               className="w-full bg-[var(--accent,#6c5ce7)] text-white py-4 rounded-2xl font-bold text-base active:opacity-80"
             >
               {vocabDates.has(today)
@@ -271,12 +266,12 @@ export default function VocabPage({
           <div className="flex items-center gap-2 mb-4">
             <button
               onClick={handleBackToCalendar}
-              className="text-xl px-2 py-1 rounded-xl text-gray-500 active:bg-black/5"
+              className="text-xl px-2 py-1 rounded-xl text-[var(--accent,#6c5ce7)] font-bold active:bg-black/5"
             >
               ←
             </button>
             <span className="text-sm font-semibold text-gray-600">
-              {formatDate(selectedDate!)}
+              {selectedDate && formatDate(selectedDate)}
             </span>
           </div>
 
@@ -365,13 +360,11 @@ export default function VocabPage({
                   </div>
                 </div>
               )}
-              {isToday &&
-                entries.length > 0 &&
-                entries.length < minWords && (
-                  <div className="text-center text-sm text-gray-400 mt-4">
-                    {minWords}개 이상 단어를 추가하면 시험을 볼 수 있어요
-                  </div>
-                )}
+              {entries.length > 0 && entries.length < minWords && (
+                <div className="text-center text-sm text-gray-400 mt-4">
+                  {minWords}개 이상 단어를 추가하면 시험을 볼 수 있어요
+                </div>
+              )}
             </>
           )}
         </>
@@ -418,7 +411,7 @@ export default function VocabPage({
             </div>
           ) : quizResult.alreadyEarned ? (
             <div className="text-sm text-gray-400 mb-4">
-              이미 별사탕을 받았어요
+              오늘은 이미 별사탕을 받았어요
             </div>
           ) : null}
           <button
