@@ -14,6 +14,7 @@ import {
   hasEarnedToday,
   saveQuizResult,
   getVocabConfig,
+  getQuizStatuses,
   loadDictionary,
 } from "@/lib/vocab";
 import { addTransaction, getBalance } from "@/lib/coins";
@@ -75,6 +76,7 @@ export default function VocabPage({
   const [coinsEnabled, setCoinsEnabled] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const longPressRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; advanced: boolean }>>(new Map());
 
   // Vocab lists (date + count + title)
   const [vocabLists, setVocabLists] = useState<
@@ -85,6 +87,10 @@ export default function VocabPage({
   const loadLists = useCallback(async () => {
     const lists = await getVocabLists(childId);
     setVocabLists(lists);
+    if (lists.length > 0) {
+      const statuses = await getQuizStatuses(childId, lists.map((l) => l.date));
+      setQuizStatuses(statuses);
+    }
   }, [childId]);
 
   // Load entries for selected date
@@ -190,6 +196,16 @@ export default function VocabPage({
     setView("quiz");
   }
 
+  async function handleStartQuizFromHome(date: string, type: VocabQuizType) {
+    setSelectedDate(date);
+    setQuizType(type);
+    setLoading(true);
+    const data = await getEntries(childId, date);
+    setEntries(data);
+    setLoading(false);
+    setView("quiz");
+  }
+
   async function handleQuizComplete(total: number, correct: number) {
     const rewardKey =
       quizType === "basic" ? "basic_reward" : "advanced_reward";
@@ -283,31 +299,59 @@ export default function VocabPage({
             </div>
           ) : (
             <ul className="flex flex-col gap-2">
-              {vocabLists.map((item) => (
-                <li key={item.date}>
-                  <button
-                    onClick={() => handleOpenList(item.date)}
-                    className="w-full flex items-center justify-between bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] active:bg-gray-50 transition-colors"
-                  >
-                    <div className="text-left min-w-0 flex-1">
-                      <div className="font-bold text-base text-gray-800">
-                        {item.title || formatDate(item.date)}
-                      </div>
-                      {item.title && (
-                        <div className="text-xs text-gray-400">
-                          {formatDate(item.date)}
+              {vocabLists.map((item) => {
+                const qs = quizStatuses.get(item.date);
+                const canQuiz = item.count >= minWords;
+                return (
+                  <li key={item.date} className="bg-white rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                    <button
+                      onClick={() => handleOpenList(item.date)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 active:bg-gray-50 transition-colors rounded-[14px]"
+                    >
+                      <div className="text-left min-w-0 flex-1">
+                        <div className="font-bold text-base text-gray-800">
+                          {item.title || formatDate(item.date)}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">
-                        {item.count}개
-                      </span>
-                      <span className="text-gray-300">›</span>
-                    </div>
-                  </button>
-                </li>
-              ))}
+                        {item.title && (
+                          <div className="text-xs text-gray-400">
+                            {formatDate(item.date)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-400">
+                          {item.count}개
+                        </span>
+                        <span className="text-gray-300">›</span>
+                      </div>
+                    </button>
+                    {canQuiz && (
+                      <div className="flex gap-2 px-4 pb-3 -mt-1">
+                        <button
+                          onClick={() => handleStartQuizFromHome(item.date, "basic")}
+                          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 ${
+                            qs?.basic
+                              ? "bg-blue-50 text-blue-400"
+                              : "bg-blue-500 text-white"
+                          }`}
+                        >
+                          📝 객관식 {qs?.basic ? "✓" : `🍬${config.basic_reward ?? 10}`}
+                        </button>
+                        <button
+                          onClick={() => handleStartQuizFromHome(item.date, "advanced")}
+                          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 ${
+                            qs?.advanced
+                              ? "bg-purple-50 text-purple-400"
+                              : "bg-purple-500 text-white"
+                          }`}
+                        >
+                          ✏️ 주관식 {qs?.advanced ? "✓" : `🍬${config.advanced_reward ?? 20}`}
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </>
@@ -412,39 +456,6 @@ export default function VocabPage({
                 )}
               </div>
 
-              {/* Quiz Buttons */}
-              {entries.length >= minWords && (
-                <div className="mt-6">
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                    시험 보기
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleStartQuiz("basic")}
-                      className="flex-1 bg-blue-500 text-white py-3 rounded-xl font-bold text-sm"
-                    >
-                      📝 객관식
-                      <div className="text-xs font-normal opacity-80 mt-0.5">
-                        🍬 {config.basic_reward ?? 10}
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => handleStartQuiz("advanced")}
-                      className="flex-1 bg-purple-500 text-white py-3 rounded-xl font-bold text-sm"
-                    >
-                      ✏️ 주관식
-                      <div className="text-xs font-normal opacity-80 mt-0.5">
-                        🍬 {config.advanced_reward ?? 20}
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
-              {entries.length > 0 && entries.length < minWords && (
-                <div className="text-center text-sm text-gray-400 mt-4">
-                  {minWords}개 이상 단어를 추가하면 시험을 볼 수 있어요
-                </div>
-              )}
             </>
           )}
         </>
@@ -456,7 +467,7 @@ export default function VocabPage({
           entries={entries}
           quizType={quizType}
           onComplete={handleQuizComplete}
-          onCancel={() => setView("list")}
+          onCancel={() => setView("home")}
         />
       )}
 
@@ -488,7 +499,10 @@ export default function VocabPage({
           <button
             onClick={() => {
               setQuizResult(null);
-              setView("list");
+              setSelectedDate(null);
+              setEntries([]);
+              setView("home");
+              loadLists();
             }}
             className="w-full bg-[var(--accent,#6c5ce7)] text-white py-3 rounded-xl font-bold"
           >

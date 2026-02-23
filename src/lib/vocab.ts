@@ -226,6 +226,32 @@ export async function updateVocabDate(
 
 // --- 퀴즈 ---
 
+// 여러 날짜의 퀴즈 완료 상태를 한번에 조회
+export async function getQuizStatuses(
+  childId: string,
+  dates: string[],
+): Promise<Map<string, { basic: boolean; advanced: boolean }>> {
+  const result = new Map<string, { basic: boolean; advanced: boolean }>();
+  for (const d of dates) result.set(d, { basic: false, advanced: false });
+  if (dates.length === 0) return result;
+
+  const { data } = await supabase
+    .from("vocab_quizzes")
+    .select("date, quiz_type")
+    .eq("user_id", childId)
+    .in("date", dates)
+    .gt("candy_earned", 0);
+
+  for (const row of (data ?? []) as { date: string; quiz_type: string }[]) {
+    const s = result.get(row.date);
+    if (s) {
+      if (row.quiz_type === "basic") s.basic = true;
+      if (row.quiz_type === "advanced") s.advanced = true;
+    }
+  }
+  return result;
+}
+
 export async function hasEarnedToday(
   childId: string,
   date: string,
