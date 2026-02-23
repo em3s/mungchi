@@ -101,6 +101,7 @@ export function VocabQuiz({
     setIsCorrect(correct);
     if (correct) {
       setTotalCorrect((prev) => prev + 1);
+      speakWord(current.entry.word);
     } else {
       setWrongInRound((prev) => [...prev, current.entry]);
     }
@@ -114,6 +115,7 @@ export function VocabQuiz({
     setIsCorrect(correct);
     if (correct) {
       setTotalCorrect((prev) => prev + 1);
+      speakWord(current.entry.word);
       setCandyPop(true);
       setTimeout(() => setCandyPop(false), 1200);
     } else {
