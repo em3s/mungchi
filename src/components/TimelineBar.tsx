@@ -144,6 +144,10 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
             {/* 이벤트 블록 */}
             {blocks.map((block) => {
               const color = COLORS[block.colorIdx];
+              const bottomEdge = block.topPct + block.heightPct;
+              const hasAdjacentBelow = blocks.some(
+                (b) => b !== block && Math.abs(b.topPct - bottomEdge) < 0.5
+              );
               return (
                 <div
                   key={block.event.uid}
@@ -154,9 +158,11 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
                     minHeight: "36px",
                   }}
                 >
-                  {/* 구분선 — 시간 눈금 영역까지 확장 */}
+                  {/* 구분선 — 시간 눈금 영역까지 확장, 연속 시 하단 생략 */}
                   <div className="absolute top-0 -left-14 right-0 border-t border-gray-400/50 pointer-events-none" />
-                  <div className="absolute bottom-0 -left-14 right-0 border-t border-gray-400/50 pointer-events-none" />
+                  {!hasAdjacentBelow && (
+                    <div className="absolute bottom-0 -left-14 right-0 border-t border-gray-400/50 pointer-events-none" />
+                  )}
                   {leadingEmoji(block.event.summary) && (
                     <span className="text-xl md:text-2xl shrink-0 leading-none">
                       {leadingEmoji(block.event.summary)}
