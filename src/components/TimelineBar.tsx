@@ -15,6 +15,17 @@ const DAY_START = 9 * 60;
 const DAY_END = 18 * 60;
 const DAY_SPAN = DAY_END - DAY_START;
 
+const EMOJI_RE = /^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)\s*/u;
+
+function leadingEmoji(text: string): string | null {
+  const m = text.match(EMOJI_RE);
+  return m ? m[1] : null;
+}
+
+function stripLeadingEmoji(text: string): string {
+  return text.replace(EMOJI_RE, "");
+}
+
 function toMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
@@ -136,15 +147,21 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
               return (
                 <div
                   key={block.event.uid}
-                  className={`absolute left-0 right-0 ${color.bg} flex flex-col justify-center px-3 py-1 overflow-hidden`}
+                  className={`absolute left-0 right-0 ${color.bg} flex items-center gap-2 px-3 py-1 overflow-hidden`}
                   style={{
                     top: `${block.topPct}%`,
                     height: `${block.heightPct}%`,
                     minHeight: "36px",
                   }}
                 >
+                  {leadingEmoji(block.event.summary) && (
+                    <span className="text-xl md:text-2xl shrink-0 leading-none">
+                      {leadingEmoji(block.event.summary)}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex flex-col justify-center">
                   <span className={`text-xs md:text-sm font-semibold ${color.text} truncate leading-tight`}>
-                    {block.event.summary}
+                    {stripLeadingEmoji(block.event.summary)}
                   </span>
                   {block.heightPct > 5 && block.event.startTime && (
                     <span className={`text-[10px] md:text-xs ${color.text} opacity-60 leading-tight`}>
@@ -152,6 +169,7 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
                       {block.event.endTime ? ` – ${formatTime(block.event.endTime)}` : ""}
                     </span>
                   )}
+                  </div>
                 </div>
               );
             })}
