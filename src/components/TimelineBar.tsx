@@ -69,27 +69,21 @@ function buildBlocks(events: CalendarEvent[]) {
 
 const TICKS = [9, 12, 15, 18];
 
-function Cap({
-  emoji,
-  label,
-  events,
-}: {
-  emoji: string;
-  label: string;
-  events: CalendarEvent[];
-}) {
+/** 기존 스타일 리스트 아이템 */
+function EventListItem({ ev }: { ev: CalendarEvent }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl md:rounded-[14px]">
-      <span className="text-base">{emoji}</span>
-      <div className="min-w-0">
-        <span className="text-xs text-gray-400 font-medium">{label}</span>
-        {events.length > 0 && (
-          <div className="text-[11px] md:text-xs text-gray-500 truncate">
-            {events.map((e) => e.summary).join(", ")}
-          </div>
-        )}
-      </div>
-    </div>
+    <li className="bg-blue-50 rounded-xl px-4 py-3 text-blue-900 md:rounded-[14px]">
+      <div className="font-semibold text-sm md:text-base">{ev.summary}</div>
+      {!ev.isAllDay && ev.startTime && (
+        <div className="text-xs text-blue-500 mt-0.5">
+          {ev.startTime}
+          {ev.endTime ? ` ~ ${ev.endTime}` : ""}
+        </div>
+      )}
+      {ev.isAllDay && (
+        <div className="text-xs text-blue-400 mt-0.5">하루종일</div>
+      )}
+    </li>
   );
 }
 
@@ -120,92 +114,96 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
 
       {/* 종일 이벤트 */}
       {allDay.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {allDay.map((ev) => (
-            <span
-              key={ev.uid}
-              className="text-[11px] md:text-xs bg-blue-50 text-blue-600 rounded-full px-2.5 py-0.5 font-medium"
-            >
-              {ev.summary}
-            </span>
-          ))}
+        <ul className="flex flex-col gap-2 mb-2">
+          {allDay.map((ev) => <EventListItem key={ev.uid} ev={ev} />)}
+        </ul>
+      )}
+
+      {/* 9시 이전 — 리스트 */}
+      {morning.length > 0 && (
+        <ul className="flex flex-col gap-2 mb-2">
+          {morning.map((ev) => <EventListItem key={ev.uid} ev={ev} />)}
+        </ul>
+      )}
+
+      {/* 9시~6시 메인 타임라인 */}
+      {blocks.length > 0 && (
+        <div className="flex my-1">
+          {/* 시간 눈금 (왼쪽) */}
+          <div className="relative w-11 md:w-13 shrink-0">
+            {TICKS.map((hour, i) => (
+              <div
+                key={hour}
+                className="absolute right-0 pr-2 text-[10px] md:text-xs text-gray-400 leading-none -translate-y-1/2"
+                style={{ top: `${(i / (TICKS.length - 1)) * 100}%` }}
+              >
+                {hour > 12 ? `${hour - 12}pm` : hour === 12 ? "12pm" : `${hour}am`}
+              </div>
+            ))}
+          </div>
+
+          {/* 타임라인 본체 */}
+          <div
+            className="flex-1 relative bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden md:rounded-[14px]"
+            style={{ minHeight: "540px" }}
+          >
+            {/* 눈금선 */}
+            {TICKS.map((hour, i) => (
+              <div
+                key={hour}
+                className="absolute left-0 right-0 border-t border-dashed border-gray-100"
+                style={{ top: `${(i / (TICKS.length - 1)) * 100}%` }}
+              />
+            ))}
+
+            {/* 빈 구간 라벨 */}
+            {gaps.map((gap, i) => (
+              gap.heightPct > 4 && (
+                <div
+                  key={`gap-${i}`}
+                  className="absolute left-0 right-0 flex items-center justify-center"
+                  style={{ top: `${gap.topPct}%`, height: `${gap.heightPct}%` }}
+                >
+                  <span className="text-[10px] md:text-xs text-gray-300">자유시간</span>
+                </div>
+              )
+            ))}
+
+            {/* 이벤트 블록 */}
+            {blocks.map((block) => {
+              const color = COLORS[block.colorIdx];
+              return (
+                <div
+                  key={block.event.uid}
+                  className={`absolute left-1.5 right-1.5 ${color.bg} border-l-[3px] ${color.accent} rounded-lg flex flex-col justify-center px-3 py-1 overflow-hidden`}
+                  style={{
+                    top: `${block.topPct}%`,
+                    height: `${block.heightPct}%`,
+                    minHeight: "36px",
+                  }}
+                >
+                  <span className={`text-xs md:text-sm font-semibold ${color.text} truncate leading-tight`}>
+                    {block.event.summary}
+                  </span>
+                  {block.heightPct > 5 && block.event.startTime && (
+                    <span className={`text-[10px] md:text-xs ${color.text} opacity-60 leading-tight`}>
+                      {formatTime(block.event.startTime)}
+                      {block.event.endTime ? ` – ${formatTime(block.event.endTime)}` : ""}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* 아침 */}
-      <Cap emoji="🌅" label="아침" events={morning} />
-
-      {/* 메인 타임라인 */}
-      <div className="flex my-1">
-        {/* 시간 눈금 (왼쪽) */}
-        <div className="relative w-11 md:w-13 shrink-0">
-          {TICKS.map((hour, i) => (
-            <div
-              key={hour}
-              className="absolute right-0 pr-2 text-[10px] md:text-xs text-gray-400 leading-none -translate-y-1/2"
-              style={{ top: `${(i / (TICKS.length - 1)) * 100}%` }}
-            >
-              {hour > 12 ? `${hour - 12}pm` : hour === 12 ? "12pm" : `${hour}am`}
-            </div>
-          ))}
-        </div>
-
-        {/* 타임라인 본체 */}
-        <div className="flex-1 relative bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden md:rounded-[14px]"
-          style={{ minHeight: "540px" }}
-        >
-          {/* 눈금선 */}
-          {TICKS.map((hour, i) => (
-            <div
-              key={hour}
-              className="absolute left-0 right-0 border-t border-dashed border-gray-100"
-              style={{ top: `${(i / (TICKS.length - 1)) * 100}%` }}
-            />
-          ))}
-
-          {/* 빈 구간 라벨 */}
-          {gaps.map((gap, i) => (
-            gap.heightPct > 4 && (
-              <div
-                key={`gap-${i}`}
-                className="absolute left-0 right-0 flex items-center justify-center"
-                style={{ top: `${gap.topPct}%`, height: `${gap.heightPct}%` }}
-              >
-                <span className="text-[10px] md:text-xs text-gray-300">자유시간</span>
-              </div>
-            )
-          ))}
-
-          {/* 이벤트 블록 */}
-          {blocks.map((block) => {
-            const color = COLORS[block.colorIdx];
-            return (
-              <div
-                key={block.event.uid}
-                className={`absolute left-1.5 right-1.5 ${color.bg} border-l-[3px] ${color.accent} rounded-lg flex flex-col justify-center px-3 py-1 overflow-hidden`}
-                style={{
-                  top: `${block.topPct}%`,
-                  height: `${block.heightPct}%`,
-                  minHeight: "36px",
-                }}
-              >
-                <span className={`text-xs md:text-sm font-semibold ${color.text} truncate leading-tight`}>
-                  {block.event.summary}
-                </span>
-                {block.heightPct > 5 && block.event.startTime && (
-                  <span className={`text-[10px] md:text-xs ${color.text} opacity-60 leading-tight`}>
-                    {formatTime(block.event.startTime)}
-                    {block.event.endTime ? ` – ${formatTime(block.event.endTime)}` : ""}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 저녁 */}
-      <Cap emoji="🌙" label="저녁" events={evening} />
+      {/* 6시 이후 — 리스트 */}
+      {evening.length > 0 && (
+        <ul className="flex flex-col gap-2 mt-2">
+          {evening.map((ev) => <EventListItem key={ev.uid} ev={ev} />)}
+        </ul>
+      )}
     </div>
   );
 }
