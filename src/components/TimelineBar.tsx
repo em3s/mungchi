@@ -130,14 +130,24 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
             className="flex-1 relative bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden md:rounded-[14px]"
             style={{ minHeight: "540px" }}
           >
-            {/* 눈금선 */}
-            {TICKS.map((hour, i) => (
-              <div
-                key={hour}
-                className="absolute left-0 right-0 border-t border-dashed border-gray-100"
-                style={{ top: `${(i / (TICKS.length - 1)) * 100}%` }}
-              />
-            ))}
+            {/* 정시 눈금선 + 30분 점선 */}
+            {TICKS.map((hour, i) => {
+              const topPct = (i / (TICKS.length - 1)) * 100;
+              return (
+                <div key={hour}>
+                  <div
+                    className="absolute left-0 right-0 border-t border-gray-200"
+                    style={{ top: `${topPct}%` }}
+                  />
+                  {i < TICKS.length - 1 && (
+                    <div
+                      className="absolute left-0 right-0 border-t border-dashed border-gray-100"
+                      style={{ top: `${topPct + (1 / (TICKS.length - 1)) * 50}%` }}
+                    />
+                  )}
+                </div>
+              );
+            })}
 
             {/* 이벤트 블록 */}
             {blocks.map((block) => {
