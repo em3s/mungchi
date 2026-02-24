@@ -163,6 +163,8 @@ export const GRADE_LABELS: Record<string, string> = {
 export const STAR_EMOJIS = [
   "⭐", "✨", "🌟", "💫", "☀️", "🌙",
   "💎", "🔮", "🪐", "⚡", "🌈", "🦋",
+  "🍫", "🎀", "🐱", "🐶", "🦄", "🌸",
+  "🍀", "🔥", "❄️", "🎵", "🚀", "🧸",
 ] as const;
 
 export const THEME_PRESETS = [
