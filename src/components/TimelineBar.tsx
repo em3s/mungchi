@@ -159,9 +159,9 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
                   }}
                 >
                   {/* 구분선 — 시간 눈금 영역까지 확장, 연속 시 하단 생략 */}
-                  <div className="absolute top-0 -left-14 right-0 border-t border-gray-400/50 pointer-events-none" />
+                  <div className="absolute top-0 -left-3 right-0 border-t border-gray-400/50 pointer-events-none" />
                   {!hasAdjacentBelow && (
-                    <div className="absolute bottom-0 -left-14 right-0 border-t border-gray-400/50 pointer-events-none" />
+                    <div className="absolute bottom-0 -left-3 right-0 border-t border-gray-400/50 pointer-events-none" />
                   )}
                   {leadingEmoji(block.event.summary) && (
                     <span className="text-xl md:text-2xl shrink-0 leading-none">
