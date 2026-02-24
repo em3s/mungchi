@@ -12,6 +12,58 @@ import {
 } from "@/lib/dict-db";
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
 
+// --- 오늘의 단어장 ---
+
+export const DAILY_LIST_ID = "daily";
+export const DAILY_WORD_COUNT = 10;
+
+/** djb2 해시 → 32bit 정수 */
+function hashSeed(seed: string): number {
+  let h = 5381;
+  for (let i = 0; i < seed.length; i++) {
+    h = ((h << 5) + h + seed.charCodeAt(i)) | 0;
+  }
+  return h >>> 0;
+}
+
+/** 시드 기반 PRNG (Mulberry32) */
+function mulberry32(seed: number): () => number {
+  let s = seed | 0;
+  return () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** 날짜+유저 시드로 오늘의 단어 10개 선택 (동기, STATIC_DICT 직접 사용) */
+export function getDailyWords(userId: string, date: string): VocabEntry[] {
+  const seed = hashSeed(`${date}:${userId}`);
+  const rng = mulberry32(seed);
+
+  // Fisher-Yates 셔플 (인덱스 배열)
+  const indices = Array.from({ length: STATIC_DICT.length }, (_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  const count = Math.min(DAILY_WORD_COUNT, STATIC_DICT.length);
+  return indices.slice(0, count).map((idx, i) => {
+    const [word, meaning, level] = STATIC_DICT[idx];
+    return {
+      id: `daily-${i}`,
+      user_id: userId,
+      list_id: DAILY_LIST_ID,
+      dictionary_id: null,
+      word,
+      meaning,
+      spelling: level <= 2,
+    };
+  });
+}
+
 const ENTRIES_TTL = 30_000; // 30초
 const LISTS_TTL = 30_000; // 30초
 const CONFIG_TTL = 60_000; // 1분

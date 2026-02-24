@@ -17,7 +17,10 @@ import {
   getVocabConfig,
   getQuizStatuses,
   loadDictionary,
+  getDailyWords,
+  DAILY_LIST_ID,
 } from "@/lib/vocab";
+import { todayKST } from "@/lib/date";
 import { addTransaction, getBalance } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
 import { WordInput } from "@/components/WordInput";
@@ -115,6 +118,16 @@ export default function VocabPage({
   if (!flagsLoaded || featureDisabled) return null;
 
   const minWords = config.min_words ?? 3;
+
+  const isDailyList = selectedListId === DAILY_LIST_ID;
+
+  function handleOpenDaily() {
+    const words = getDailyWords(childId, todayKST());
+    setListTitleState("오늘의 단어장");
+    setSelectedListId(DAILY_LIST_ID);
+    setEntries(words);
+    setView("list");
+  }
 
   function handleOpenList(listId: string) {
     const list = vocabLists.find((l) => l.id === listId);
@@ -216,6 +229,15 @@ export default function VocabPage({
     setView("quiz");
   }
 
+  function handleStartDailyQuiz(type: VocabQuizType) {
+    const words = getDailyWords(childId, todayKST());
+    setSelectedListId(DAILY_LIST_ID);
+    setQuizType(type);
+    const quizEntries = type === "spelling" ? words.filter((e) => e.spelling) : words;
+    setEntries(quizEntries);
+    setView("quiz");
+  }
+
   async function handleStartQuizFromHome(listId: string, type: VocabQuizType) {
     setSelectedListId(listId);
     setQuizType(type);
@@ -235,14 +257,17 @@ export default function VocabPage({
         ? (config.basic_reward ?? 1)
         : correct; // spelling: 이미 지급 완료
 
-    await saveQuizResult(
-      childId,
-      selectedListId!,
-      quizType,
-      total,
-      correct,
-      candy,
-    );
+    // daily list는 DB 저장 스킵 (list_id가 UUID 아님)
+    if (!isDailyList) {
+      await saveQuizResult(
+        childId,
+        selectedListId!,
+        quizType,
+        total,
+        correct,
+        candy,
+      );
+    }
 
     // 객관식만 완료 시 보상 지급 (스펠링은 onSpellingCorrect에서 즉시 지급)
     if (quizType === "basic" && candy > 0 && coinsEnabled) {
@@ -291,6 +316,40 @@ export default function VocabPage({
       {/* Home View — vocab list + create new */}
       {view === "home" && (
         <>
+          {/* Daily words card */}
+          <div className="mb-4">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
+              <button
+                onClick={handleOpenDaily}
+                className="w-full flex items-center justify-between px-4 py-3.5 active:bg-amber-100/50 transition-colors"
+              >
+                <div className="text-left">
+                  <div className="font-bold text-base text-amber-800">
+                    🌟 오늘의 단어장
+                  </div>
+                  <div className="text-xs text-amber-600/70 mt-0.5">
+                    매일 새로운 10개 단어
+                  </div>
+                </div>
+                <span className="text-amber-400">›</span>
+              </button>
+              <div className="flex gap-2 px-4 pb-3 -mt-1">
+                <button
+                  onClick={() => handleStartDailyQuiz("basic")}
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 bg-blue-500 text-white"
+                >
+                  📝 객관식 🍪{config.basic_reward ?? 1}
+                </button>
+                <button
+                  onClick={() => handleStartDailyQuiz("spelling")}
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 bg-purple-500 text-white"
+                >
+                  ✏️ 스펠링
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* New vocab list */}
           <div className="flex items-center gap-2 mb-6">
             <input
@@ -395,16 +454,20 @@ export default function VocabPage({
       {/* List View */}
       {view === "list" && (
         <>
-          {/* Title input */}
+          {/* Title */}
           <div className="mb-4">
-            <input
-              type="text"
-              value={listTitle}
-              onChange={(e) => setListTitleState(e.target.value)}
-              onBlur={handleTitleSave}
-              placeholder="단어장 이름"
-              className="w-full text-lg font-bold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 px-1"
-            />
+            {isDailyList ? (
+              <div className="text-lg font-bold text-gray-800 px-1">🌟 오늘의 단어장</div>
+            ) : (
+              <input
+                type="text"
+                value={listTitle}
+                onChange={(e) => setListTitleState(e.target.value)}
+                onBlur={handleTitleSave}
+                placeholder="단어장 이름"
+                className="w-full text-lg font-bold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 px-1"
+              />
+            )}
           </div>
 
           {loading ? (
@@ -413,8 +476,8 @@ export default function VocabPage({
             </div>
           ) : (
             <>
-              {/* Add Form (inline) */}
-              {showAddForm && (
+              {/* Add Form (inline) — daily에서는 숨김 */}
+              {!isDailyList && showAddForm && (
                 <div className="mb-3">
                   <WordInput
                     onSelect={handleAddWord}
@@ -429,9 +492,9 @@ export default function VocabPage({
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-xs font-semibold text-gray-500 tracking-wider">
-                    단어 ({entries.length}) · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span>
+                    단어 ({entries.length}){!isDailyList && <> · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span></>}
                   </div>
-                  {!showAddForm && (
+                  {!isDailyList && !showAddForm && (
                     <button
                       onClick={() => setShowAddForm(true)}
                       className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)]"
@@ -448,7 +511,7 @@ export default function VocabPage({
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {entries.map((entry) => {
-                      if (editingEntryId === entry.id) {
+                      if (!isDailyList && editingEntryId === entry.id) {
                         return (
                           <li
                             key={entry.id}
@@ -492,26 +555,28 @@ export default function VocabPage({
                           key={entry.id}
                           className="flex items-center gap-3 bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-[18px] md:gap-4 md:rounded-2xl"
                         >
-                          <button
-                            onClick={async () => {
-                              const newVal = !entry.spelling;
-                              const ok = await toggleSpelling(childId, selectedListId!, entry.id, newVal);
-                              if (ok) {
-                                setEntries((prev) =>
-                                  prev.map((e) =>
-                                    e.id === entry.id ? { ...e, spelling: newVal } : e,
-                                  ),
-                                );
-                              }
-                            }}
-                            className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm md:w-[34px] md:h-[34px] md:text-base ${
-                              entry.spelling
-                                ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
-                                : "bg-white border-[var(--accent,#6c5ce7)]"
-                            }`}
-                          >
-                            {entry.spelling ? "✓" : ""}
-                          </button>
+                          {!isDailyList && (
+                            <button
+                              onClick={async () => {
+                                const newVal = !entry.spelling;
+                                const ok = await toggleSpelling(childId, selectedListId!, entry.id, newVal);
+                                if (ok) {
+                                  setEntries((prev) =>
+                                    prev.map((e) =>
+                                      e.id === entry.id ? { ...e, spelling: newVal } : e,
+                                    ),
+                                  );
+                                }
+                              }}
+                              className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm md:w-[34px] md:h-[34px] md:text-base ${
+                                entry.spelling
+                                  ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
+                                  : "bg-white border-[var(--accent,#6c5ce7)]"
+                              }`}
+                            >
+                              {entry.spelling ? "✓" : ""}
+                            </button>
+                          )}
                           <button
                             onClick={() => speakWord(entry.word)}
                             className="text-gray-400 text-base active:text-[var(--accent,#6c5ce7)] transition-colors shrink-0"
@@ -519,24 +584,56 @@ export default function VocabPage({
                           >
                             ▶
                           </button>
-                          <span
-                            onClick={() => handleStartEdit(entry)}
-                            className="flex-1 text-base md:text-lg"
-                          >
-                            {entry.word}  <span className="text-gray-400">{entry.meaning}</span>
-                          </span>
-                          <button
-                            onClick={() => handleRemoveWord(entry.id)}
-                            className="text-gray-400 text-sm px-1 active:text-red-500 transition-colors"
-                          >
-                            ✕
-                          </button>
+                          {isDailyList ? (
+                            <span className="flex-1 text-base md:text-lg">
+                              {entry.word}  <span className="text-gray-400">{entry.meaning}</span>
+                            </span>
+                          ) : (
+                            <span
+                              onClick={() => handleStartEdit(entry)}
+                              className="flex-1 text-base md:text-lg"
+                            >
+                              {entry.word}  <span className="text-gray-400">{entry.meaning}</span>
+                            </span>
+                          )}
+                          {!isDailyList && (
+                            <button
+                              onClick={() => handleRemoveWord(entry.id)}
+                              className="text-gray-400 text-sm px-1 active:text-red-500 transition-colors"
+                            >
+                              ✕
+                            </button>
+                          )}
                         </li>
                       );
                     })}
                   </ul>
                 )}
               </div>
+
+              {/* Daily list quiz buttons */}
+              {isDailyList && entries.length >= minWords && (
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => handleStartQuiz("basic")}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1 active:opacity-80 bg-blue-500 text-white"
+                  >
+                    📝 객관식 🍪{config.basic_reward ?? 1}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const spellingEntries = entries.filter((e) => e.spelling);
+                      if (spellingEntries.length === 0) return;
+                      setEntries(spellingEntries);
+                      handleStartQuiz("spelling");
+                    }}
+                    disabled={entries.filter((e) => e.spelling).length === 0}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1 active:opacity-80 bg-purple-500 text-white disabled:opacity-40"
+                  >
+                    ✏️ 스펠링
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={handleBackToHome}
