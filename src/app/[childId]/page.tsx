@@ -20,6 +20,7 @@ import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { addTransaction, getBalance } from "@/lib/coins";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { TimelineBar } from "@/components/TimelineBar";
 
 export default function DashboardPage({
   params,
@@ -464,35 +465,8 @@ export default function DashboardPage({
         {cheerRef.current.message}
       </div>
 
-      {/* Calendar Events */}
-      {dayEvents.length > 0 && (
-        <div className="mt-6 mb-3">
-          <div className="text-xs font-semibold text-blue-500 uppercase tracking-wider mb-2 md:text-sm">
-            📅 일정 ({dayEvents.length})
-          </div>
-          <ul className="flex flex-col gap-2">
-            {dayEvents.map((ev) => (
-              <li
-                key={ev.uid}
-                className="bg-blue-50 rounded-xl px-4 py-3 text-blue-900 md:rounded-[14px]"
-              >
-                <div className="font-semibold text-sm md:text-base">
-                  {ev.summary}
-                </div>
-                {!ev.isAllDay && ev.startTime && (
-                  <div className="text-xs text-blue-500 mt-0.5">
-                    {ev.startTime}
-                    {ev.endTime ? ` ~ ${ev.endTime}` : ""}
-                  </div>
-                )}
-                {ev.isAllDay && (
-                  <div className="text-xs text-blue-400 mt-0.5">하루종일</div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Calendar Events — Timeline Bar */}
+      <TimelineBar events={dayEvents} />
 
       {/* Task Section Header */}
       <div className="flex items-center justify-between mt-6 mb-3">
