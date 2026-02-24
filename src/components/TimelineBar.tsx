@@ -92,20 +92,6 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
 
   if (events.length === 0) return null;
 
-  // 빈 구간 계산
-  const gaps: { topPct: number; heightPct: number }[] = [];
-  const sorted = [...blocks].sort((a, b) => a.topPct - b.topPct);
-  let cursor = 0;
-  for (const b of sorted) {
-    if (b.topPct > cursor + 0.5) {
-      gaps.push({ topPct: cursor, heightPct: b.topPct - cursor });
-    }
-    cursor = b.topPct + b.heightPct;
-  }
-  if (cursor < 99.5) {
-    gaps.push({ topPct: cursor, heightPct: 100 - cursor });
-  }
-
   return (
     <div className="mt-6 mb-3">
       <div className="text-xs font-semibold text-blue-500 uppercase tracking-wider mb-2 md:text-sm">
@@ -154,19 +140,6 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
                 className="absolute left-0 right-0 border-t border-dashed border-gray-100"
                 style={{ top: `${(i / (TICKS.length - 1)) * 100}%` }}
               />
-            ))}
-
-            {/* 빈 구간 라벨 */}
-            {gaps.map((gap, i) => (
-              gap.heightPct > 4 && (
-                <div
-                  key={`gap-${i}`}
-                  className="absolute left-0 right-0 flex items-center justify-center"
-                  style={{ top: `${gap.topPct}%`, height: `${gap.heightPct}%` }}
-                >
-                  <span className="text-[10px] md:text-xs text-gray-300">자유시간</span>
-                </div>
-              )
             ))}
 
             {/* 이벤트 블록 */}
