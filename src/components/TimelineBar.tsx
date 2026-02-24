@@ -147,13 +147,16 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
               return (
                 <div
                   key={block.event.uid}
-                  className={`absolute -left-6 right-0 ${color.bg} flex items-center gap-2 pl-8 pr-3 py-1 overflow-hidden border-y border-gray-400/50`}
+                  className={`absolute left-0 right-0 ${color.bg} flex items-center gap-2 px-3 py-1 overflow-visible`}
                   style={{
                     top: `${block.topPct}%`,
                     height: `${block.heightPct}%`,
                     minHeight: "36px",
                   }}
                 >
+                  {/* 구분선 — 시간 눈금 영역까지 확장 */}
+                  <div className="absolute top-0 -left-14 right-0 border-t border-gray-400/50 pointer-events-none" />
+                  <div className="absolute bottom-0 -left-14 right-0 border-t border-gray-400/50 pointer-events-none" />
                   {leadingEmoji(block.event.summary) && (
                     <span className="text-xl md:text-2xl shrink-0 leading-none">
                       {leadingEmoji(block.event.summary)}
