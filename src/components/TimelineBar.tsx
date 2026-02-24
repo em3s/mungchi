@@ -136,7 +136,7 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
               return (
                 <div
                   key={block.event.uid}
-                  className={`absolute left-1.5 right-1.5 ${color.bg} border-l-[3px] ${color.accent} rounded-lg flex flex-col justify-center px-3 py-1 overflow-hidden`}
+                  className={`absolute left-0 right-0 ${color.bg} flex flex-col justify-center px-3 py-1 overflow-hidden`}
                   style={{
                     top: `${block.topPct}%`,
                     height: `${block.heightPct}%`,
