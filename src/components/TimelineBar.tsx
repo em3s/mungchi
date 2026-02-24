@@ -152,7 +152,7 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
 
         {/* 타임라인 본체 */}
         <div className="flex-1 relative bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden md:rounded-[14px]"
-          style={{ minHeight: "240px" }}
+          style={{ minHeight: "540px" }}
         >
           {/* 눈금선 */}
           {TICKS.map((hour, i) => (
@@ -165,7 +165,7 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
 
           {/* 빈 구간 라벨 */}
           {gaps.map((gap, i) => (
-            gap.heightPct > 8 && (
+            gap.heightPct > 4 && (
               <div
                 key={`gap-${i}`}
                 className="absolute left-0 right-0 flex items-center justify-center"
@@ -186,13 +186,13 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
                 style={{
                   top: `${block.topPct}%`,
                   height: `${block.heightPct}%`,
-                  minHeight: "28px",
+                  minHeight: "36px",
                 }}
               >
                 <span className={`text-xs md:text-sm font-semibold ${color.text} truncate leading-tight`}>
                   {block.event.summary}
                 </span>
-                {block.heightPct > 10 && block.event.startTime && (
+                {block.heightPct > 5 && block.event.startTime && (
                   <span className={`text-[10px] md:text-xs ${color.text} opacity-60 leading-tight`}>
                     {formatTime(block.event.startTime)}
                     {block.event.endTime ? ` – ${formatTime(block.event.endTime)}` : ""}
