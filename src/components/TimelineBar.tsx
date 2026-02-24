@@ -13,8 +13,8 @@ const COLORS = [
   { bg: "bg-cyan-50", text: "text-cyan-700", accent: "border-cyan-300" },
 ];
 
-const DAY_START = 9 * 60;
-const DAY_END = 18 * 60;
+const DAY_START = 8 * 60;
+const DAY_END = 19 * 60;
 const DAY_SPAN = DAY_END - DAY_START;
 
 const EMOJI_RE = /^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)\s*/u;
@@ -80,7 +80,8 @@ function buildBlocks(events: CalendarEvent[]) {
   return { morning, evening, blocks, allDay };
 }
 
-const TICKS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+const TICKS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+const FADED_HOURS = new Set([8, 19]);
 
 /** 기존 스타일 리스트 아이템 */
 function EventListItem({ ev }: { ev: CalendarEvent }) {
@@ -134,21 +135,21 @@ export function TimelineBar({ events, date }: { events: CalendarEvent[]; date: s
         </ul>
       )}
 
-      {/* 9시 이전 — 리스트 */}
+      {/* 8시 이전 — 리스트 */}
       {morning.length > 0 && (
         <ul className="flex flex-col gap-2 mb-2">
           {morning.map((ev) => <EventListItem key={ev.uid} ev={ev} />)}
         </ul>
       )}
 
-      {/* 9시~6시 메인 타임라인 — 항상 표시 */}
+      {/* 8시~7시 메인 타임라인 — 항상 표시 */}
         <div className="flex my-1">
           {/* 시간 눈금 (왼쪽) */}
           <div className="relative w-11 md:w-13 shrink-0">
             {TICKS.map((hour, i) => (
               <div
                 key={hour}
-                className="absolute right-0 pr-2 text-[10px] md:text-xs text-gray-400 leading-none -translate-y-1/2"
+                className={`absolute right-0 pr-2 text-[10px] md:text-xs leading-none -translate-y-1/2 ${FADED_HOURS.has(hour) ? "text-gray-300" : "text-gray-400"}`}
                 style={{ top: `${(i / (TICKS.length - 1)) * 100}%` }}
               >
                 {hour > 12 ? `${hour - 12}pm` : hour === 12 ? "12pm" : `${hour}am`}
@@ -206,10 +207,11 @@ export function TimelineBar({ events, date }: { events: CalendarEvent[]; date: s
             {/* 정시 눈금선 + 30분 점선 (이벤트 위에 표시) */}
             {TICKS.map((hour, i) => {
               const topPct = (i / (TICKS.length - 1)) * 100;
+              const faded = FADED_HOURS.has(hour);
               return (
                 <div key={hour} className="pointer-events-none">
                   <div
-                    className="absolute left-0 right-0 border-t border-gray-300/60 z-10"
+                    className={`absolute left-0 right-0 border-t z-10 ${faded ? "border-gray-200/40" : "border-gray-300/60"}`}
                     style={{ top: `${topPct}%` }}
                   />
                   {i < TICKS.length - 1 && (
@@ -235,7 +237,7 @@ export function TimelineBar({ events, date }: { events: CalendarEvent[]; date: s
           </div>
         </div>
 
-      {/* 6시 이후 — 리스트 */}
+      {/* 7시 이후 — 리스트 */}
       {evening.length > 0 && (
         <ul className="flex flex-col gap-2 mt-2">
           {evening.map((ev) => <EventListItem key={ev.uid} ev={ev} />)}
