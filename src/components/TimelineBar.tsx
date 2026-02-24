@@ -90,12 +90,10 @@ function EventListItem({ ev }: { ev: CalendarEvent }) {
 export function TimelineBar({ events }: { events: CalendarEvent[] }) {
   const { morning, evening, blocks, allDay } = buildBlocks(events);
 
-  if (events.length === 0) return null;
-
   return (
     <div className="mt-6 mb-3">
       <div className="text-xs font-semibold text-blue-500 uppercase tracking-wider mb-2 md:text-sm">
-        📅 일정 ({events.length})
+        📅 일정{events.length > 0 ? ` (${events.length})` : ""}
       </div>
 
       {/* 종일 이벤트 */}
@@ -112,8 +110,7 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
         </ul>
       )}
 
-      {/* 9시~6시 메인 타임라인 */}
-      {blocks.length > 0 && (
+      {/* 9시~6시 메인 타임라인 — 항상 표시 */}
         <div className="flex my-1">
           {/* 시간 눈금 (왼쪽) */}
           <div className="relative w-11 md:w-13 shrink-0">
@@ -169,7 +166,6 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
             })}
           </div>
         </div>
-      )}
 
       {/* 6시 이후 — 리스트 */}
       {evening.length > 0 && (
