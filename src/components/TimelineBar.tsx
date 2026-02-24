@@ -138,7 +138,7 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
 
           {/* 타임라인 본체 */}
           <div
-            className="flex-1 relative bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden md:rounded-[14px]"
+            className="flex-1 relative bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-visible md:rounded-[14px]"
             style={{ minHeight: "540px" }}
           >
             {/* 이벤트 블록 */}
@@ -147,7 +147,7 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
               return (
                 <div
                   key={block.event.uid}
-                  className={`absolute left-0 right-0 ${color.bg} flex items-center gap-2 px-3 py-1 overflow-hidden border-y border-gray-200/40`}
+                  className={`absolute -left-6 right-0 ${color.bg} flex items-center gap-2 pl-8 pr-3 py-1 overflow-hidden border-y border-gray-400/50`}
                   style={{
                     top: `${block.topPct}%`,
                     height: `${block.heightPct}%`,
