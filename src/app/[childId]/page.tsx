@@ -466,7 +466,7 @@ export default function DashboardPage({
       </div>
 
       {/* Calendar Events — Timeline Bar */}
-      <TimelineBar events={dayEvents} />
+      <TimelineBar events={dayEvents} date={activeDate} />
 
       {/* Task Section Header */}
       <div className="flex items-center justify-between mt-6 mb-3">

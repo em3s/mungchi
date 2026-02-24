@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import type { CalendarEvent } from "@/lib/types";
+import { todayKST } from "@/lib/date";
 
 const COLORS = [
   { bg: "bg-blue-50", text: "text-blue-700", accent: "border-blue-300" },
@@ -98,8 +100,26 @@ function EventListItem({ ev }: { ev: CalendarEvent }) {
   );
 }
 
-export function TimelineBar({ events }: { events: CalendarEvent[] }) {
+export function TimelineBar({ events, date }: { events: CalendarEvent[]; date: string }) {
   const { morning, evening, blocks, allDay } = buildBlocks(events);
+  const isToday = date === todayKST();
+
+  // 현재 시간 (분) — 1분마다 업데이트
+  const [nowMin, setNowMin] = useState(() => {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  });
+  useEffect(() => {
+    if (!isToday) return;
+    const id = setInterval(() => {
+      const d = new Date();
+      setNowMin(d.getHours() * 60 + d.getMinutes());
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [isToday]);
+
+  const nowInRange = isToday && nowMin >= DAY_START && nowMin <= DAY_END;
+  const nowPct = ((nowMin - DAY_START) / DAY_SPAN) * 100;
 
   return (
     <div className="mt-6 mb-3">
@@ -201,6 +221,17 @@ export function TimelineBar({ events }: { events: CalendarEvent[] }) {
                 </div>
               );
             })}
+
+            {/* 현재 시간 라인 */}
+            {nowInRange && (
+              <div
+                className="absolute -left-3 right-0 z-20 pointer-events-none flex items-center"
+                style={{ top: `${nowPct}%` }}
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1 shrink-0" />
+                <div className="flex-1 border-t-2 border-red-500" />
+              </div>
+            )}
           </div>
         </div>
 
