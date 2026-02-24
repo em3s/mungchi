@@ -175,19 +175,34 @@ export default function DashboardPage({
 
       if (coinsEnabled && !bonusGivenRef.current) {
         bonusGivenRef.current = true;
-        addTransaction(childId, 3, "allclear_bonus", "올클리어 보너스").then(
-          (result) => {
-            if (result.ok) {
-              setCoinBalance(result.newBalance ?? null);
-              showToast("올클리어 보너스! 초코 +3! 🍪");
-            }
-          },
-        );
+        // DB에서 오늘 이미 올클리어 보너스를 받았는지 확인
+        supabase
+          .from("coin_transactions")
+          .select("id")
+          .eq("user_id", childId)
+          .eq("type", "allclear_bonus")
+          .gte("created_at", today + "T00:00:00+09:00")
+          .lt("created_at", today + "T24:00:00+09:00")
+          .limit(1)
+          .then(({ data: existing }) => {
+            if (existing && existing.length > 0) return; // 이미 지급됨
+            addTransaction(
+              childId,
+              3,
+              "allclear_bonus",
+              "올클리어 보너스",
+            ).then((result) => {
+              if (result.ok) {
+                setCoinBalance(result.newBalance ?? null);
+                showToast("올클리어 보너스! 초코 +3! 🍪");
+              }
+            });
+          });
       }
     }
     if (activeRate < 1) bonusGivenRef.current = false;
     prevRateRef.current = activeRate;
-  }, [activeRate, selectedDate, coinsEnabled, childId, showToast]);
+  }, [activeRate, selectedDate, coinsEnabled, childId, today, showToast]);
 
   // 응원 메시지
   if (activeRate !== cheerRef.current.rate) {

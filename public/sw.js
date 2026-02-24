@@ -1,4 +1,4 @@
-const CACHE_NAME = "mungchi-mlzfrpni";
+const CACHE_NAME = "mungchi-mm0nrsum";
 
 // Install: 새 SW 설치 대기 (skipWaiting 안함 — 사용자 제어)
 self.addEventListener("install", () => {
