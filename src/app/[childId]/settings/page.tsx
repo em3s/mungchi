@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { USERS, THEME_PRESETS, STAR_EMOJIS } from "@/lib/constants";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
@@ -114,7 +114,60 @@ export default function SettingsPage({
         )}
       </section>
 
+      <section className="bg-white rounded-2xl p-5 shadow-sm mt-4">
+        <h2 className="text-base font-bold mb-4">📦 앱 업데이트</h2>
+        <ForceUpdate />
+      </section>
+
       <BottomNav childId={childId} />
     </>
+  );
+}
+
+function ForceUpdate() {
+  const [status, setStatus] = useState<"idle" | "checking" | "done">("idle");
+
+  const handleUpdate = useCallback(async () => {
+    if (!("serviceWorker" in navigator)) {
+      window.location.reload();
+      return;
+    }
+
+    setStatus("checking");
+
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        await reg.update();
+        // waiting SW가 있으면 활성화
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          // controllerchange가 reload 처리
+          return;
+        }
+      }
+      // 캐시 전체 삭제
+      const names = await caches.keys();
+      await Promise.all(names.map((n) => caches.delete(n)));
+    } catch {
+      // 실패해도 reload
+    }
+
+    setStatus("done");
+    window.location.reload();
+  }, []);
+
+  return (
+    <button
+      onClick={handleUpdate}
+      disabled={status === "checking"}
+      className="w-full py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]"
+      style={{
+        backgroundColor: status === "checking" ? "#e2e8f0" : "var(--accent, #6c5ce7)",
+        color: status === "checking" ? "#94a3b8" : "white",
+      }}
+    >
+      {status === "checking" ? "확인 중..." : "최신 버전으로 업데이트"}
+    </button>
   );
 }
