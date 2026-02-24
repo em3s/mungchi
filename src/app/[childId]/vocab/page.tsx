@@ -25,6 +25,7 @@ import { VocabQuiz } from "@/components/VocabQuiz";
 import { Toast } from "@/components/Toast";
 import { VocabSettings } from "@/components/VocabSettings";
 import { useToast } from "@/hooks/useToast";
+import { speakWord } from "@/lib/tts";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
 type ViewState = "home" | "list" | "quiz" | "result";
@@ -114,15 +115,6 @@ export default function VocabPage({
   if (!flagsLoaded || featureDisabled) return null;
 
   const minWords = config.min_words ?? 3;
-
-  function speakWord(word: string) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(word);
-    u.lang = "en-US";
-    u.rate = 0.9;
-    window.speechSynthesis.speak(u);
-  }
 
   function handleOpenList(listId: string) {
     const list = vocabLists.find((l) => l.id === listId);

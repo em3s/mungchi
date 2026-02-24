@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getSimilarWords } from "@/lib/vocab";
+import { speakWord } from "@/lib/tts";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
 interface QuizQuestion {
@@ -76,15 +77,6 @@ export function VocabQuiz({
     startRound(entries, 1);
     setLoading(false);
   }, [entries, startRound]);
-
-  function speakWord(word: string) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(word);
-    u.lang = "en-US";
-    u.rate = 0.9;
-    window.speechSynthesis.speak(u);
-  }
 
   if (loading) {
     return (
