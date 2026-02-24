@@ -67,7 +67,7 @@ function buildBlocks(events: CalendarEvent[]) {
   return { morning, evening, blocks, allDay };
 }
 
-const TICKS = [9, 12, 15, 18];
+const TICKS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 
 /** 기존 스타일 리스트 아이템 */
 function EventListItem({ ev }: { ev: CalendarEvent }) {
