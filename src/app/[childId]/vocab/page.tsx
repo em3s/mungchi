@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef, use } from "react";
 import { useRouter } from "next/navigation";
-import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import {
   getEntries,
   getVocabLists,
@@ -21,13 +20,17 @@ import {
   DAILY_LIST_ID,
 } from "@/lib/vocab";
 import { todayKST } from "@/lib/date";
-import { addTransaction, getBalance } from "@/lib/coins";
+import { addTransaction } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import { WordInput } from "@/components/WordInput";
 import { VocabQuiz } from "@/components/VocabQuiz";
 import { Toast } from "@/components/Toast";
 import { VocabSettings } from "@/components/VocabSettings";
 import { useToast } from "@/hooks/useToast";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
+import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { useLongPress } from "@/hooks/useLongPress";
 import { speakWord } from "@/lib/tts";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
@@ -41,16 +44,7 @@ export default function VocabPage({
   const { childId } = use(params);
   const router = useRouter();
   const { message: toastMsg, showToast } = useToast();
-
-  // Feature flag guard
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
-  useEffect(() => {
-    loadFeatureFlags().then(() => setFlagsLoaded(true));
-  }, []);
-  const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, "vocab");
-  useEffect(() => {
-    if (featureDisabled) router.replace(`/${childId}`);
-  }, [featureDisabled, childId, router]);
+  const { flagsLoaded, allowed: vocabAllowed } = useFeatureGuard(childId, "vocab");
 
   // State
   const [entries, setEntries] = useState<VocabEntry[]>([]);
@@ -66,10 +60,9 @@ export default function VocabPage({
     candy: number;
   } | null>(null);
   const [config, setConfig] = useState<Record<string, number>>({});
-  const [coinBalance, setCoinBalance] = useState<number | null>(null);
-  const [coinsEnabled, setCoinsEnabled] = useState(false);
+  const { coinsEnabled, coinBalance, setCoinBalance } = useCoinBalance(childId, flagsLoaded);
   const [showSettings, setShowSettings] = useState(false);
-  const longPressRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const titleLongPress = useLongPress(() => setShowSettings(true));
   const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; spelling: boolean }>>(new Map());
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editWord, setEditWord] = useState("");
@@ -101,21 +94,18 @@ export default function VocabPage({
 
   // Initial load
   useEffect(() => {
-    if (!flagsLoaded || featureDisabled) return;
+    if (!vocabAllowed) return;
     loadLists();
     loadDictionary();
     getVocabConfig().then(setConfig);
-    const coins = isFeatureEnabled(childId, "coins");
-    setCoinsEnabled(coins);
-    if (coins) getBalance(childId).then(setCoinBalance);
-  }, [childId, flagsLoaded, featureDisabled, loadLists]);
+  }, [childId, vocabAllowed, loadLists]);
 
   // Load entries when selectedListId changes (list view only)
   useEffect(() => {
     if (selectedListId && view === "list") loadEntries();
   }, [selectedListId, loadEntries, view]);
 
-  if (!flagsLoaded || featureDisabled) return null;
+  if (!vocabAllowed) return null;
 
   const minWords = config.min_words ?? 3;
 
@@ -287,31 +277,11 @@ export default function VocabPage({
   return (
     <div className="pt-2 pb-24">
       {/* Header */}
-      <div
-        className="flex items-center justify-between py-4 sticky top-0 z-10"
-        style={{ background: "var(--bg)" }}
-      >
-        <h1
-          className="text-xl font-bold md:text-2xl select-none"
-          onTouchStart={() => {
-            longPressRef.current = setTimeout(() => setShowSettings(true), 800);
-          }}
-          onTouchEnd={() => clearTimeout(longPressRef.current)}
-          onTouchCancel={() => clearTimeout(longPressRef.current)}
-          onMouseDown={() => {
-            longPressRef.current = setTimeout(() => setShowSettings(true), 800);
-          }}
-          onMouseUp={() => clearTimeout(longPressRef.current)}
-          onMouseLeave={() => clearTimeout(longPressRef.current)}
-        >
-          📖 영어 단어
-        </h1>
-        {coinsEnabled && coinBalance !== null && (
-          <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">
-            🍪 {coinBalance}
-          </span>
-        )}
-      </div>
+      <PageHeader
+        title="📖 영어 단어"
+        titleProps={titleLongPress}
+        coinBalance={coinsEnabled ? coinBalance : undefined}
+      />
 
       {/* Home View — vocab list + create new */}
       {view === "home" && (

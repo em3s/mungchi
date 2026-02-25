@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { USERS } from "@/lib/constants";
 import { PinModal } from "@/components/PinModal";
+import { Loading } from "@/components/Loading";
 import { useSession } from "@/hooks/useSession";
+import { useLongPress } from "@/hooks/useLongPress";
 
 export default function HomePage() {
   const router = useRouter();
@@ -14,15 +16,7 @@ export default function HomePage() {
   >(null);
 
   // 롱프레스 → 관리 페이지 진입
-  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const handleTitleDown = useCallback(() => {
-    longPressTimer.current = setTimeout(() => {
-      router.push("/admin");
-    }, 800);
-  }, [router]);
-  const handleTitleUp = useCallback(() => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  }, []);
+  const titleLongPress = useLongPress(() => router.push("/admin"));
 
   // 세션이 있으면 대시보드로 이동
   useEffect(() => {
@@ -32,11 +26,7 @@ export default function HomePage() {
   }, [loaded, childId, router]);
 
   if (!loaded) {
-    return (
-      <div className="text-center pt-[60px] text-gray-400 text-xl">
-        불러오는 중...
-      </div>
-    );
+    return <Loading />;
   }
 
   if (childId) return null; // 리다이렉트 중
@@ -45,9 +35,7 @@ export default function HomePage() {
     <div className="max-w-[480px] mx-auto px-4 pt-10 text-center md:max-w-[640px] md:px-6">
       <h2
         className="text-2xl font-bold mb-2 md:text-3xl select-none cursor-default"
-        onPointerDown={handleTitleDown}
-        onPointerUp={handleTitleUp}
-        onPointerLeave={handleTitleUp}
+        {...titleLongPress}
       >
         🍡 뭉치
       </h2>

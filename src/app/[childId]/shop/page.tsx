@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
+import { isFeatureEnabled } from "@/lib/features";
 import {
   getBalance,
   getRewards,
@@ -10,9 +10,13 @@ import {
   getTransactions,
 } from "@/lib/coins";
 import { BottomNav } from "@/components/BottomNav";
+import { Loading } from "@/components/Loading";
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { PageHeader } from "@/components/PageHeader";
 import { RewardCard } from "@/components/RewardCard";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import type { CoinReward, CoinTransaction } from "@/lib/types";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -34,7 +38,6 @@ export default function ShopPage({
   const router = useRouter();
   const { message: toastMsg, showToast } = useToast();
 
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [rewards, setRewards] = useState<CoinReward[]>([]);
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
@@ -42,34 +45,21 @@ export default function ShopPage({
   const [exchanging, setExchanging] = useState(false);
   const [txPage, setTxPage] = useState(0);
   const TX_PER_PAGE = 10;
+  const { allowed } = useFeatureGuard(childId, "coins");
 
   useEffect(() => {
-    loadFeatureFlags().then(() => setFlagsLoaded(true));
-  }, []);
-
-  const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, "coins");
-
-  useEffect(() => {
-    if (featureDisabled) router.replace(`/${childId}`);
-  }, [featureDisabled, childId, router]);
-
-  useEffect(() => {
-    if (!flagsLoaded || featureDisabled) return;
+    if (!allowed) return;
     Promise.all([
       getBalance(childId).then(setBalance),
       getRewards().then(setRewards),
       getTransactions(childId, 200).then(setTransactions),
     ]);
-  }, [childId, flagsLoaded, featureDisabled]);
+  }, [childId, allowed]);
 
-  if (!flagsLoaded || featureDisabled) return null;
+  if (!allowed) return null;
 
   if (balance === null) {
-    return (
-      <div className="text-center pt-[60px] text-gray-400 text-xl">
-        불러오는 중...
-      </div>
-    );
+    return <Loading />;
   }
 
   async function handleExchange(reward: CoinReward) {
@@ -90,13 +80,7 @@ export default function ShopPage({
   return (
     <div className="pt-2">
       {/* Header */}
-      <div
-        className="flex items-center justify-between py-4 sticky top-0 z-10"
-        style={{ background: "var(--bg)" }}
-      >
-        <h1 className="text-xl font-bold md:text-2xl">🍪 초코</h1>
-        <span />
-      </div>
+      <PageHeader title="🍪 초코" />
 
       {/* Balance */}
       <div className="text-center mb-6">
@@ -207,37 +191,16 @@ export default function ShopPage({
 
       {/* Exchange Confirm Modal */}
       {confirmReward && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] animate-fade-in"
-          onClick={() => !exchanging && setConfirmReward(null)}
-        >
-          <div
-            className="bg-white rounded-2xl p-6 w-[280px] max-w-[85vw] text-center animate-pop-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-4xl mb-3">{confirmReward.emoji}</div>
-            <div className="text-lg font-bold mb-1">{confirmReward.name}</div>
-            <div className="text-sm text-gray-500 mb-4">
-              🍪 {confirmReward.cost}개 사용
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmReward(null)}
-                disabled={exchanging}
-                className="flex-1 py-2.5 bg-gray-100 rounded-xl text-sm font-semibold text-gray-500 active:bg-gray-200"
-              >
-                아니요
-              </button>
-              <button
-                onClick={() => handleExchange(confirmReward)}
-                disabled={exchanging}
-                className="flex-1 py-2.5 bg-amber-500 rounded-xl text-sm font-semibold text-white active:opacity-80"
-              >
-                {exchanging ? "교환 중..." : "교환할래요!"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={confirmReward.name}
+          emoji={confirmReward.emoji}
+          subtitle={`🍪 ${confirmReward.cost}개 사용`}
+          confirmLabel={exchanging ? "교환 중..." : "교환할래요!"}
+          confirmColor="bg-amber-500"
+          disabled={exchanging}
+          onConfirm={() => handleExchange(confirmReward)}
+          onCancel={() => setConfirmReward(null)}
+        />
       )}
 
       <BottomNav childId={childId} />

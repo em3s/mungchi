@@ -8,6 +8,8 @@ import type { BadgeInfo } from "@/lib/types";
 import type { DayTaskSummary } from "@/lib/badges/types";
 import { evaluateBadges, getBadgesForDisplay } from "@/lib/badges/engine";
 import { BottomNav } from "@/components/BottomNav";
+import { Loading } from "@/components/Loading";
+import { PageHeader } from "@/components/PageHeader";
 import { TrophyShelf } from "@/components/TrophyShelf";
 import { BadgeCard } from "@/components/BadgeCard";
 import { BadgeModal } from "@/components/BadgeModal";
@@ -78,11 +80,7 @@ export default function BadgesPage({
   }, [childId]);
 
   if (!badges) {
-    return (
-      <div className="text-center pt-[60px] text-gray-400 text-xl">
-        불러오는 중...
-      </div>
-    );
+    return <Loading />;
   }
 
   const earnedCount = badges.filter((b) => b.earned).length;
@@ -98,14 +96,14 @@ export default function BadgesPage({
   return (
     <div className="pt-2">
       {/* Header */}
-      <div className="flex items-center justify-between py-4 sticky top-0 z-10" style={{ background: "var(--bg)" }}>
-        <h1 className="text-xl font-bold md:text-2xl">
-          🏅 뱃지
-        </h1>
-        <span className="text-sm font-bold text-gray-500 md:text-base">
-          {earnedCount}/{totalCount} 발견 · {totalEarned}회 획득
-        </span>
-      </div>
+      <PageHeader
+        title="🏅 뱃지"
+        rightSlot={
+          <span className="text-sm font-bold text-gray-500 md:text-base">
+            {earnedCount}/{totalCount} 발견 · {totalEarned}회 획득
+          </span>
+        }
+      />
 
       {/* Progress Bar */}
       <div className="h-1.5 bg-gray-200 rounded-full mb-5 overflow-hidden md:h-2">

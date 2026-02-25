@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { getBalance, addTransaction } from "@/lib/coins";
-import { USERS } from "@/lib/constants";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
+import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/BottomNav";
 import { DinoGame } from "@/components/DinoGame";
 import { Toast } from "@/components/Toast";
@@ -16,34 +16,23 @@ export default function GamePage({
 }: {
   params: Promise<{ childId: string }>;
 }) {
-  const { childId } = use(params);
+  const { childId, user } = useUser(params);
   const router = useRouter();
   const { message: toastMsg, showToast } = useToast();
   const { override: themeOverride } = useThemeOverride(childId);
-  const user = USERS.find((u) => u.id === childId);
 
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [highScore, setHighScore] = useState(0);
   const [lastScore, setLastScore] = useState<number | null>(null);
   const deductingRef = useRef(false);
+  const { allowed } = useFeatureGuard(childId, "game");
 
   useEffect(() => {
-    loadFeatureFlags().then(() => setFlagsLoaded(true));
-  }, []);
-
-  const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, "game");
-
-  useEffect(() => {
-    if (featureDisabled) router.replace(`/${childId}`);
-  }, [featureDisabled, childId, router]);
-
-  useEffect(() => {
-    if (!flagsLoaded || featureDisabled) return;
+    if (!allowed) return;
     getBalance(childId).then(setBalance);
-  }, [childId, flagsLoaded, featureDisabled]);
+  }, [childId, allowed]);
 
-  if (!flagsLoaded || featureDisabled || !user) return null;
+  if (!allowed || !user) return null;
 
   const canPlay = balance !== null && balance >= 1;
 

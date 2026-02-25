@@ -1,42 +1,29 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { cached } from "@/lib/cache";
-import { USERS, PERSONAL_MILESTONES } from "@/lib/constants";
-import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
+import { PERSONAL_MILESTONES } from "@/lib/constants";
 import { BottomNav } from "@/components/BottomNav";
+import { Loading } from "@/components/Loading";
 import { MilestoneMap } from "@/components/MilestoneMap";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
+import { useUser } from "@/hooks/useUser";
 
 export default function StarPage({
   params,
 }: {
   params: Promise<{ childId: string }>;
 }) {
-  const { childId } = use(params);
-  const router = useRouter();
+  const { childId, user: child } = useUser(params);
   const [completed, setCompleted] = useState<number | null>(null);
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
 
-  const child = USERS.find((c) => c.id === childId);
   const { override: emojiOverride } = useEmojiOverride(childId);
+  const { allowed } = useFeatureGuard(childId, "star");
 
   useEffect(() => {
-    loadFeatureFlags().then(() => setFlagsLoaded(true));
-  }, []);
-
-  const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, "star");
-
-  useEffect(() => {
-    if (featureDisabled) {
-      router.replace(`/${childId}`);
-    }
-  }, [featureDisabled, childId, router]);
-
-  useEffect(() => {
-    if (!flagsLoaded || featureDisabled) return;
+    if (!allowed) return;
     async function load() {
       try {
         const count = await cached(
@@ -57,16 +44,12 @@ export default function StarPage({
       }
     }
     load();
-  }, [childId, flagsLoaded, featureDisabled]);
+  }, [childId, allowed]);
 
-  if (!flagsLoaded || featureDisabled) return null;
+  if (!allowed) return null;
 
   if (completed === null) {
-    return (
-      <div className="text-center pt-[60px] text-gray-400 text-xl">
-        불러오는 중...
-      </div>
-    );
+    return <Loading />;
   }
 
   const emoji = emojiOverride || child?.emoji || "⭐";

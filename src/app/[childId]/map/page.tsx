@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { cached } from "@/lib/cache";
 import { USERS, MILESTONES } from "@/lib/constants";
-import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
 import { BottomNav } from "@/components/BottomNav";
+import { Loading } from "@/components/Loading";
 import { MilestoneMap } from "@/components/MilestoneMap";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 
 const CHILD_USERS = USERS.filter((u) => u.role === "child");
 
@@ -18,28 +18,15 @@ export default function MapPage({
   params: Promise<{ childId: string }>;
 }) {
   const { childId } = use(params);
-  const router = useRouter();
   const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
   const [childCounts, setChildCounts] = useState<
     { id: string; emoji: string; count: number }[]
   >([]);
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
   const { override: emojiOverride } = useEmojiOverride(childId);
+  const { allowed } = useFeatureGuard(childId, "map");
 
   useEffect(() => {
-    loadFeatureFlags().then(() => setFlagsLoaded(true));
-  }, []);
-
-  const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, "map");
-
-  useEffect(() => {
-    if (featureDisabled) {
-      router.replace(`/${childId}`);
-    }
-  }, [featureDisabled, childId, router]);
-
-  useEffect(() => {
-    if (!flagsLoaded || featureDisabled) return;
+    if (!allowed) return;
     async function load() {
       try {
         const counts = await cached(
@@ -70,16 +57,12 @@ export default function MapPage({
       }
     }
     load();
-  }, [childId, flagsLoaded, featureDisabled]);
+  }, [childId, allowed]);
 
-  if (!flagsLoaded || featureDisabled) return null;
+  if (!allowed) return null;
 
   if (totalCompleted === null) {
-    return (
-      <div className="text-center pt-[60px] text-gray-400 text-xl">
-        불러오는 중...
-      </div>
-    );
+    return <Loading />;
   }
 
   return (

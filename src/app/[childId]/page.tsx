@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, use } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { todayKST, formatMonth, WEEKDAYS } from "@/lib/date";
-import { getCheer, USERS } from "@/lib/constants";
+import { getCheer } from "@/lib/constants";
 import type { Task, MonthDays, CalendarEvent } from "@/lib/types";
 import { ProgressRing } from "@/components/ProgressRing";
 import { TaskItem } from "@/components/TaskItem";
@@ -12,13 +12,19 @@ import { TaskForm } from "@/components/TaskForm";
 import { BottomNav } from "@/components/BottomNav";
 import { Calendar } from "@/components/Calendar";
 import { ConfettiEffect } from "@/components/ConfettiEffect";
+import { PageHeader } from "@/components/PageHeader";
 import { Toast } from "@/components/Toast";
+import { Loading } from "@/components/Loading";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { PinModal } from "@/components/PinModal";
 import { useSession } from "@/hooks/useSession";
 import { useToast } from "@/hooks/useToast";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
+import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { useLongPress } from "@/hooks/useLongPress";
+import { useUser } from "@/hooks/useUser";
 import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
-import { addTransaction, getBalance } from "@/lib/coins";
+import { addTransaction } from "@/lib/coins";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { TimelineBar } from "@/components/TimelineBar";
 
@@ -27,7 +33,7 @@ export default function DashboardPage({
 }: {
   params: Promise<{ childId: string }>;
 }) {
-  const { childId } = use(params);
+  const { childId, user: child } = useUser(params);
   const router = useRouter();
   const { logout } = useSession();
   const { message: toastMsg, showToast } = useToast();
@@ -43,10 +49,10 @@ export default function DashboardPage({
   const cheerRef = useRef({ rate: -1, message: "" });
   const bonusGivenRef = useRef(false);
 
-  // 초코
-  const [coinBalance, setCoinBalance] = useState<number | null>(null);
-  const [coinsEnabled, setCoinsEnabled] = useState(false);
+  // 피쳐플래그
+  const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [weatherEnabled, setWeatherEnabled] = useState(false);
+  const { coinsEnabled, coinBalance, setCoinBalance } = useCoinBalance(childId, flagsLoaded);
 
   // 달력 상태
   const today = todayKST();
@@ -59,7 +65,6 @@ export default function DashboardPage({
   const [dayTasks, setDayTasks] = useState<Task[] | null>(null);
   const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
 
-  const child = USERS.find((c) => c.id === childId);
   const { override: emojiOverride } = useEmojiOverride(childId);
   const displayEmoji = emojiOverride || child?.emoji;
 
@@ -131,9 +136,7 @@ export default function DashboardPage({
   // 피쳐 초기화
   useEffect(() => {
     loadFeatureFlags().then(() => {
-      const coinsOn = isFeatureEnabled(childId, "coins");
-      setCoinsEnabled(coinsOn);
-      if (coinsOn) getBalance(childId).then(setCoinBalance);
+      setFlagsLoaded(true);
       setWeatherEnabled(isFeatureEnabled(childId, "weather"));
     });
   }, [childId]);
@@ -383,7 +386,7 @@ export default function DashboardPage({
   }
 
   // 롱프레스 로그아웃
-  const longPressRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const titleLongPress = useLongPress(() => setShowLockModal(true));
 
   function formatSelectedDate(dateStr: string) {
     const d = new Date(dateStr + "T00:00:00");
@@ -394,11 +397,7 @@ export default function DashboardPage({
   }
 
   if (loading) {
-    return (
-      <div className="text-center pt-[60px] text-gray-400 text-xl">
-        불러오는 중...
-      </div>
-    );
+    return <Loading />;
   }
 
   const activeLabel = selectedDate
@@ -417,26 +416,11 @@ export default function DashboardPage({
       {showConfetti && <ConfettiEffect />}
 
       {/* Header */}
-      <div className="flex items-center justify-between py-4 sticky top-0 z-10" style={{ background: "var(--bg)" }}>
-        <h1
-          className="text-xl font-bold md:text-2xl select-none"
-          onTouchStart={() => {
-            longPressRef.current = setTimeout(
-              () => setShowLockModal(true),
-              800
-            );
-          }}
-          onTouchEnd={() => clearTimeout(longPressRef.current)}
-          onTouchMove={() => clearTimeout(longPressRef.current)}
-        >
-          {displayEmoji} {child?.name}
-        </h1>
-        {coinsEnabled && coinBalance !== null && (
-          <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">
-            🍪 {coinBalance}
-          </span>
-        )}
-      </div>
+      <PageHeader
+        title={<>{displayEmoji} {child?.name}</>}
+        titleProps={titleLongPress}
+        coinBalance={coinsEnabled ? coinBalance : undefined}
+      />
 
       {/* Weather */}
       {weatherEnabled && <WeatherWidget today={today} />}
@@ -540,72 +524,31 @@ export default function DashboardPage({
 
       {/* Delete Confirm Modal */}
       {confirmDelete && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] animate-fade-in"
-          onClick={() => setConfirmDelete(null)}
-        >
-          <div
-            className="bg-white rounded-2xl p-6 w-[280px] max-w-[85vw] text-center animate-pop-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-lg font-bold mb-2">정말 지울까요?</div>
-            <div className="text-sm text-gray-500 mb-5">
-              &ldquo;{confirmDelete.title}&rdquo;
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 bg-gray-100 rounded-xl text-sm font-semibold text-gray-500 active:bg-gray-200"
-              >
-                아니요
-              </button>
-              <button
-                onClick={() => {
-                  doDelete(confirmDelete);
-                  setConfirmDelete(null);
-                }}
-                className="flex-1 py-2.5 bg-red-500 rounded-xl text-sm font-semibold text-white active:opacity-80"
-              >
-                지울래요
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title="정말 지울까요?"
+          subtitle={<>&ldquo;{confirmDelete.title}&rdquo;</>}
+          confirmLabel="지울래요"
+          onConfirm={() => {
+            doDelete(confirmDelete);
+            setConfirmDelete(null);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
       {/* Untoggle Confirm Modal */}
       {confirmUntoggle && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999] animate-fade-in"
-          onClick={() => setConfirmUntoggle(null)}
-        >
-          <div
-            className="bg-white rounded-2xl p-6 w-[280px] max-w-[85vw] text-center animate-pop-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-lg font-bold mb-2">아직 안 했어요?</div>
-            <div className="text-sm text-gray-500 mb-5">
-              &ldquo;{confirmUntoggle.title}&rdquo;
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmUntoggle(null)}
-                className="flex-1 py-2.5 bg-gray-100 rounded-xl text-sm font-semibold text-gray-500 active:bg-gray-200"
-              >
-                아니요
-              </button>
-              <button
-                onClick={() => {
-                  doToggle(confirmUntoggle);
-                  setConfirmUntoggle(null);
-                }}
-                className="flex-1 py-2.5 bg-[var(--accent,#6c5ce7)] rounded-xl text-sm font-semibold text-white active:opacity-80"
-              >
-                아직 안했어요
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title="아직 안 했어요?"
+          subtitle={<>&ldquo;{confirmUntoggle.title}&rdquo;</>}
+          confirmLabel="아직 안했어요"
+          confirmColor="bg-[var(--accent,#6c5ce7)]"
+          onConfirm={() => {
+            doToggle(confirmUntoggle);
+            setConfirmUntoggle(null);
+          }}
+          onCancel={() => setConfirmUntoggle(null)}
+        />
       )}
 
       {/* Logout Modal */}
