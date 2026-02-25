@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { use } from "react";
+import useSWR from "swr";
 import { supabase } from "@/lib/supabase/client";
-import { cached } from "@/lib/cache";
 import { USERS, MILESTONES } from "@/lib/constants";
 import { BottomNav } from "@/components/BottomNav";
 import { Loading } from "@/components/Loading";
@@ -12,58 +12,46 @@ import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 
 const CHILD_USERS = USERS.filter((u) => u.role === "child");
 
+type ChildCount = { id: string; emoji: string; count: number };
+
+async function fetchMapCounts(): Promise<ChildCount[]> {
+  const results = await Promise.all(
+    CHILD_USERS.map((child) =>
+      supabase
+        .from("tasks")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", child.id)
+        .eq("completed", true),
+    ),
+  );
+  return CHILD_USERS.map((child, i) => ({
+    id: child.id,
+    emoji: child.emoji,
+    count: results[i].count ?? 0,
+  }));
+}
+
 export default function MapPage({
   params,
 }: {
   params: Promise<{ childId: string }>;
 }) {
   const { childId } = use(params);
-  const [totalCompleted, setTotalCompleted] = useState<number | null>(null);
-  const [childCounts, setChildCounts] = useState<
-    { id: string; emoji: string; count: number }[]
-  >([]);
   const { override: emojiOverride } = useEmojiOverride(childId);
   const { allowed } = useFeatureGuard(childId, "map");
 
-  useEffect(() => {
-    if (!allowed) return;
-    async function load() {
-      try {
-        const counts = await cached(
-          "map_counts",
-          60_000,
-          async () => {
-            const results = await Promise.all(
-              CHILD_USERS.map((child) =>
-                supabase
-                  .from("tasks")
-                  .select("*", { count: "exact", head: true })
-                  .eq("user_id", child.id)
-                  .eq("completed", true),
-              ),
-            );
-            return CHILD_USERS.map((child, i) => ({
-              id: child.id,
-              emoji: child.emoji,
-              count: results[i].count ?? 0,
-            }));
-          },
-        );
-
-        setChildCounts(counts);
-        setTotalCompleted(counts.reduce((sum, c) => sum + c.count, 0));
-      } catch {
-        setTotalCompleted(0);
-      }
-    }
-    load();
-  }, [childId, allowed]);
+  const { data: childCounts } = useSWR(
+    allowed ? "map_counts" : null,
+    fetchMapCounts,
+  );
 
   if (!allowed) return null;
 
-  if (totalCompleted === null) {
+  if (!childCounts) {
     return <Loading />;
   }
+
+  const totalCompleted = childCounts.reduce((sum, c) => sum + c.count, 0);
 
   return (
     <>

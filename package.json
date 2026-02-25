@@ -18,7 +18,8 @@
     "next": "16.1.6",
     "node-ical": "^0.25.3",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "swr": "^2.4.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

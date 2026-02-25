@@ -7,6 +7,7 @@ import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { USERS } from "@/lib/constants";
 import { PinModal } from "@/components/PinModal";
 import { SupervisorFAB } from "@/components/SupervisorFAB";
+import { useRealtimeFlags } from "@/hooks/useRealtimeFlags";
 
 export default function ChildLayout({
   children,
@@ -21,6 +22,7 @@ export default function ChildLayout({
   const { override: themeOverride } = useThemeOverride(childId);
 
   const child = USERS.find((c) => c.id === childId);
+  useRealtimeFlags();
 
   const handlePinSuccess = useCallback(() => {
     login(childId);

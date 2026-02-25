@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 import { getBalance, addTransaction } from "@/lib/coins";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
@@ -21,20 +22,19 @@ export default function GamePage({
   const { message: toastMsg, showToast } = useToast();
   const { override: themeOverride } = useThemeOverride(childId);
 
-  const [balance, setBalance] = useState<number | null>(null);
   const [highScore, setHighScore] = useState(0);
   const [lastScore, setLastScore] = useState<number | null>(null);
   const deductingRef = useRef(false);
   const { allowed } = useFeatureGuard(childId, "game");
 
-  useEffect(() => {
-    if (!allowed) return;
-    getBalance(childId).then(setBalance);
-  }, [childId, allowed]);
+  const { data: balance, mutate: mutateBalance } = useSWR(
+    allowed ? `coin_balance:${childId}` : null,
+    () => getBalance(childId),
+  );
 
   if (!allowed || !user) return null;
 
-  const canPlay = balance !== null && balance >= 1;
+  const canPlay = balance !== undefined && balance >= 1;
 
   async function handleGameStart() {
     if (deductingRef.current) return;
@@ -42,7 +42,7 @@ export default function GamePage({
     const result = await addTransaction(childId, -1, "game", "🦖 공룡 달리기");
     deductingRef.current = false;
     if (result.ok && result.newBalance !== undefined) {
-      setBalance(result.newBalance);
+      mutateBalance(result.newBalance, { revalidate: false });
     }
   }
 

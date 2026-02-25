@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
+import useSWR from "swr";
 import { supabase } from "@/lib/supabase/client";
-import { cached } from "@/lib/cache";
 import { USERS, CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/constants";
 import type { BadgeInfo } from "@/lib/types";
 import type { DayTaskSummary } from "@/lib/badges/types";
@@ -14,70 +14,63 @@ import { TrophyShelf } from "@/components/TrophyShelf";
 import { BadgeCard } from "@/components/BadgeCard";
 import { BadgeModal } from "@/components/BadgeModal";
 
+function toDaySummaries(
+  data: { date: string; completed: boolean; completed_at: string | null }[] | null
+): DayTaskSummary[] {
+  const map = new Map<string, DayTaskSummary>();
+  for (const task of data || []) {
+    let day = map.get(task.date);
+    if (!day) {
+      day = { date: task.date, total: 0, completed: 0, tasks: [] };
+      map.set(task.date, day);
+    }
+    day.total++;
+    if (task.completed) day.completed++;
+    day.tasks.push({
+      completed: task.completed,
+      completedAt: task.completed_at,
+    });
+  }
+  return [...map.values()];
+}
+
+async function fetchBadges(childId: string): Promise<BadgeInfo[]> {
+  const siblingId = USERS.find((c) => c.id !== childId)?.id ?? "";
+
+  const fetchTasks = async (id: string) => {
+    const { data } = await supabase
+      .from("tasks")
+      .select("date, completed, completed_at")
+      .eq("user_id", id)
+      .order("date");
+    return data;
+  };
+
+  const [childData, siblingData] = await Promise.all([
+    fetchTasks(childId),
+    fetchTasks(siblingId),
+  ]);
+
+  const childDays = toDaySummaries(childData);
+  const siblingDays = toDaySummaries(siblingData);
+
+  const earned = evaluateBadges(childId, childDays, siblingDays);
+  return getBadgesForDisplay(earned);
+}
+
 export default function BadgesPage({
   params,
 }: {
   params: Promise<{ childId: string }>;
 }) {
   const { childId } = use(params);
-  const [badges, setBadges] = useState<BadgeInfo[] | null>(null);
   const [selected, setSelected] = useState<BadgeInfo | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const siblingId =
-          USERS.find((c) => c.id !== childId)?.id ?? "";
-
-        // 모든 할일 데이터 로드 (1분 캐시)
-        const fetchTasks = (id: string) =>
-          cached(`badge_tasks:${id}`, 60_000, async () => {
-            const { data } = await supabase
-              .from("tasks")
-              .select("date, completed, completed_at")
-              .eq("user_id", id)
-              .order("date");
-            return data;
-          });
-
-        const [childData, siblingData] = await Promise.all([
-          fetchTasks(childId),
-          fetchTasks(siblingId),
-        ]);
-
-        const toDaySummaries = (
-          data: { date: string; completed: boolean; completed_at: string | null }[] | null
-        ): DayTaskSummary[] => {
-          const map = new Map<string, DayTaskSummary>();
-          for (const task of data || []) {
-            let day = map.get(task.date);
-            if (!day) {
-              day = { date: task.date, total: 0, completed: 0, tasks: [] };
-              map.set(task.date, day);
-            }
-            day.total++;
-            if (task.completed) day.completed++;
-            day.tasks.push({
-              completed: task.completed,
-              completedAt: task.completed_at,
-            });
-          }
-          return [...map.values()];
-        };
-
-        const childDays = toDaySummaries(childData);
-        const siblingDays = toDaySummaries(siblingData);
-
-        const earned = evaluateBadges(childId, childDays, siblingDays);
-        const display = getBadgesForDisplay(earned);
-        setBadges(display);
-      } catch {
-        setBadges([]);
-      }
-    }
-
-    load();
-  }, [childId]);
+  const { data: badges } = useSWR(
+    `badges:${childId}`,
+    () => fetchBadges(childId),
+    { revalidateOnFocus: false },
+  );
 
   if (!badges) {
     return <Loading />;

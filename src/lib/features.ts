@@ -2,7 +2,7 @@
 // 우선순위: DB값 > 코드 기본값
 
 import { supabase } from "@/lib/supabase/client";
-import { cached, invalidate } from "@/lib/cache";
+import { mutate } from "swr";
 
 // stable = 기본 활성 (DB 없어도 보임)
 // testing = 기본 비활성 (DB에서 true로 활성화해야 보임)
@@ -18,8 +18,6 @@ const CODE_DEFAULTS = {
 type UserId = keyof typeof CODE_DEFAULTS;
 export type FeatureKey = keyof (typeof CODE_DEFAULTS)[UserId];
 
-const CACHE_TTL = 60_000; // 1분
-
 export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "map", label: "쌍둥이별" },
   { key: "star", label: "반짝별" },
@@ -29,25 +27,22 @@ export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "weather", label: "날씨" },
 ];
 
-// --- DB (캐시 경유) ---
+// --- DB (SWR 캐시) ---
 type FlagMap = Record<string, Record<string, boolean>>;
 let flagsSnapshot: FlagMap = {};
 
 export async function loadFeatureFlags(): Promise<FlagMap> {
-  const flags = await cached<FlagMap>("feature_flags", CACHE_TTL, async () => {
-    const { data, error } = await supabase.from("feature_flags").select("*");
-    if (error) return flagsSnapshot;
-    const map: FlagMap = {};
-    if (data) {
-      for (const row of data) {
-        if (!map[row.user_id]) map[row.user_id] = {};
-        map[row.user_id][row.feature] = row.enabled;
-      }
+  const { data, error } = await supabase.from("feature_flags").select("*");
+  if (error) return flagsSnapshot;
+  const map: FlagMap = {};
+  if (data) {
+    for (const row of data) {
+      if (!map[row.user_id]) map[row.user_id] = {};
+      map[row.user_id][row.feature] = row.enabled;
     }
-    return map;
-  });
-  flagsSnapshot = flags;
-  return flags;
+  }
+  flagsSnapshot = map;
+  return map;
 }
 
 function getDbValue(userId: string, feature: string): boolean | undefined {
@@ -79,7 +74,7 @@ export async function setFeatureFlag(
     .from("feature_flags")
     .upsert({ user_id: userId, feature, enabled });
   if (error) return false;
-  invalidate("feature_flags");
+  mutate("feature_flags");
   if (!flagsSnapshot[userId]) flagsSnapshot[userId] = {};
   flagsSnapshot[userId][feature] = enabled;
   return true;

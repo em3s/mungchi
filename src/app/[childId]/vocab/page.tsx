@@ -60,7 +60,7 @@ export default function VocabPage({
     candy: number;
   } | null>(null);
   const [config, setConfig] = useState<Record<string, number>>({});
-  const { coinsEnabled, coinBalance, setCoinBalance } = useCoinBalance(childId, flagsLoaded);
+  const { coinsEnabled, coinBalance, setCoinBalance } = useCoinBalance(childId);
   const [showSettings, setShowSettings] = useState(false);
   const titleLongPress = useLongPress(() => setShowSettings(true));
   const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; spelling: boolean }>>(new Map());

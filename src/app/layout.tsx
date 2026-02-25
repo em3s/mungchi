@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { UpdateButton } from "@/components/UpdateButton";
+import { SWRProvider } from "@/components/SWRProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,8 +34,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="antialiased">
-        <UpdateButton />
-        {children}
+        <SWRProvider>
+          <UpdateButton />
+          {children}
+        </SWRProvider>
       </body>
     </html>
   );

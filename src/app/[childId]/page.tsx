@@ -23,7 +23,8 @@ import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { useLongPress } from "@/hooks/useLongPress";
 import { useUser } from "@/hooks/useUser";
-import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
+import { useFeatureFlags } from "@/hooks/useFeatureGuard";
+import { isFeatureEnabled } from "@/lib/features";
 import { addTransaction } from "@/lib/coins";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { TimelineBar } from "@/components/TimelineBar";
@@ -49,10 +50,10 @@ export default function DashboardPage({
   const cheerRef = useRef({ rate: -1, message: "" });
   const bonusGivenRef = useRef(false);
 
-  // 피쳐플래그
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
-  const [weatherEnabled, setWeatherEnabled] = useState(false);
-  const { coinsEnabled, coinBalance, setCoinBalance } = useCoinBalance(childId, flagsLoaded);
+  // 피쳐플래그 (SWR 공유 캐시)
+  const { flagsLoaded } = useFeatureFlags();
+  const weatherEnabled = flagsLoaded && isFeatureEnabled(childId, "weather");
+  const { coinsEnabled, coinBalance, setCoinBalance } = useCoinBalance(childId);
 
   // 달력 상태
   const today = todayKST();
@@ -132,14 +133,6 @@ export default function DashboardPage({
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
-
-  // 피쳐 초기화
-  useEffect(() => {
-    loadFeatureFlags().then(() => {
-      setFlagsLoaded(true);
-      setWeatherEnabled(isFeatureEnabled(childId, "weather"));
-    });
-  }, [childId]);
 
   useEffect(() => {
     loadMonth();

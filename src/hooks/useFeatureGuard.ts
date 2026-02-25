@@ -1,22 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { isFeatureEnabled, loadFeatureFlags } from "@/lib/features";
+import useSWR from "swr";
+import { loadFeatureFlags, isFeatureEnabled } from "@/lib/features";
 import type { FeatureKey } from "@/lib/features";
 
 /**
- * Feature flag guard — 비활성 피쳐면 대시보드로 리다이렉트.
- * flagsLoaded=false 또는 allowed=false면 페이지에서 null 반환.
+ * Feature flag guard (SWR).
+ * 비활성 피쳐면 대시보드로 리다이렉트.
+ * SWR 키 "feature_flags"를 공유해 중복 요청 제거.
  */
 export function useFeatureGuard(childId: string, feature: FeatureKey) {
   const router = useRouter();
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
-
-  useEffect(() => {
-    loadFeatureFlags().then(() => setFlagsLoaded(true));
-  }, []);
-
+  const { data: flags } = useSWR("feature_flags", loadFeatureFlags);
+  const flagsLoaded = !!flags;
   const featureDisabled = flagsLoaded && !isFeatureEnabled(childId, feature);
 
   useEffect(() => {
@@ -24,4 +22,12 @@ export function useFeatureGuard(childId: string, feature: FeatureKey) {
   }, [featureDisabled, childId, router]);
 
   return { flagsLoaded, allowed: flagsLoaded && !featureDisabled };
+}
+
+/**
+ * Feature flag만 로드 (guard 없음) — 대시보드 등에서 사용.
+ */
+export function useFeatureFlags() {
+  const { data: flags } = useSWR("feature_flags", loadFeatureFlags);
+  return { flagsLoaded: !!flags };
 }

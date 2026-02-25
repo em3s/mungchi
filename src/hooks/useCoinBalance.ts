@@ -1,23 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { isFeatureEnabled } from "@/lib/features";
+import { useCallback } from "react";
+import useSWR from "swr";
+import { loadFeatureFlags, isFeatureEnabled } from "@/lib/features";
 import { getBalance } from "@/lib/coins";
 
 /**
- * 초코 잔액 훅 — flagsLoaded가 true일 때 coins 피쳐 확인 후 잔액 조회.
- * setCoinBalance를 노출해서 거래 후 로컬 업데이트 가능.
+ * 초코 잔액 훅 (SWR).
+ * feature_flags를 SWR로 공유 캐시, 잔액도 SWR 관리.
+ * setCoinBalance로 거래 후 즉시 로컬 업데이트 가능.
  */
-export function useCoinBalance(childId: string, flagsLoaded: boolean) {
-  const [coinsEnabled, setCoinsEnabled] = useState(false);
-  const [coinBalance, setCoinBalance] = useState<number | null>(null);
+export function useCoinBalance(childId: string) {
+  const { data: flags } = useSWR("feature_flags", loadFeatureFlags);
+  const coinsEnabled = !!flags && isFeatureEnabled(childId, "coins");
 
-  useEffect(() => {
-    if (!flagsLoaded) return;
-    const on = isFeatureEnabled(childId, "coins");
-    setCoinsEnabled(on);
-    if (on) getBalance(childId).then(setCoinBalance);
-  }, [childId, flagsLoaded]);
+  const { data: balance, mutate } = useSWR(
+    coinsEnabled ? `coin_balance:${childId}` : null,
+    () => getBalance(childId),
+  );
 
-  return { coinsEnabled, coinBalance, setCoinBalance };
+  const setCoinBalance = useCallback(
+    (val: number | null) => {
+      if (val !== null) mutate(val, { revalidate: false });
+    },
+    [mutate],
+  );
+
+  return { coinsEnabled, coinBalance: balance ?? null, setCoinBalance };
 }

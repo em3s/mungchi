@@ -1,26 +1,21 @@
 // 초코 화폐 시스템 — 잔액 조회, 거래 기록, 보상 교환
 
 import { supabase } from "@/lib/supabase/client";
-import { cached, invalidate } from "@/lib/cache";
+import { mutate } from "swr";
 import type { CoinTransaction, CoinReward } from "@/lib/types";
-
-const BALANCE_TTL = 30_000; // 30초
-const REWARDS_TTL = 60_000; // 1분
 
 // --- 잔액 ---
 
 export async function getBalance(childId: string): Promise<number> {
-  return cached(`coin_balance:${childId}`, BALANCE_TTL, async () => {
-    const { data } = await supabase
-      .from("coin_balances")
-      .select("balance")
-      .eq("user_id", childId)
-      .single();
-    return data?.balance ?? 0;
-  });
+  const { data } = await supabase
+    .from("coin_balances")
+    .select("balance")
+    .eq("user_id", childId)
+    .single();
+  return data?.balance ?? 0;
 }
 
-// --- 거래 기록 + 잔액 갱신 ---
+// --- 거래 기록 + 잔액 갱신 (Supabase RPC — 원자적) ---
 
 export async function addTransaction(
   childId: string,
@@ -29,36 +24,18 @@ export async function addTransaction(
   reason?: string,
   refId?: string,
 ): Promise<{ ok: boolean; newBalance?: number }> {
-  const { error: txErr } = await supabase.from("coin_transactions").insert({
-    user_id: childId,
-    amount,
-    type,
-    reason: reason ?? null,
-    ref_id: refId ?? null,
+  const { data, error } = await supabase.rpc("add_coin_transaction", {
+    p_user_id: childId,
+    p_amount: amount,
+    p_type: type,
+    p_reason: reason ?? null,
+    p_ref_id: refId ?? null,
   });
-  if (txErr) return { ok: false };
 
-  // SUM 집계로 잔액 재계산 (레이스 컨디션 방지)
-  const { data: sumData } = await supabase
-    .from("coin_transactions")
-    .select("amount")
-    .eq("user_id", childId);
+  if (error) return { ok: false };
 
-  const newBalance = Math.max(
-    0,
-    (sumData ?? []).reduce((acc, r) => acc + (r.amount ?? 0), 0),
-  );
-  const { error: balErr } = await supabase
-    .from("coin_balances")
-    .upsert({
-      user_id: childId,
-      balance: newBalance,
-      updated_at: new Date().toISOString(),
-    });
-
-  if (balErr) return { ok: false };
-
-  invalidate(`coin_balance:${childId}`);
+  const newBalance = data as number;
+  mutate(`coin_balance:${childId}`);
   return { ok: true, newBalance };
 }
 
@@ -80,15 +57,13 @@ export async function getTransactions(
 // --- 보상 카탈로그 ---
 
 export async function getRewards(): Promise<CoinReward[]> {
-  return cached("coin_rewards", REWARDS_TTL, async () => {
-    const { data } = await supabase
-      .from("coin_rewards")
-      .select("*")
-      .eq("active", true)
-      .order("sort_order")
-      .order("created_at");
-    return (data as CoinReward[]) ?? [];
-  });
+  const { data } = await supabase
+    .from("coin_rewards")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order")
+    .order("created_at");
+  return (data as CoinReward[]) ?? [];
 }
 
 export async function exchangeReward(
@@ -108,5 +83,5 @@ export async function exchangeReward(
 }
 
 export function invalidateRewardsCache(): void {
-  invalidate("coin_rewards");
+  mutate("coin_rewards");
 }

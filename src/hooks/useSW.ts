@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { supabase } from "@/lib/supabase/client";
 
+/**
+ * Service Worker 업데이트 감지.
+ * 피쳐플래그 변경은 useRealtimeFlags (Supabase Realtime)가 담당.
+ */
 export function useSW() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const waitingRef = useRef<ServiceWorker | null>(null);
 
-  // --- SW 업데이트 감지 ---
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
@@ -50,35 +52,9 @@ export function useSW() {
     };
   }, []);
 
-  // --- 피쳐플래그 변경 감지 ---
-  useEffect(() => {
-    let initial: string | null = null;
-    let interval: ReturnType<typeof setInterval>;
-
-    async function fetchFlags(): Promise<string> {
-      const { data } = await supabase.from("feature_flags").select("*");
-      return JSON.stringify(data ?? []);
-    }
-
-    fetchFlags().then((snap) => {
-      initial = snap;
-
-      interval = setInterval(async () => {
-        const current = await fetchFlags();
-        if (initial && current !== initial) {
-          setUpdateAvailable(true);
-          clearInterval(interval);
-        }
-      }, 60_000); // 60초마다 체크
-    });
-
-    return () => clearInterval(interval);
-  }, []);
-
   const applyUpdate = useCallback(() => {
     if (waitingRef.current) {
       waitingRef.current.postMessage({ type: "SKIP_WAITING" });
-      // controllerchange가 reload 처리
     } else {
       window.location.reload();
     }

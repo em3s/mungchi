@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 import { isFeatureEnabled } from "@/lib/features";
 import {
   getBalance,
@@ -17,7 +18,7 @@ import { RewardCard } from "@/components/RewardCard";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
-import type { CoinReward, CoinTransaction } from "@/lib/types";
+import type { CoinReward } from "@/lib/types";
 
 const TYPE_LABELS: Record<string, string> = {
   task_complete: "할일 완료",
@@ -38,27 +39,28 @@ export default function ShopPage({
   const router = useRouter();
   const { message: toastMsg, showToast } = useToast();
 
-  const [balance, setBalance] = useState<number | null>(null);
-  const [rewards, setRewards] = useState<CoinReward[]>([]);
-  const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [confirmReward, setConfirmReward] = useState<CoinReward | null>(null);
   const [exchanging, setExchanging] = useState(false);
   const [txPage, setTxPage] = useState(0);
   const TX_PER_PAGE = 10;
   const { allowed } = useFeatureGuard(childId, "coins");
 
-  useEffect(() => {
-    if (!allowed) return;
-    Promise.all([
-      getBalance(childId).then(setBalance),
-      getRewards().then(setRewards),
-      getTransactions(childId, 200).then(setTransactions),
-    ]);
-  }, [childId, allowed]);
+  const { data: balance, mutate: mutateBalance } = useSWR(
+    allowed ? `coin_balance:${childId}` : null,
+    () => getBalance(childId),
+  );
+  const { data: rewards } = useSWR(
+    allowed ? "coin_rewards" : null,
+    getRewards,
+  );
+  const { data: transactions, mutate: mutateTransactions } = useSWR(
+    allowed ? `coin_transactions:${childId}` : null,
+    () => getTransactions(childId, 200),
+  );
 
   if (!allowed) return null;
 
-  if (balance === null) {
+  if (balance === undefined) {
     return <Loading />;
   }
 
@@ -69,9 +71,9 @@ export default function ShopPage({
     setConfirmReward(null);
 
     if (result.ok) {
-      setBalance(result.newBalance ?? null);
+      mutateBalance(result.newBalance ?? undefined, { revalidate: false });
       showToast(`${reward.emoji} ${reward.name} 교환 완료!`);
-      getTransactions(childId, 200).then(setTransactions);
+      mutateTransactions();
     } else {
       showToast("초코가 부족해요!");
     }
@@ -105,7 +107,7 @@ export default function ShopPage({
       )}
 
       {/* Rewards Grid */}
-      {rewards.length > 0 && (
+      {rewards && rewards.length > 0 && (
         <>
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 md:text-sm">
             🍪 초코샵
@@ -129,7 +131,7 @@ export default function ShopPage({
           📋 최근 내역
         </div>
 
-        {transactions.length === 0 ? (
+        {!transactions || transactions.length === 0 ? (
           <div className="text-center py-4 text-gray-400 text-sm">
             아직 내역이 없어요
           </div>
