@@ -80,7 +80,7 @@ export default function GamePage({
       <div className="px-4">
         {canPlay ? (
           <DinoGame
-            playerEmoji="🏃"
+            playerEmoji="🦖"
             onGameStart={handleGameStart}
             onGameOver={handleGameOver}
           />

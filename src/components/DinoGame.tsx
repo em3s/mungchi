@@ -73,11 +73,15 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
     ctx.moveTo(0, GROUND_Y);
     ctx.lineTo(W, GROUND_Y);
     ctx.stroke();
-    // Player
+    // Player (flipped to face right)
+    ctx.save();
+    ctx.translate(PLAYER_X, GROUND_Y);
+    ctx.scale(-1, 1);
     ctx.font = `${PLAYER_SIZE}px serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    ctx.fillText(playerEmoji, PLAYER_X, GROUND_Y);
+    ctx.fillText(playerEmoji, 0, 0);
+    ctx.restore();
   }
 
   // --- Game loop ---
@@ -162,12 +166,16 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
       ctx.stroke();
     }
 
-    // Player
+    // Player (flipped to face right)
     const bobY = !jumping.current ? Math.sin(frame.current * 0.2) * 2 : 0;
+    ctx.save();
+    ctx.translate(PLAYER_X, playerY.current + bobY);
+    ctx.scale(-1, 1);
     ctx.font = `${PLAYER_SIZE}px serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    ctx.fillText(playerEmoji, PLAYER_X, playerY.current + bobY);
+    ctx.fillText(playerEmoji, 0, 0);
+    ctx.restore();
 
     // Obstacles
     for (const o of obstacles.current) {
@@ -255,7 +263,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
             className="absolute left-0 right-0 flex flex-col items-center justify-center pointer-events-none"
             style={{ top: 0, height: GAME_H }}
           >
-            <div className="text-4xl mb-2">🏃</div>
+            <div className="text-4xl mb-2" style={{ transform: "scaleX(-1)" }}>🦖</div>
             <div className="text-sm font-bold text-gray-500 bg-white/80 px-3 py-1 rounded-full">
               탭하면 시작!
             </div>
