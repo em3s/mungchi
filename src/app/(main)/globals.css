@@ -294,6 +294,48 @@ body {
   animation: checkPop 0.3s ease;
 }
 
+@keyframes moleUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes moleWhack {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  30% { transform: translateY(-12px) scale(1.3) rotate(-10deg); }
+  100% { transform: translateY(100%) scale(0.5) rotate(15deg); }
+}
+
+@keyframes bonkFlash {
+  0% { opacity: 0; transform: scale(0.3); }
+  30% { opacity: 1; transform: scale(1.3); }
+  100% { opacity: 0; transform: scale(0.6); }
+}
+
+@keyframes scoreFloat {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-30px) scale(1.3); }
+}
+
+.animate-mole-up {
+  animation: moleUp 0.2s ease-out forwards;
+}
+
+.animate-mole-whack {
+  animation: moleWhack 0.3s ease-in forwards;
+}
+
+.animate-bonk-flash {
+  animation: bonkFlash 0.35s ease-out forwards;
+}
+
+.animate-score-float {
+  animation: scoreFloat 0.5s ease-out forwards;
+}
+
 @keyframes candyFloat {
   0% {
     transform: translateY(0) scale(0.5);

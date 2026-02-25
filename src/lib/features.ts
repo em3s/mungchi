@@ -23,7 +23,7 @@ export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "star", label: "반짝별" },
   { key: "coins", label: "초코" },
   { key: "vocab", label: "영어단어" },
-  { key: "game", label: "공룡 달리기" },
+  { key: "game", label: "미니게임" },
   { key: "weather", label: "날씨" },
 ];
 

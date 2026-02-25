@@ -92,18 +92,30 @@ export default function ShopPage({
         <div className="text-sm text-gray-400">모은 초코</div>
       </div>
 
-      {/* Game Banner */}
+      {/* Game Banners */}
       {isFeatureEnabled(childId, "game") && (
-        <button
-          onClick={() => router.push(`/${childId}/game`)}
-          className="w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-white rounded-2xl p-4 mb-6 flex items-center justify-between active:opacity-80"
-        >
-          <div className="text-left">
-            <div className="font-bold text-base">🦖 공룡 달리기</div>
-            <div className="text-xs opacity-80">1🍪로 한 판 플레이!</div>
-          </div>
-          <div className="text-2xl">▶</div>
-        </button>
+        <div className="flex flex-col gap-3 mb-6">
+          <button
+            onClick={() => router.push(`/${childId}/game`)}
+            className="w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-white rounded-2xl p-4 flex items-center justify-between active:opacity-80"
+          >
+            <div className="text-left">
+              <div className="font-bold text-base">🦖 공룡 달리기</div>
+              <div className="text-xs opacity-80">1🍪로 한 판 플레이!</div>
+            </div>
+            <div className="text-2xl">▶</div>
+          </button>
+          <button
+            onClick={() => router.push(`/${childId}/mole`)}
+            className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl p-4 flex items-center justify-between active:opacity-80"
+          >
+            <div className="text-left">
+              <div className="font-bold text-base">🐹 두더지 잡기</div>
+              <div className="text-xs opacity-80">30초 안에 두더지를 잡아요! (1🍪)</div>
+            </div>
+            <div className="text-2xl">▶</div>
+          </button>
+        </div>
       )}
 
       {/* Rewards Grid */}
