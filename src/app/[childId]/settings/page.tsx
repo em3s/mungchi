@@ -2,6 +2,7 @@
 
 import { use, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { USERS, THEME_PRESETS, STAR_EMOJIS } from "@/lib/constants";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
@@ -112,6 +113,20 @@ export default function SettingsPage({
             기본 이모지로 되돌리기
           </button>
         )}
+      </section>
+
+      <section className="bg-white rounded-2xl p-5 shadow-sm mt-4">
+        <h2 className="text-base font-bold mb-4">🧪 실험실</h2>
+        <Link
+          href={`/v2/${childId}`}
+          className="block w-full py-3 rounded-xl text-sm font-semibold text-center text-white active:opacity-80 transition-opacity"
+          style={{ backgroundColor: "var(--accent, #6c5ce7)" }}
+        >
+          v2 UI 체험하기
+        </Link>
+        <p className="text-xs text-gray-400 text-center mt-2">
+          Konsta UI 기반 새 디자인을 미리 체험해보세요
+        </p>
       </section>
 
       <section className="bg-white rounded-2xl p-5 shadow-sm mt-4">
