@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/hooks/useSession";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { USERS } from "@/lib/constants";
+import Link from "next/link";
 import { PinModal } from "@/components/PinModal";
 import { useRealtimeFlags } from "@/hooks/useRealtimeFlags";
 
@@ -60,6 +61,15 @@ export default function V2ChildLayout({
       style={{ background: "var(--bg)", minHeight: "100dvh" }}
     >
       {children}
+
+      {/* v1으로 돌아가기 FAB */}
+      <Link
+        href={`/${childId}`}
+        className="fixed bottom-20 right-4 z-50 w-11 h-11 rounded-full bg-gray-800/80 text-white flex items-center justify-center text-lg shadow-lg active:scale-95 transition-transform"
+        title="기존 버전으로 돌아가기"
+      >
+        ←
+      </Link>
     </div>
   );
 }
