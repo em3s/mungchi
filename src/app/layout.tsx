@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: "뭉치",
   description: "아이들 할일 관리 + 성과(달성) 시스템",
   manifest: "/manifest.json",
+  icons: [
+    { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },
+    { rel: "icon", url: "/favicon.ico", sizes: "32x32" },
+  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -31,7 +35,7 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="antialiased">
         <SWRProvider>
