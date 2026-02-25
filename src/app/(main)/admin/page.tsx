@@ -834,16 +834,15 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => {
-              const prompt = `초등학교 1학년 수준의 영어 단어 20개를 아래 형식으로 만들어줘:\n\napple | 사과\nbook | 책\ncat | 고양이`;
-              navigator.clipboard.writeText(prompt);
-              showToast("프롬프트 복사됨!");
+              navigator.clipboard.writeText("apple | 사과\nbook | 책\ncat | 고양이");
+              showToast("형식 복사됨!");
             }}
             className="w-full text-left bg-gray-50 border border-dashed border-gray-300 rounded-xl px-4 py-3 text-xs text-gray-500 mb-2 active:bg-gray-100 transition-colors"
           >
-            <span className="font-semibold text-gray-600">💡 AI 프롬프트 (탭하면 복사)</span>
+            <span className="font-semibold text-gray-600">📋 형식 (탭하면 복사)</span>
             <br />
-            <span className="whitespace-pre-line mt-1 block">
-              {`초등학교 1학년 수준의 영어 단어 20개를\n아래 형식으로 만들어줘:\n\napple | 사과\nbook | 책\ncat | 고양이`}
+            <span className="whitespace-pre-line mt-1 block font-mono">
+              {`apple | 사과\nbook | 책\ncat | 고양이`}
             </span>
           </button>
 
