@@ -1,6 +1,6 @@
 "use client";
 
-import { KonstaProvider } from "konsta/react";
+import { App } from "konsta/react";
 import { SWRProvider } from "@/components/SWRProvider";
 import "./globals.css";
 
@@ -12,11 +12,11 @@ export default function V2RootLayout({
   return (
     <html lang="ko">
       <body>
-        <KonstaProvider theme="ios" dark={false}>
+        <App theme="ios" safeAreas dark={false}>
           <SWRProvider>
             {children}
           </SWRProvider>
-        </KonstaProvider>
+        </App>
       </body>
     </html>
   );
