@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* v2 독립 스타일시트 — (main)/globals.css와 완전 분리 */
+/* 여기에 Konsta UI나 다른 UI 프레임워크 CSS를 자유롭게 import 가능 */
+
+:root {
+  --accent: #6c5ce7;
+  --accent-light: #a29bfe;
+  --bg: #f5f3ff;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Noto Sans KR", sans-serif;
+  background: var(--bg);
+  color: #2d3436;
+  min-height: 100dvh;
+  color-scheme: light;
+}
