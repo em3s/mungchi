@@ -128,6 +128,12 @@ export default function AdminPage() {
   const [dictLevel, setDictLevel] = useState(1);
   const [dictBulk, setDictBulk] = useState("");
 
+  // 벌크 단어장 생성
+  const [bulkVocabChildIds, setBulkVocabChildIds] = useState<string[]>(["sihyun", "misong"]);
+  const [bulkVocabTitle, setBulkVocabTitle] = useState("");
+  const [bulkVocabText, setBulkVocabText] = useState("");
+  const [bulkVocabGenerating, setBulkVocabGenerating] = useState(false);
+
   // 랜덤 단어장
   const [randomChildIds, setRandomChildIds] = useState<string[]>(["sihyun", "misong"]);
   const [randomCount, setRandomCount] = useState("10");
@@ -1079,6 +1085,171 @@ export default function AdminPage() {
             {randomGenerating ? "생성 중..." : "만들기"}
           </button>
         </div>
+      </section>
+
+      {/* === 벌크 단어장 생성 === */}
+      <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <h2 className="text-lg font-bold mb-4">📖 벌크 단어장 생성</h2>
+
+        {/* 대상 유저 */}
+        <div className="mb-4">
+          <label className="text-sm font-semibold text-gray-600 block mb-2">대상 아이</label>
+          <div className="flex gap-3">
+            {USERS.map((child) => (
+              <button
+                key={child.id}
+                onClick={() =>
+                  setBulkVocabChildIds((prev) =>
+                    prev.includes(child.id)
+                      ? prev.filter((c) => c !== child.id)
+                      : [...prev, child.id],
+                  )
+                }
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  bulkVocabChildIds.includes(child.id)
+                    ? "bg-[#6c5ce7] text-white shadow-md"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                <span>{child.emoji}</span>
+                <span>{child.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 단어장 이름 */}
+        <div className="mb-4">
+          <label className="text-sm font-semibold text-gray-600 block mb-1">단어장 이름</label>
+          <input
+            type="text"
+            value={bulkVocabTitle}
+            onChange={(e) => setBulkVocabTitle(e.target.value)}
+            placeholder="예: 동물 단어, 3월 1주차"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+          />
+        </div>
+
+        {/* 형식 가이드 — 클릭하면 복사 */}
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText("apple | 사과\nbook | 책\ncat | 고양이");
+            showToast("형식 복사됨!");
+          }}
+          className="w-full text-left bg-gray-50 border border-dashed border-gray-300 rounded-xl px-4 py-3 text-xs text-gray-500 mb-2 active:bg-gray-100 transition-colors"
+        >
+          <span className="font-semibold text-gray-600">📋 형식 (탭하면 복사)</span>
+          <br />
+          <span className="whitespace-pre-line mt-1 block font-mono">
+            {`apple | 사과\nbook | 책\ncat | 고양이`}
+          </span>
+        </button>
+
+        <textarea
+          value={bulkVocabText}
+          onChange={(e) => setBulkVocabText(e.target.value)}
+          placeholder={"apple | 사과\nbook | 책\ncat | 고양이"}
+          rows={5}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none mb-2"
+        />
+
+        {/* 실시간 파싱 미리보기 */}
+        {bulkVocabText.trim() && (() => {
+          const lines = bulkVocabText.split("\n").map((l) => l.trim()).filter(Boolean);
+          const parsed = lines.map((line) => {
+            const parts = line.split("|");
+            if (parts.length < 2) return { line, ok: false } as const;
+            const word = parts[0].trim().toLowerCase();
+            const meaning = parts.slice(1).join("|").trim();
+            return word && meaning
+              ? { line, ok: true, word, meaning } as const
+              : { line, ok: false } as const;
+          });
+          const valid = parsed.filter((p) => p.ok);
+          const errors = parsed.filter((p) => !p.ok);
+          return (
+            <div className="mb-2 text-xs">
+              <div className="flex gap-3 mb-1">
+                <span className="text-green-600 font-semibold">✓ {valid.length}개</span>
+                {errors.length > 0 && (
+                  <span className="text-red-500 font-semibold">✗ {errors.length}개 오류</span>
+                )}
+              </div>
+              {errors.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-1">
+                  {errors.map((e, i) => (
+                    <div key={i} className="text-red-500">⚠ {e.line}</div>
+                  ))}
+                </div>
+              )}
+              {valid.length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 max-h-32 overflow-y-auto">
+                  {valid.map((v, i) => v.ok && (
+                    <div key={i} className="text-green-700">
+                      <span className="font-medium">{v.word}</span>
+                      <span className="text-green-500 mx-1">→</span>
+                      {v.meaning}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        <button
+          onClick={async () => {
+            const listName = bulkVocabTitle.trim();
+            if (!listName || bulkVocabChildIds.length === 0 || !bulkVocabText.trim()) return;
+
+            const lines = bulkVocabText.split("\n").map((l) => l.trim()).filter(Boolean);
+            const words = lines
+              .map((line) => {
+                const parts = line.split("|");
+                if (parts.length < 2) return null;
+                const word = parts[0].trim().toLowerCase();
+                const meaning = parts.slice(1).join("|").trim();
+                return word && meaning ? { word, meaning } : null;
+              })
+              .filter((r): r is { word: string; meaning: string } => r !== null);
+            if (words.length === 0) return;
+
+            setBulkVocabGenerating(true);
+            try {
+              let totalCreated = 0;
+              for (const childId of bulkVocabChildIds) {
+                const { ok, listId } = await createList(childId, listName);
+                if (!ok || !listId) continue;
+
+                const rows = words.map((w) => ({
+                  user_id: childId,
+                  list_id: listId,
+                  word: w.word,
+                  meaning: w.meaning,
+                }));
+                const { error } = await supabase.from("vocab_entries").insert(rows);
+                if (error) throw error;
+                totalCreated += words.length;
+              }
+
+              const names = bulkVocabChildIds
+                .map((id) => USERS.find((u) => u.id === id)?.name)
+                .join(", ");
+              showToast(`${names}에게 "${listName}" ${totalCreated}개 단어 추가!`);
+              setBulkVocabText("");
+              setBulkVocabTitle("");
+            } catch {
+              showToast("생성 실패");
+            } finally {
+              setBulkVocabGenerating(false);
+            }
+          }}
+          disabled={!bulkVocabTitle.trim() || bulkVocabChildIds.length === 0 || !bulkVocabText.trim() || bulkVocabGenerating}
+          className="w-full bg-[#6c5ce7] text-white py-3 rounded-xl font-bold text-base disabled:opacity-40"
+        >
+          {bulkVocabGenerating ? "생성 중..." : "단어장 만들기"}
+        </button>
       </section>
 
       {/* === 벌크 추가 섹션 === */}
