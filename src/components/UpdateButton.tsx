@@ -1,9 +1,13 @@
 "use client";
 
 import { useSW } from "@/hooks/useSW";
+import { useRealtimeFeatureFlags } from "@/hooks/useRealtimeFeatureFlags";
 
 export function UpdateButton() {
   const { updateAvailable, applyUpdate } = useSW();
+
+  // Supabase Realtime — feature_flags 변경 시 SWR 캐시 자동 갱신
+  useRealtimeFeatureFlags();
 
   if (!updateAvailable) return null;
 
