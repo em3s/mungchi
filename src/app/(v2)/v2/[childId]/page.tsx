@@ -3,26 +3,33 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Page,
-  Navbar,
-  List,
-  ListItem,
-  Button,
   Dialog,
   DialogButton,
   Toast,
-  Tabbar,
-  TabbarLink,
+  Button,
   Fab,
-  Block,
-  BlockTitle,
-  Chip,
-  Preloader,
 } from "konsta/react";
 import { supabase } from "@/lib/supabase/client";
 import { todayKST, formatMonth, WEEKDAYS } from "@/lib/date";
 import { getCheer } from "@/lib/constants";
 import type { Task, MonthDays, CalendarEvent } from "@/lib/types";
+
+// v1 visual components
+import { ProgressRing } from "@/components/ProgressRing";
+import { TaskItem } from "@/components/TaskItem";
+import { Calendar } from "@/components/Calendar";
+import { ConfettiEffect } from "@/components/ConfettiEffect";
+import { PageHeader } from "@/components/PageHeader";
+import { Loading } from "@/components/Loading";
+import { BottomNav } from "@/components/BottomNav";
+import { WeatherWidget } from "@/components/WeatherWidget";
+import { TimelineBar } from "@/components/TimelineBar";
+
+// Konsta-powered v2 components
+import { V2TaskAddSheet } from "../../components/V2TaskAddSheet";
+import { V2PinPopup } from "../../components/V2PinPopup";
+
+// hooks & utils
 import { useSession } from "@/hooks/useSession";
 import { useToast } from "@/hooks/useToast";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
@@ -32,14 +39,6 @@ import { useUser } from "@/hooks/useUser";
 import { useFeatureFlags } from "@/hooks/useFeatureGuard";
 import { isFeatureEnabled } from "@/lib/features";
 import { addTransaction } from "@/lib/coins";
-
-import { V2Calendar } from "../../components/V2Calendar";
-import { V2Progress } from "../../components/V2Progress";
-import { V2EventList } from "../../components/V2EventList";
-import { V2WeatherCards } from "../../components/V2WeatherCards";
-import { V2TaskAddSheet } from "../../components/V2TaskAddSheet";
-import { V2PinPopup } from "../../components/V2PinPopup";
-import { V2Confetti } from "../../components/V2Confetti";
 
 export default function V2DashboardPage({
   params,
@@ -55,7 +54,7 @@ export default function V2DashboardPage({
   const [loading, setLoading] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddSheet, setShowAddSheet] = useState(false);
   const [confirmUntoggle, setConfirmUntoggle] = useState<Task | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
@@ -78,7 +77,7 @@ export default function V2DashboardPage({
   const { override: emojiOverride } = useEmojiOverride(childId);
   const displayEmoji = emojiOverride || child?.emoji;
 
-  // --- Data fetching ---
+  // --- Data fetching (identical to v1) ---
   const loadTasks = useCallback(async () => {
     const { data, error } = await supabase
       .from("tasks").select("*").eq("user_id", childId).eq("date", today)
@@ -192,7 +191,19 @@ export default function V2DashboardPage({
     if (error || !data) { showV2Toast("추가 실패"); return; }
     if (selectedDate && dayTasks) setDayTasks([...dayTasks, data]);
     if (!selectedDate || targetDate === today) setTasks((prev) => [...prev, data]);
-    loadMonth(); setShowAddForm(false); showV2Toast("할일 추가 완료!");
+    loadMonth(); setShowAddSheet(false); showV2Toast("할일 추가 완료!");
+  }
+
+  async function handleEdit(task: Task, newTitle: string) {
+    const { error } = await supabase.from("tasks").update({ title: newTitle }).eq("id", task.id);
+    if (error) { showV2Toast("수정 실패"); return; }
+    const updateList = (list: Task[]) => list.map((t) => (t.id === task.id ? { ...t, title: newTitle } : t));
+    if (selectedDate && dayTasks) setDayTasks(updateList(dayTasks));
+    else setTasks(updateList(tasks));
+  }
+
+  function handleDelete(task: Task) {
+    setConfirmDelete(task);
   }
 
   async function doDelete(task: Task) {
@@ -215,17 +226,7 @@ export default function V2DashboardPage({
     return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
   }
 
-  // Loading — Konsta Preloader
-  if (loading) {
-    return (
-      <Page>
-        <Navbar title="불러오는 중..." className="!bg-[var(--bg)]" />
-        <Block className="!flex !justify-center !pt-20">
-          <Preloader />
-        </Block>
-      </Page>
-    );
-  }
+  if (loading) return <Loading />;
 
   const activeLabel = selectedDate ? fmtDate(selectedDate) : "오늘";
   const todoTasks = activeTasks.filter((t) => !t.completed);
@@ -234,135 +235,89 @@ export default function V2DashboardPage({
   const activeDate = selectedDate || today;
   const dayEventsArr = monthEvents.filter((e) => e.date === activeDate);
 
-  const tabs = [
-    { href: `/v2/${childId}`, label: "할일", icon: "📋", key: "dashboard" },
-    { href: `/${childId}/badges`, label: "뱃지", icon: "🏅", key: "badges" },
-    { href: `/${childId}/shop`, label: "초코", icon: "🍪", key: "coins" },
-    { href: `/${childId}/vocab`, label: "영어", icon: "📖", key: "vocab" },
-    { href: `/${childId}/settings`, label: "설정", icon: "⚙️", key: "settings" },
-  ].filter((tab) => {
-    if (tab.key === "coins") return isFeatureEnabled(childId, "coins");
-    if (tab.key === "vocab") return isFeatureEnabled(childId, "vocab");
-    return true;
-  });
-
   return (
-    <Page className="!overflow-x-hidden">
-      {showConfetti && <V2Confetti />}
+    <div className="pt-2">
+      {showConfetti && <ConfettiEffect />}
 
-      <Navbar
-        title={<span {...titleLongPress}>{displayEmoji} {child?.name}</span>}
-        right={
-          coinsEnabled && coinBalance !== null ? (
-            <Chip className="!bg-amber-50 !text-amber-500 !font-bold">🍪 {coinBalance}</Chip>
-          ) : undefined
-        }
-        className="!bg-[var(--bg)]"
+      {/* v1 Header */}
+      <PageHeader
+        title={<>{displayEmoji} {child?.name}</>}
+        titleProps={titleLongPress}
+        coinBalance={coinsEnabled ? coinBalance : undefined}
       />
 
-      <div className="max-w-[480px] mx-auto px-4 md:max-w-[640px] md:px-6">
-        {weatherEnabled && <V2WeatherCards today={today} />}
+      {weatherEnabled && <WeatherWidget today={today} />}
 
-        <V2Calendar
-          year={calYear} month={calMonth} monthData={monthData} today={today}
-          selectedDate={selectedDate} eventDates={eventDates}
-          onDateClick={handleDateClick} onPrevMonth={prevMonthNav}
-          onNextMonth={nextMonthNav} onGoToday={goToday}
-        />
+      <Calendar
+        year={calYear} month={calMonth} monthData={monthData} today={today}
+        selectedDate={selectedDate} eventDates={eventDates}
+        onDateClick={handleDateClick} onPrevMonth={prevMonthNav}
+        onNextMonth={nextMonthNav} onGoToday={goToday}
+      />
 
-        <V2Progress
-          rate={activeRate}
-          completedCount={activeCompleted}
-          totalCount={activeTasks.length}
-        />
+      <ProgressRing rate={activeRate} />
+      <div className="text-center text-base font-semibold -mt-3 mb-2 animate-cheer-bounce md:text-lg"
+        style={{ color: "var(--accent, #6c5ce7)" }} key={cheerRef.current.message}>
+        {cheerRef.current.message}
+      </div>
 
-        <div className="text-center text-base font-semibold mb-2 animate-cheer-bounce"
-          style={{ color: "var(--accent, #6c5ce7)" }} key={cheerRef.current.message}>
-          {cheerRef.current.message}
+      <TimelineBar events={dayEventsArr} date={activeDate} />
+
+      {/* Task section header — no add button (FAB replaces it) */}
+      <div className="flex items-center justify-between mt-6 mb-3">
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider md:text-sm">
+          {activeLabel} — 할 일 ({todoTasks.length})
         </div>
-
-        <V2EventList events={dayEventsArr} date={activeDate} />
       </div>
 
-      {/* Task section */}
-      <div className="max-w-[480px] mx-auto px-4 md:max-w-[640px] md:px-6">
-        <BlockTitle className="!mt-2 !mb-1 !pl-0 flex items-center justify-between">
-          <span>{activeLabel} — 할 일 ({todoTasks.length})</span>
-        </BlockTitle>
-      </div>
-
+      {/* v1 TaskItem list */}
       {todoTasks.length === 0 && doneTasks.length === 0 ? (
-        <Block className="!text-center !py-10 !text-gray-400">
+        <div className="text-center py-10 text-gray-400 md:text-lg">
           {selectedDate ? "이 날의 데이터가 없어요" : "오늘 할일이 없어요. 추가해보세요!"}
-        </Block>
+        </div>
       ) : todoTasks.length === 0 ? (
-        <Block className="!text-center !py-10 !text-gray-400">모두 완료! 🎉</Block>
+        <div className="text-center py-10 text-gray-400 md:text-lg">모두 완료! 🎉</div>
       ) : (
-        <List strongIos outlineIos className="!my-0">
+        <ul className="flex flex-col gap-2">
           {todoTasks.map((t) => (
-            <ListItem key={t.id} title={t.title}
-              media={
-                <button onClick={() => handleToggle(t)}
-                  className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 bg-white border-[var(--accent,#6c5ce7)]" />
-              }
-              after={
-                <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(t); }}
-                  className="text-gray-300 text-xs px-1 active:text-red-500">✕</button>
-              }
-            />
+            <TaskItem key={t.id} task={t} onToggle={handleToggle} onEdit={handleEdit} onDelete={handleDelete} />
           ))}
-        </List>
+        </ul>
       )}
 
       {doneTasks.length > 0 && (
         <>
-          <div className="max-w-[480px] mx-auto px-4 md:max-w-[640px] md:px-6">
-            <BlockTitle className="!mt-4 !mb-1 !pl-0">완료 ({doneTasks.length})</BlockTitle>
+          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-3 md:text-sm">
+            완료 ({doneTasks.length})
           </div>
-          <List strongIos outlineIos className="!my-0">
+          <ul className="flex flex-col gap-2">
             {doneTasks.map((t) => (
-              <ListItem key={t.id}
-                title={<span className="line-through opacity-50">{t.title}</span>}
-                media={
-                  <button onClick={() => handleToggle(t)}
-                    className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white">✓</button>
-                }
-                after={
-                  <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(t); }}
-                    className="text-gray-300 text-xs px-1 active:text-red-500">✕</button>
-                }
-              />
+              <TaskItem key={t.id} task={t} onToggle={handleToggle} onDelete={handleDelete} />
             ))}
-          </List>
+          </ul>
         </>
       )}
 
-      <div className="h-24" />
+      {/* v1 BottomNav */}
+      <BottomNav childId={childId} />
 
-      {/* FAB — add task */}
+      {/* === Konsta enhancements === */}
+
+      {/* FAB — floating add button */}
       <Fab
         className="!fixed !right-4 !bottom-20 !z-40"
         icon={<span className="text-2xl leading-none">+</span>}
-        onClick={() => setShowAddForm(true)}
+        onClick={() => setShowAddSheet(true)}
       />
 
-      {/* Tabbar */}
-      <Tabbar className="!fixed !bottom-0 left-0 right-0 !pb-[env(safe-area-inset-bottom,8px)]">
-        {tabs.map((tab) => (
-          <TabbarLink key={tab.key} active={tab.key === "dashboard"}
-            onClick={() => router.push(tab.href)}
-            icon={<span className="text-xl">{tab.icon}</span>} label={tab.label} />
-        ))}
-      </Tabbar>
-
-      {/* Task add — bottom sheet */}
+      {/* Sheet — bottom sheet for adding tasks */}
       <V2TaskAddSheet
-        opened={showAddForm}
+        opened={showAddSheet}
         onSubmit={handleAddTask}
-        onClose={() => setShowAddForm(false)}
+        onClose={() => setShowAddSheet(false)}
       />
 
-      {/* Dialogs */}
+      {/* Dialog — iOS-style confirm modals */}
       <Dialog opened={!!confirmDelete} onBackdropClick={() => setConfirmDelete(null)}
         title="정말 지울까요?"
         content={confirmDelete ? <span className="text-gray-500">&ldquo;{confirmDelete.title}&rdquo;</span> : undefined}
@@ -374,16 +329,17 @@ export default function V2DashboardPage({
         buttons={<><DialogButton onClick={() => setConfirmUntoggle(null)}>아니요</DialogButton><DialogButton strong onClick={() => { if (confirmUntoggle) doToggle(confirmUntoggle); setConfirmUntoggle(null); }}>아직 안했어요</DialogButton></>}
       />
 
-      {/* PIN popup for logout */}
+      {/* Toast — Konsta-style notification */}
+      <Toast opened={toastOpen} button={<Button clear small inline onClick={() => setToastOpen(false)}>닫기</Button>}>
+        <span className="shrink">{toastMsg}</span>
+      </Toast>
+
+      {/* PIN — Konsta Popup */}
       {showLockModal && (
         <V2PinPopup title="잠금 해제" subtitle="비밀번호를 입력하세요"
           onSuccess={() => { logout(); router.push("/"); }}
           onCancel={() => setShowLockModal(false)} />
       )}
-
-      <Toast opened={toastOpen} button={<Button clear small inline onClick={() => setToastOpen(false)}>닫기</Button>}>
-        <span className="shrink">{toastMsg}</span>
-      </Toast>
-    </Page>
+    </div>
   );
 }
