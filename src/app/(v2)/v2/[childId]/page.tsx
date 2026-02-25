@@ -24,6 +24,7 @@ import { ConfettiEffect } from "@/components/ConfettiEffect";
 import { TimelineBar } from "@/components/TimelineBar";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { Loading } from "@/components/Loading";
+import { TaskForm } from "@/components/TaskForm";
 import { PinModal } from "@/components/PinModal";
 import { useSession } from "@/hooks/useSession";
 import { useToast } from "@/hooks/useToast";
@@ -50,7 +51,6 @@ export default function V2DashboardPage({
   const [showConfetti, setShowConfetti] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
   const [confirmUntoggle, setConfirmUntoggle] = useState<Task | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
@@ -179,16 +179,15 @@ export default function V2DashboardPage({
     loadMonth();
   }
 
-  async function handleAddTask() {
-    const title = newTaskTitle.trim();
-    if (!title) return;
+  async function handleAddTask(title: string) {
+    if (!title.trim()) return;
     const targetDate = selectedDate || today;
     const { data, error } = await supabase.from("tasks")
-      .insert({ user_id: childId, title, date: targetDate, priority: 0 }).select().single();
+      .insert({ user_id: childId, title: title.trim(), date: targetDate, priority: 0 }).select().single();
     if (error || !data) { showV2Toast("추가 실패"); return; }
     if (selectedDate && dayTasks) setDayTasks([...dayTasks, data]);
     if (!selectedDate || targetDate === today) setTasks((prev) => [...prev, data]);
-    loadMonth(); setShowAddForm(false); setNewTaskTitle(""); showV2Toast("할일 추가 완료!");
+    loadMonth(); setShowAddForm(false); showV2Toast("할일 추가 완료!");
   }
 
   async function doDelete(task: Task) {
@@ -270,9 +269,20 @@ export default function V2DashboardPage({
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             {activeLabel} — 할 일 ({todoTasks.length})
           </div>
-          <Button small rounded onClick={() => setShowAddForm(true)}
-            className="!bg-[var(--accent,#6c5ce7)]">+ 추가</Button>
+          {!showAddForm && (
+            <Button small rounded onClick={() => setShowAddForm(true)}
+              className="!bg-[var(--accent,#6c5ce7)]">+ 추가</Button>
+          )}
         </div>
+
+        {showAddForm && (
+          <div className="mb-3">
+            <TaskForm
+              onSubmit={handleAddTask}
+              onCancel={() => setShowAddForm(false)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Task List */}
@@ -333,16 +343,6 @@ export default function V2DashboardPage({
       </Tabbar>
 
       {/* Dialogs */}
-      <Dialog opened={showAddForm} onBackdropClick={() => setShowAddForm(false)}
-        title="할일 추가"
-        content={
-          <input type="text" placeholder="할일을 입력하세요" value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleAddTask(); }}
-            autoFocus className="w-full mt-2 px-0 py-2 border-b border-gray-300 outline-none text-base bg-transparent" />
-        }
-        buttons={<><DialogButton onClick={() => { setShowAddForm(false); setNewTaskTitle(""); }}>취소</DialogButton><DialogButton strong onClick={handleAddTask}>추가</DialogButton></>}
-      />
       <Dialog opened={!!confirmDelete} onBackdropClick={() => setConfirmDelete(null)}
         title="정말 지울까요?"
         content={confirmDelete ? <span className="text-gray-500">&ldquo;{confirmDelete.title}&rdquo;</span> : undefined}
