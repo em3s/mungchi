@@ -2,6 +2,7 @@
 
 import { use, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { USERS, THEME_PRESETS, STAR_EMOJIS } from "@/lib/constants";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
@@ -112,6 +113,17 @@ export default function SettingsPage({
             기본 이모지로 되돌리기
           </button>
         )}
+      </section>
+
+      <section className="bg-white rounded-2xl p-5 shadow-sm mt-4">
+        <h2 className="text-base font-bold mb-4">🧪 v2 체험</h2>
+        <Link
+          href={`/v2/${childId}`}
+          className="block w-full py-3 rounded-xl text-sm font-semibold text-center transition-all active:scale-[0.98]"
+          style={{ backgroundColor: "var(--accent, #6c5ce7)", color: "white" }}
+        >
+          v2 대시보드 체험하기
+        </Link>
       </section>
 
       <section className="bg-white rounded-2xl p-5 shadow-sm mt-4">

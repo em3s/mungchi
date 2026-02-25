@@ -1,16 +1,26 @@
 @import "tailwindcss";
+@import "konsta/react/theme.css";
 
-/* v2 독립 스타일시트 — (main)/globals.css와 완전 분리 */
-/* 여기에 Konsta UI나 다른 UI 프레임워크 CSS를 자유롭게 import 가능 */
-
+/* 뭉치 테마 프리셋 */
 :root {
   --accent: #6c5ce7;
   --accent-light: #a29bfe;
   --bg: #f5f3ff;
 }
 
+.theme-preset-purple { --accent: #6c5ce7; --accent-light: #a29bfe; --bg: #f5f3ff; }
+.theme-preset-orange { --accent: #e17055; --accent-light: #fab1a0; --bg: #fdf5f0; }
+.theme-preset-navy { --accent: #4a69bd; --accent-light: #7d9fd6; --bg: #f0f3ff; }
+.theme-preset-rose { --accent: #f78fb3; --accent-light: #ffb8d0; --bg: #fff5f9; }
+
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  color-scheme: light;
 }
 
 body {
@@ -19,5 +29,28 @@ body {
   background: var(--bg);
   color: #2d3436;
   min-height: 100dvh;
-  color-scheme: light;
 }
+
+/* Konsta primary → 뭉치 accent 연결 */
+:root {
+  --k-color-primary: var(--accent, #6c5ce7);
+  --color-brand-primary: var(--accent, #6c5ce7);
+}
+
+/* 기존 애니메이션 (v1에서 가져옴) */
+@keyframes cheerBounce {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-cheer-bounce { animation: cheerBounce 0.5s ease; }
+
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+.animate-confetti-fall { animation: confettiFall 2.5s ease-out forwards; }
+
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }

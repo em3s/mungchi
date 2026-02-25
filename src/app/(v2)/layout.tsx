@@ -1,17 +1,8 @@
-import type { Metadata, Viewport } from "next";
+"use client";
+
+import { KonstaProvider } from "konsta/react";
+import { SWRProvider } from "@/components/SWRProvider";
 import "./globals.css";
-
-export const metadata: Metadata = {
-  title: "뭉치 v2",
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: "cover",
-};
 
 export default function V2RootLayout({
   children,
@@ -21,7 +12,11 @@ export default function V2RootLayout({
   return (
     <html lang="ko">
       <body>
-        {children}
+        <KonstaProvider theme="ios" dark={false}>
+          <SWRProvider>
+            {children}
+          </SWRProvider>
+        </KonstaProvider>
       </body>
     </html>
   );
