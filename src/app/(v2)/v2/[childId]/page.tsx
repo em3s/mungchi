@@ -215,12 +215,12 @@ export default function V2DashboardPage({
     return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
   }
 
-  // --- Loading ---
+  // Loading — Konsta Preloader
   if (loading) {
     return (
       <Page>
         <Navbar title="불러오는 중..." className="!bg-[var(--bg)]" />
-        <Block className="flex justify-center pt-20">
+        <Block className="!flex !justify-center !pt-20">
           <Preloader />
         </Block>
       </Page>
@@ -276,7 +276,6 @@ export default function V2DashboardPage({
           totalCount={activeTasks.length}
         />
 
-        {/* Cheer message */}
         <div className="text-center text-base font-semibold mb-2 animate-cheer-bounce"
           style={{ color: "var(--accent, #6c5ce7)" }} key={cheerRef.current.message}>
           {cheerRef.current.message}
@@ -285,20 +284,19 @@ export default function V2DashboardPage({
         <V2EventList events={dayEventsArr} date={activeDate} />
       </div>
 
-      {/* Task section header */}
+      {/* Task section */}
       <div className="max-w-[480px] mx-auto px-4 md:max-w-[640px] md:px-6">
-        <BlockTitle className="!mt-4 !mb-2 !pl-0">
-          {activeLabel} — 할 일 ({todoTasks.length})
+        <BlockTitle className="!mt-2 !mb-1 !pl-0 flex items-center justify-between">
+          <span>{activeLabel} — 할 일 ({todoTasks.length})</span>
         </BlockTitle>
       </div>
 
-      {/* Task list */}
       {todoTasks.length === 0 && doneTasks.length === 0 ? (
-        <Block className="text-center !py-10 text-gray-400">
+        <Block className="!text-center !py-10 !text-gray-400">
           {selectedDate ? "이 날의 데이터가 없어요" : "오늘 할일이 없어요. 추가해보세요!"}
         </Block>
       ) : todoTasks.length === 0 ? (
-        <Block className="text-center !py-10 text-gray-400">모두 완료! 🎉</Block>
+        <Block className="!text-center !py-10 !text-gray-400">모두 완료! 🎉</Block>
       ) : (
         <List strongIos outlineIos className="!my-0">
           {todoTasks.map((t) => (
@@ -319,7 +317,7 @@ export default function V2DashboardPage({
       {doneTasks.length > 0 && (
         <>
           <div className="max-w-[480px] mx-auto px-4 md:max-w-[640px] md:px-6">
-            <BlockTitle className="!mt-4 !mb-2 !pl-0">완료 ({doneTasks.length})</BlockTitle>
+            <BlockTitle className="!mt-4 !mb-1 !pl-0">완료 ({doneTasks.length})</BlockTitle>
           </div>
           <List strongIos outlineIos className="!my-0">
             {doneTasks.map((t) => (
@@ -341,10 +339,10 @@ export default function V2DashboardPage({
 
       <div className="h-24" />
 
-      {/* FAB for adding tasks */}
+      {/* FAB — add task */}
       <Fab
-        className="fixed !right-4 !bottom-20 z-40"
-        icon={<span className="text-xl">+</span>}
+        className="!fixed !right-4 !bottom-20 !z-40"
+        icon={<span className="text-2xl leading-none">+</span>}
         onClick={() => setShowAddForm(true)}
       />
 
@@ -357,7 +355,7 @@ export default function V2DashboardPage({
         ))}
       </Tabbar>
 
-      {/* Task add sheet */}
+      {/* Task add — bottom sheet */}
       <V2TaskAddSheet
         opened={showAddForm}
         onSubmit={handleAddTask}
@@ -376,6 +374,7 @@ export default function V2DashboardPage({
         buttons={<><DialogButton onClick={() => setConfirmUntoggle(null)}>아니요</DialogButton><DialogButton strong onClick={() => { if (confirmUntoggle) doToggle(confirmUntoggle); setConfirmUntoggle(null); }}>아직 안했어요</DialogButton></>}
       />
 
+      {/* PIN popup for logout */}
       {showLockModal && (
         <V2PinPopup title="잠금 해제" subtitle="비밀번호를 입력하세요"
           onSuccess={() => { logout(); router.push("/"); }}
