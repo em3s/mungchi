@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSession } from "@/hooks/useSession";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { USERS } from "@/lib/constants";
-import { PinModal } from "@/components/PinModal";
+import { V2PinPopup } from "../../components/V2PinPopup";
 import { useRealtimeFlags } from "@/hooks/useRealtimeFlags";
 
 export default function V2ChildLayout({
@@ -43,7 +43,7 @@ export default function V2ChildLayout({
 
   if (sessionChildId !== childId) {
     return (
-      <PinModal
+      <V2PinPopup
         title={child.name}
         subtitle="비밀번호를 입력하세요"
         emoji={child.emoji}

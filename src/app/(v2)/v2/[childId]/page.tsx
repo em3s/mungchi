@@ -13,19 +13,16 @@ import {
   Toast,
   Tabbar,
   TabbarLink,
+  Fab,
+  Block,
+  BlockTitle,
+  Chip,
+  Preloader,
 } from "konsta/react";
 import { supabase } from "@/lib/supabase/client";
 import { todayKST, formatMonth, WEEKDAYS } from "@/lib/date";
 import { getCheer } from "@/lib/constants";
 import type { Task, MonthDays, CalendarEvent } from "@/lib/types";
-import { ProgressRing } from "@/components/ProgressRing";
-import { Calendar } from "@/components/Calendar";
-import { ConfettiEffect } from "@/components/ConfettiEffect";
-import { TimelineBar } from "@/components/TimelineBar";
-import { WeatherWidget } from "@/components/WeatherWidget";
-import { Loading } from "@/components/Loading";
-import { TaskForm } from "@/components/TaskForm";
-import { PinModal } from "@/components/PinModal";
 import { useSession } from "@/hooks/useSession";
 import { useToast } from "@/hooks/useToast";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
@@ -35,6 +32,14 @@ import { useUser } from "@/hooks/useUser";
 import { useFeatureFlags } from "@/hooks/useFeatureGuard";
 import { isFeatureEnabled } from "@/lib/features";
 import { addTransaction } from "@/lib/coins";
+
+import { V2Calendar } from "../../components/V2Calendar";
+import { V2Progress } from "../../components/V2Progress";
+import { V2EventList } from "../../components/V2EventList";
+import { V2WeatherCards } from "../../components/V2WeatherCards";
+import { V2TaskAddSheet } from "../../components/V2TaskAddSheet";
+import { V2PinPopup } from "../../components/V2PinPopup";
+import { V2Confetti } from "../../components/V2Confetti";
 
 export default function V2DashboardPage({
   params,
@@ -210,7 +215,17 @@ export default function V2DashboardPage({
     return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
   }
 
-  if (loading) return <Loading />;
+  // --- Loading ---
+  if (loading) {
+    return (
+      <Page>
+        <Navbar title="불러오는 중..." className="!bg-[var(--bg)]" />
+        <Block className="flex justify-center pt-20">
+          <Preloader />
+        </Block>
+      </Page>
+    );
+  }
 
   const activeLabel = selectedDate ? fmtDate(selectedDate) : "오늘";
   const todoTasks = activeTasks.filter((t) => !t.completed);
@@ -233,65 +248,57 @@ export default function V2DashboardPage({
 
   return (
     <Page className="!overflow-x-hidden">
-      {showConfetti && <ConfettiEffect />}
+      {showConfetti && <V2Confetti />}
 
       <Navbar
         title={<span {...titleLongPress}>{displayEmoji} {child?.name}</span>}
         right={
           coinsEnabled && coinBalance !== null ? (
-            <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">🍪 {coinBalance}</span>
+            <Chip className="!bg-amber-50 !text-amber-500 !font-bold">🍪 {coinBalance}</Chip>
           ) : undefined
         }
         className="!bg-[var(--bg)]"
       />
 
       <div className="max-w-[480px] mx-auto px-4 md:max-w-[640px] md:px-6">
-        {weatherEnabled && <WeatherWidget today={today} />}
+        {weatherEnabled && <V2WeatherCards today={today} />}
 
-        <Calendar
+        <V2Calendar
           year={calYear} month={calMonth} monthData={monthData} today={today}
           selectedDate={selectedDate} eventDates={eventDates}
           onDateClick={handleDateClick} onPrevMonth={prevMonthNav}
           onNextMonth={nextMonthNav} onGoToday={goToday}
         />
 
-        <div className="text-center">
-          <ProgressRing rate={activeRate} />
-          <div className="text-base font-semibold -mt-3 mb-2 animate-cheer-bounce"
-            style={{ color: "var(--accent, #6c5ce7)" }} key={cheerRef.current.message}>
-            {cheerRef.current.message}
-          </div>
+        <V2Progress
+          rate={activeRate}
+          completedCount={activeCompleted}
+          totalCount={activeTasks.length}
+        />
+
+        {/* Cheer message */}
+        <div className="text-center text-base font-semibold mb-2 animate-cheer-bounce"
+          style={{ color: "var(--accent, #6c5ce7)" }} key={cheerRef.current.message}>
+          {cheerRef.current.message}
         </div>
 
-        <TimelineBar events={dayEventsArr} date={activeDate} />
-
-        <div className="flex items-center justify-between mt-5 mb-2">
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            {activeLabel} — 할 일 ({todoTasks.length})
-          </div>
-          {!showAddForm && (
-            <Button small rounded onClick={() => setShowAddForm(true)}
-              className="!bg-[var(--accent,#6c5ce7)]">+ 추가</Button>
-          )}
-        </div>
-
-        {showAddForm && (
-          <div className="mb-3">
-            <TaskForm
-              onSubmit={handleAddTask}
-              onCancel={() => setShowAddForm(false)}
-            />
-          </div>
-        )}
+        <V2EventList events={dayEventsArr} date={activeDate} />
       </div>
 
-      {/* Task List */}
+      {/* Task section header */}
+      <div className="max-w-[480px] mx-auto px-4 md:max-w-[640px] md:px-6">
+        <BlockTitle className="!mt-4 !mb-2 !pl-0">
+          {activeLabel} — 할 일 ({todoTasks.length})
+        </BlockTitle>
+      </div>
+
+      {/* Task list */}
       {todoTasks.length === 0 && doneTasks.length === 0 ? (
-        <div className="text-center py-10 text-gray-400">
+        <Block className="text-center !py-10 text-gray-400">
           {selectedDate ? "이 날의 데이터가 없어요" : "오늘 할일이 없어요. 추가해보세요!"}
-        </div>
+        </Block>
       ) : todoTasks.length === 0 ? (
-        <div className="text-center py-10 text-gray-400">모두 완료! 🎉</div>
+        <Block className="text-center !py-10 text-gray-400">모두 완료! 🎉</Block>
       ) : (
         <List strongIos outlineIos className="!my-0">
           {todoTasks.map((t) => (
@@ -312,7 +319,7 @@ export default function V2DashboardPage({
       {doneTasks.length > 0 && (
         <>
           <div className="max-w-[480px] mx-auto px-4 md:max-w-[640px] md:px-6">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-5 mb-2">완료 ({doneTasks.length})</div>
+            <BlockTitle className="!mt-4 !mb-2 !pl-0">완료 ({doneTasks.length})</BlockTitle>
           </div>
           <List strongIos outlineIos className="!my-0">
             {doneTasks.map((t) => (
@@ -332,8 +339,16 @@ export default function V2DashboardPage({
         </>
       )}
 
-      <div className="h-20" />
+      <div className="h-24" />
 
+      {/* FAB for adding tasks */}
+      <Fab
+        className="fixed !right-4 !bottom-20 z-40"
+        icon={<span className="text-xl">+</span>}
+        onClick={() => setShowAddForm(true)}
+      />
+
+      {/* Tabbar */}
       <Tabbar className="!fixed !bottom-0 left-0 right-0 !pb-[env(safe-area-inset-bottom,8px)]">
         {tabs.map((tab) => (
           <TabbarLink key={tab.key} active={tab.key === "dashboard"}
@@ -341,6 +356,13 @@ export default function V2DashboardPage({
             icon={<span className="text-xl">{tab.icon}</span>} label={tab.label} />
         ))}
       </Tabbar>
+
+      {/* Task add sheet */}
+      <V2TaskAddSheet
+        opened={showAddForm}
+        onSubmit={handleAddTask}
+        onClose={() => setShowAddForm(false)}
+      />
 
       {/* Dialogs */}
       <Dialog opened={!!confirmDelete} onBackdropClick={() => setConfirmDelete(null)}
@@ -355,7 +377,7 @@ export default function V2DashboardPage({
       />
 
       {showLockModal && (
-        <PinModal title="잠금 해제" subtitle="비밀번호를 입력하세요"
+        <V2PinPopup title="잠금 해제" subtitle="비밀번호를 입력하세요"
           onSuccess={() => { logout(); router.push("/"); }}
           onCancel={() => setShowLockModal(false)} />
       )}
