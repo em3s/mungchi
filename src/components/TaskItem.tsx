@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { Task } from "@/lib/types";
 
 interface TaskItemProps {
@@ -14,7 +14,14 @@ interface TaskItemProps {
 export function TaskItem({ task, onToggle, onEdit, onDelete, checkOnly }: TaskItemProps) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(task.title);
+  const [popping, setPopping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleToggle = useCallback(() => {
+    if (!onToggle) return;
+    setPopping(true);
+    onToggle(task);
+  }, [onToggle, task]);
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
@@ -38,8 +45,11 @@ export function TaskItem({ task, onToggle, onEdit, onDelete, checkOnly }: TaskIt
     >
       {onToggle && (
         <button
-          onClick={() => onToggle(task)}
+          onClick={handleToggle}
+          onAnimationEnd={() => setPopping(false)}
           className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm md:w-[34px] md:h-[34px] md:text-base ${
+            popping ? "animate-check-pop" : ""
+          } ${
             task.completed
               ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
               : "bg-white border-[var(--accent,#6c5ce7)]"

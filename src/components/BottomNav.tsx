@@ -73,10 +73,10 @@ export function BottomNav({ childId }: BottomNavProps) {
           <Link
             key={tab.key}
             href={tab.href}
-            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-[0.7rem] font-semibold transition-colors no-underline md:text-[0.85rem] md:px-4 md:py-1.5 ${
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-[0.7rem] font-semibold transition-all duration-200 no-underline md:text-[0.85rem] md:px-4 md:py-1.5 ${
               isActive(tab)
-                ? "text-[var(--accent,#6c5ce7)]"
-                : "text-gray-400"
+                ? "text-[var(--accent,#6c5ce7)] bg-[var(--accent,#6c5ce7)]/10 scale-105"
+                : "text-gray-400 active:scale-95"
             }`}
           >
             <span className="text-xl md:text-2xl">{tab.icon}</span>
