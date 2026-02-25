@@ -57,7 +57,7 @@ export default function V2ChildLayout({
 
   return (
     <div
-      className={themeClass}
+      className={`v2-root ${themeClass}`}
       style={{ background: "var(--bg)", minHeight: "100dvh" }}
     >
       {children}
