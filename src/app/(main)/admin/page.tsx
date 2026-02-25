@@ -827,15 +827,78 @@ export default function AdminPage() {
         {/* 벌크 추가 */}
         <div>
           <label className="text-sm font-semibold text-gray-600 block mb-2">
-            벌크 추가 (한 줄에: 영어단어[Tab]한글뜻)
+            벌크 추가 (한 줄에: 영어단어 | 한글뜻)
           </label>
+
+          {/* 프롬프트 예시 — 클릭하면 복사 */}
+          <button
+            type="button"
+            onClick={() => {
+              const prompt = `초등학교 1학년 수준의 영어 단어 20개를 아래 형식으로 만들어줘:\n\napple | 사과\nbook | 책\ncat | 고양이`;
+              navigator.clipboard.writeText(prompt);
+              showToast("프롬프트 복사됨!");
+            }}
+            className="w-full text-left bg-gray-50 border border-dashed border-gray-300 rounded-xl px-4 py-3 text-xs text-gray-500 mb-2 active:bg-gray-100 transition-colors"
+          >
+            <span className="font-semibold text-gray-600">💡 AI 프롬프트 (탭하면 복사)</span>
+            <br />
+            <span className="whitespace-pre-line mt-1 block">
+              {`초등학교 1학년 수준의 영어 단어 20개를\n아래 형식으로 만들어줘:\n\napple | 사과\nbook | 책\ncat | 고양이`}
+            </span>
+          </button>
+
           <textarea
             value={dictBulk}
             onChange={(e) => setDictBulk(e.target.value)}
-            placeholder={"apple\t사과\nbook\t책\ncat\t고양이"}
+            placeholder={"apple | 사과\nbook | 책\ncat | 고양이"}
             rows={5}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none mb-2"
           />
+
+          {/* 실시간 파싱 미리보기 */}
+          {dictBulk.trim() && (() => {
+            const lines = dictBulk.split("\n").map((l) => l.trim()).filter(Boolean);
+            const parsed = lines.map((line) => {
+              const parts = line.split("|");
+              if (parts.length < 2) return { line, ok: false } as const;
+              const word = parts[0].trim().toLowerCase();
+              const meaning = parts.slice(1).join("|").trim();
+              return word && meaning
+                ? { line, ok: true, word, meaning } as const
+                : { line, ok: false } as const;
+            });
+            const valid = parsed.filter((p) => p.ok);
+            const errors = parsed.filter((p) => !p.ok);
+            return (
+              <div className="mb-2 text-xs">
+                <div className="flex gap-3 mb-1">
+                  <span className="text-green-600 font-semibold">✓ {valid.length}개</span>
+                  {errors.length > 0 && (
+                    <span className="text-red-500 font-semibold">✗ {errors.length}개 오류</span>
+                  )}
+                </div>
+                {errors.length > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-1">
+                    {errors.map((e, i) => (
+                      <div key={i} className="text-red-500">⚠ {e.line}</div>
+                    ))}
+                  </div>
+                )}
+                {valid.length > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 max-h-32 overflow-y-auto">
+                    {valid.map((v, i) => v.ok && (
+                      <div key={i} className="text-green-700">
+                        <span className="font-medium">{v.word}</span>
+                        <span className="text-green-500 mx-1">→</span>
+                        {v.meaning}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           <button
             onClick={async () => {
               const bulkLines = dictBulk
@@ -844,13 +907,12 @@ export default function AdminPage() {
                 .filter(Boolean);
               const rows = bulkLines
                 .map((line) => {
-                  const [word, meaning] = line.split("\t");
+                  const parts = line.split("|");
+                  if (parts.length < 2) return null;
+                  const word = parts[0].trim().toLowerCase();
+                  const meaning = parts.slice(1).join("|").trim();
                   return word && meaning
-                    ? {
-                        word: word.trim().toLowerCase(),
-                        meaning: meaning.trim(),
-                        level: 1,
-                      }
+                    ? { word, meaning, level: 1 }
                     : null;
                 })
                 .filter(
