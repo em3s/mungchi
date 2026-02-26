@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState } from "react";
+import { sfx } from "@/lib/sounds";
 
 // --- 게임 설정 ---
 const W = 600;
@@ -133,6 +134,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
         // Game over
         stateRef.current = "gameover";
         setDisplayState("gameover");
+        sfx.gameOver();
         onGameOver(score.current);
         cancelAnimationFrame(rafId.current);
         drawGameOver(ctx);
@@ -212,12 +214,14 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
       setDisplayState("playing");
       jumping.current = true;
       playerVY.current = JUMP_VEL;
+      sfx.jump();
       rafId.current = requestAnimationFrame(gameLoop);
       return;
     }
     if (stateRef.current === "playing" && !jumping.current) {
       jumping.current = true;
       playerVY.current = JUMP_VEL;
+      sfx.jump();
     }
   }
 

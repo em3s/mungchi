@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { sfx } from "@/lib/sounds";
 
 /* ── 게임 설정 ── */
 const GAME_DURATION = 30;
@@ -173,6 +174,7 @@ export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
     setHoles(initHoles());
     setTimeLeft(0);
     setFinalCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)]);
+    sfx.gameEnd();
     onGameOver(score.current);
   }
 
@@ -186,6 +188,8 @@ export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
       const pts = prev[idx].isGolden ? 2 : 1;
       score.current += pts;
       setDisplayScore(score.current);
+      if (prev[idx].isGolden) sfx.goldenWhack();
+      else sfx.whack();
 
       // 자동 내리기 타이머 취소
       const mt = moleTimers.current.get(idx);
