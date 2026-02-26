@@ -8,9 +8,17 @@ import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/BottomNav";
-import { MoleGame } from "@/components/MoleGame";
+import { MoleGame, MOLE_DIFFICULTIES, type MoleDifficultyKey } from "@/components/MoleGame";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
+
+const DIFFICULTY_INFO: Record<MoleDifficultyKey, { label: string; cost: number; color: string; desc: string }> = {
+  easy:     { label: "쉬움",       cost: 5, color: "bg-green-500", desc: "30초, 느긋하게" },
+  hard:     { label: "어려움",     cost: 3, color: "bg-amber-500", desc: "25초, 빠른 두더지" },
+  veryHard: { label: "많이 어려움", cost: 1, color: "bg-red-500",   desc: "20초, 극한 스피드" },
+};
+
+const DIFFICULTY_KEYS: MoleDifficultyKey[] = ["easy", "hard", "veryHard"];
 
 export default function MolePage({
   params,
@@ -22,8 +30,10 @@ export default function MolePage({
   const { message: toastMsg } = useToast();
   const { override: themeOverride } = useThemeOverride(childId);
 
-  const [highScore, setHighScore] = useState(0);
+  const [difficulty, setDifficulty] = useState<MoleDifficultyKey>("easy");
+  const [highScores, setHighScores] = useState<Record<string, number>>({});
   const [lastScore, setLastScore] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
   const deductingRef = useRef(false);
   const { allowed } = useFeatureGuard(childId, "game");
 
@@ -34,12 +44,14 @@ export default function MolePage({
 
   if (!allowed || !user) return null;
 
-  const canPlay = balance !== undefined && balance >= 1;
+  const info = DIFFICULTY_INFO[difficulty];
+  const canPlay = balance !== undefined && balance >= info.cost;
 
   async function handleGameStart() {
     if (deductingRef.current) return;
     deductingRef.current = true;
-    const result = await addTransaction(childId, -1, "game", "🐹 두더지 잡기");
+    setPlaying(true);
+    const result = await addTransaction(childId, -info.cost, "game", `🐹 두더지 잡기 (${info.label})`);
     deductingRef.current = false;
     if (result.ok && result.newBalance !== undefined) {
       mutateBalance(result.newBalance, { revalidate: false });
@@ -48,10 +60,14 @@ export default function MolePage({
 
   function handleGameOver(score: number) {
     setLastScore(score);
-    if (score > highScore) {
-      setHighScore(score);
+    setPlaying(false);
+    const prev = highScores[difficulty] ?? 0;
+    if (score > prev) {
+      setHighScores((h) => ({ ...h, [difficulty]: score }));
     }
   }
+
+  const highScore = highScores[difficulty] ?? 0;
 
   return (
     <div className={`theme-preset-${themeOverride || user.theme} min-h-screen bg-[var(--bg)] pb-24`}>
@@ -69,17 +85,47 @@ export default function MolePage({
       </div>
 
       {/* Title */}
-      <div className="text-center mb-4">
+      <div className="text-center mb-3">
         <h1 className="text-xl font-black text-gray-800">🐹 두더지 잡기</h1>
-        <p className="text-xs text-gray-400 mt-1">
-          30초 안에 두더지를 최대한 잡아요! (1🍪)
-        </p>
       </div>
+
+      {/* Difficulty selector */}
+      {!playing && (
+        <div className="px-4 mb-4">
+          <div className="flex gap-2 justify-center">
+            {DIFFICULTY_KEYS.map((key) => {
+              const d = DIFFICULTY_INFO[key];
+              const active = difficulty === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setDifficulty(key)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                    active
+                      ? `${d.color} text-white shadow-md scale-105`
+                      : "bg-gray-100 text-gray-500 active:scale-95"
+                  }`}
+                >
+                  <div>{d.label}</div>
+                  <div className={`text-[10px] mt-0.5 ${active ? "text-white/80" : "text-gray-400"}`}>
+                    {d.cost}🍪
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-2">
+            {info.desc} — {info.cost}🍪/판
+          </p>
+        </div>
+      )}
 
       {/* Game area */}
       <div className="px-4">
         {canPlay ? (
           <MoleGame
+            key={difficulty}
+            difficulty={MOLE_DIFFICULTIES[difficulty]}
             onGameStart={handleGameStart}
             onGameOver={handleGameOver}
           />
@@ -88,7 +134,7 @@ export default function MolePage({
             <div className="text-5xl mb-4">🍪</div>
             <div className="text-gray-500 font-bold mb-1">초코가 부족해요!</div>
             <div className="text-xs text-gray-400 mb-4">
-              할일이나 퀴즈를 완료해서 초코를 모아보세요
+              {info.label}은 {info.cost}🍪 필요해요
             </div>
             <button
               onClick={() => router.push(`/${childId}/shop`)}

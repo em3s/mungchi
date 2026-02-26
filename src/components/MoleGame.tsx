@@ -4,19 +4,52 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { sfx } from "@/lib/sounds";
 
 /* ── 게임 설정 ── */
-const GAME_DURATION = 30;
 const HOLES = 9;
-const GOLDEN_CHANCE = 0.1;
 
-const PHASE_CONFIG = {
-  1: { maxActive: 2, moleLifeMs: 2000, minSpawnMs: 1200, maxSpawnMs: 1600 },
-  2: { maxActive: 3, moleLifeMs: 1400, minSpawnMs: 900, maxSpawnMs: 1200 },
-  3: { maxActive: 4, moleLifeMs: 1000, minSpawnMs: 650, maxSpawnMs: 900 },
+type PhaseConfig = Record<1 | 2 | 3, { maxActive: number; moleLifeMs: number; minSpawnMs: number; maxSpawnMs: number }>;
+
+export interface MoleDifficulty {
+  duration: number;
+  goldenChance: number;
+  phases: PhaseConfig;
+}
+
+export const MOLE_DIFFICULTIES = {
+  easy: {
+    duration: 30,
+    goldenChance: 0.12,
+    phases: {
+      1: { maxActive: 2, moleLifeMs: 2000, minSpawnMs: 1200, maxSpawnMs: 1600 },
+      2: { maxActive: 3, moleLifeMs: 1400, minSpawnMs: 900, maxSpawnMs: 1200 },
+      3: { maxActive: 4, moleLifeMs: 1000, minSpawnMs: 650, maxSpawnMs: 900 },
+    },
+  },
+  hard: {
+    duration: 25,
+    goldenChance: 0.08,
+    phases: {
+      1: { maxActive: 3, moleLifeMs: 1400, minSpawnMs: 900, maxSpawnMs: 1200 },
+      2: { maxActive: 4, moleLifeMs: 1000, minSpawnMs: 700, maxSpawnMs: 950 },
+      3: { maxActive: 5, moleLifeMs: 700, minSpawnMs: 500, maxSpawnMs: 750 },
+    },
+  },
+  veryHard: {
+    duration: 20,
+    goldenChance: 0.05,
+    phases: {
+      1: { maxActive: 4, moleLifeMs: 1000, minSpawnMs: 700, maxSpawnMs: 950 },
+      2: { maxActive: 5, moleLifeMs: 700, minSpawnMs: 500, maxSpawnMs: 700 },
+      3: { maxActive: 6, moleLifeMs: 500, minSpawnMs: 350, maxSpawnMs: 550 },
+    },
+  },
 } as const;
 
-function getPhase(elapsed: number): 1 | 2 | 3 {
-  if (elapsed < 10) return 1;
-  if (elapsed < 20) return 2;
+export type MoleDifficultyKey = keyof typeof MOLE_DIFFICULTIES;
+
+function getPhase(elapsed: number, duration: number): 1 | 2 | 3 {
+  const third = duration / 3;
+  if (elapsed < third) return 1;
+  if (elapsed < third * 2) return 2;
   return 3;
 }
 
@@ -41,6 +74,7 @@ interface HoleState {
 }
 
 interface MoleGameProps {
+  difficulty: MoleDifficulty;
   onGameStart: () => void;
   onGameOver: (score: number) => void;
 }
@@ -54,11 +88,11 @@ function initHoles(): HoleState[] {
   }));
 }
 
-export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
+export function MoleGame({ difficulty, onGameStart, onGameOver }: MoleGameProps) {
   /* ── 디스플레이 state ── */
   const [displayState, setDisplayState] = useState<"ready" | "playing" | "gameover">("ready");
   const [displayScore, setDisplayScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
+  const [timeLeft, setTimeLeft] = useState(difficulty.duration);
   const [holes, setHoles] = useState<HoleState[]>(initHoles);
   const [finalCheer, setFinalCheer] = useState("");
 
@@ -92,7 +126,7 @@ export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
   const raiseMole = useCallback((holeIdx: number, lifeMs: number) => {
     if (stateRef.current !== "playing") return;
 
-    const isGolden = Math.random() < GOLDEN_CHANCE;
+    const isGolden = Math.random() < difficulty.goldenChance;
 
     setHoles((prev) => {
       if (prev[holeIdx].moleUp) return prev;
@@ -117,8 +151,8 @@ export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
     if (stateRef.current !== "playing") return;
 
     const elapsed = (Date.now() - startTimeRef.current) / 1000;
-    const phase = getPhase(elapsed);
-    const cfg = PHASE_CONFIG[phase];
+    const phase = getPhase(elapsed, difficulty.duration);
+    const cfg = difficulty.phases[phase];
 
     setHoles((prev) => {
       const activeCount = prev.filter((h) => h.moleUp).length;
@@ -150,12 +184,12 @@ export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
     startTimeRef.current = Date.now();
     setDisplayState("playing");
     setDisplayScore(0);
-    setTimeLeft(GAME_DURATION);
+    setTimeLeft(difficulty.duration);
     setHoles(initHoles());
 
     tickRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      const remaining = GAME_DURATION - elapsed;
+      const remaining = difficulty.duration - elapsed;
       setTimeLeft(remaining);
 
       if (remaining <= 0) {
@@ -224,7 +258,7 @@ export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
     score.current = 0;
     setDisplayState("ready");
     setDisplayScore(0);
-    setTimeLeft(GAME_DURATION);
+    setTimeLeft(difficulty.duration);
     setHoles(initHoles());
   }
 
@@ -262,7 +296,7 @@ export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
           <div className="w-full h-2 bg-gray-200 rounded-full mb-4 overflow-hidden">
             <div
               className="h-full bg-amber-500 rounded-full transition-all duration-200 ease-linear"
-              style={{ width: `${(timeLeft / GAME_DURATION) * 100}%` }}
+              style={{ width: `${(timeLeft / difficulty.duration) * 100}%` }}
             />
           </div>
 
@@ -318,7 +352,7 @@ export function MoleGame({ onGameStart, onGameOver }: MoleGameProps) {
               <div className="text-3xl font-black text-[var(--accent)] mb-1">
                 {displayScore}점
               </div>
-              <div className="text-xs text-gray-400 mb-6">30초 동안 {displayScore}마리 잡았어요!</div>
+              <div className="text-xs text-gray-400 mb-6">{difficulty.duration}초 동안 {displayScore}마리 잡았어요!</div>
 
               <div className="flex gap-3 justify-center">
                 <button
