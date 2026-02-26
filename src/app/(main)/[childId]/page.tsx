@@ -49,6 +49,7 @@ export default function DashboardPage({
   const prevRateRef = useRef<number | null>(null);
   const cheerRef = useRef({ rate: -1, message: "" });
   const bonusGivenRef = useRef(false);
+  const prevSelectedRef = useRef<string | null>(null);
 
   // 피쳐플래그 (SWR 공유 캐시)
   const { flagsLoaded } = useFeatureFlags();
@@ -161,7 +162,12 @@ export default function DashboardPage({
 
   // 올클리어 컨페티 + 초코 보너스
   useEffect(() => {
+    // 날짜 전환 시 rate 변화를 올클리어로 오인하지 않도록 스킵
+    const dateCtxChanged = selectedDate !== prevSelectedRef.current;
+    prevSelectedRef.current = selectedDate;
+
     if (
+      !dateCtxChanged &&
       prevRateRef.current !== null &&
       prevRateRef.current < 1 &&
       activeRate === 1 &&

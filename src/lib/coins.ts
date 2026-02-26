@@ -70,9 +70,24 @@ export async function exchangeReward(
   childId: string,
   reward: CoinReward,
 ): Promise<{ ok: boolean; newBalance?: number }> {
+  // 원자적 교환 시도 (잔액 확인 + 차감을 DB 레벨에서 직렬화)
+  const { data, error } = await supabase.rpc("exchange_reward", {
+    p_user_id: childId,
+    p_cost: reward.cost,
+    p_reason: `${reward.emoji} ${reward.name}`,
+    p_ref_id: reward.id,
+  });
+
+  if (!error) {
+    if (data === -1) return { ok: false }; // 잔액 부족
+    const newBalance = data as number;
+    mutate(`coin_balance:${childId}`);
+    return { ok: true, newBalance };
+  }
+
+  // Fallback: RPC 미설치 시 기존 방식
   const balance = await getBalance(childId);
   if (balance < reward.cost) return { ok: false };
-
   return addTransaction(
     childId,
     -reward.cost,

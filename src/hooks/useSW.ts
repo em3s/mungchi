@@ -36,6 +36,8 @@ export function useSW() {
 
       // 60초마다 새 SW 체크 (iPad PWA 대응)
       interval = setInterval(() => reg.update(), 60_000);
+    }).catch((err) => {
+      console.error("[SW] registration failed:", err);
     });
 
     let refreshing = false;

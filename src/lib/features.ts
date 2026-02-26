@@ -70,13 +70,26 @@ export async function setFeatureFlag(
   feature: FeatureKey,
   enabled: boolean
 ): Promise<boolean> {
+  // 낙관적 업데이트 (UI 즉시 반영)
+  const prevValue = flagsSnapshot[userId]?.[feature];
+  if (!flagsSnapshot[userId]) flagsSnapshot[userId] = {};
+  flagsSnapshot[userId][feature] = enabled;
+
   const { error } = await supabase
     .from("feature_flags")
     .upsert({ user_id: userId, feature, enabled });
-  if (error) return false;
+
+  if (error) {
+    // DB 실패 시 롤백
+    if (prevValue !== undefined) {
+      flagsSnapshot[userId][feature] = prevValue;
+    } else {
+      delete flagsSnapshot[userId][feature];
+    }
+    return false;
+  }
+
   mutate("feature_flags");
-  if (!flagsSnapshot[userId]) flagsSnapshot[userId] = {};
-  flagsSnapshot[userId][feature] = enabled;
   return true;
 }
 
