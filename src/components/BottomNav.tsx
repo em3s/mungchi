@@ -50,12 +50,14 @@ export function BottomNav({ childId }: BottomNavProps) {
       key: "star",
     },
     { href: `/${childId}/map`, label: "쌍둥이별", icon: "🌟", key: "map" },
+    { href: `/${childId}/sound`, label: "사운드", icon: "🔊", key: "sound" },
     { href: `/${childId}/settings`, label: "설정", icon: "⚙️", key: "settings" },
   ].filter((tab) => {
     if (tab.key === "map") return isFeatureEnabled(childId, "map");
     if (tab.key === "star") return isFeatureEnabled(childId, "star");
     if (tab.key === "coins") return isFeatureEnabled(childId, "coins");
     if (tab.key === "vocab") return isFeatureEnabled(childId, "vocab");
+    if (tab.key === "sound") return isFeatureEnabled(childId, "sound");
     return true;
   });
 
