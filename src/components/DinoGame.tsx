@@ -12,12 +12,23 @@ const PLAYER_X = 60;
 const PLAYER_SIZE = 30;
 const JUMP_VEL = -11.5;
 const GRAVITY = 0.55;
-const INITIAL_SPEED = 4;
-const SPEED_INC = 0.4;
-const MAX_SPEED = 11;
-const MIN_GAP = 70;
-const MAX_GAP = 150;
 const OBSTACLE_EMOJIS = ["🌵", "🪨", "📦"];
+
+export interface DinoDifficulty {
+  initialSpeed: number;
+  speedInc: number;
+  maxSpeed: number;
+  minGap: number;
+  maxGap: number;
+}
+
+export const DINO_DIFFICULTIES = {
+  easy:     { initialSpeed: 6,   speedInc: 0.6, maxSpeed: 13, minGap: 55, maxGap: 120 },
+  hard:     { initialSpeed: 7.5, speedInc: 0.7, maxSpeed: 14, minGap: 45, maxGap: 100 },
+  veryHard: { initialSpeed: 9,   speedInc: 0.8, maxSpeed: 16, minGap: 35, maxGap: 80  },
+} as const;
+
+export type DinoDifficultyKey = keyof typeof DINO_DIFFICULTIES;
 
 interface Obstacle {
   x: number;
@@ -28,11 +39,12 @@ interface Obstacle {
 
 interface DinoGameProps {
   playerEmoji: string;
+  difficulty: DinoDifficulty;
   onGameStart: () => void;
   onGameOver: (score: number) => void;
 }
 
-export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps) {
+export function DinoGame({ playerEmoji, difficulty, onGameStart, onGameOver }: DinoGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Game state refs (avoid re-renders during game loop)
@@ -42,7 +54,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
   const jumping = useRef(false);
   const obstacles = useRef<Obstacle[]>([]);
   const score = useRef(0);
-  const speed = useRef(INITIAL_SPEED);
+  const speed = useRef(difficulty.initialSpeed);
   const frame = useRef(0);
   const nextSpawn = useRef(100);
   const groundOffset = useRef(0);
@@ -94,7 +106,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
     frame.current++;
 
     // Speed increase
-    speed.current = Math.min(MAX_SPEED, INITIAL_SPEED + Math.floor(score.current / 100) * SPEED_INC);
+    speed.current = Math.min(difficulty.maxSpeed, difficulty.initialSpeed + Math.floor(score.current / 100) * difficulty.speedInc);
 
     // Player physics
     if (jumping.current) {
@@ -112,7 +124,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
     if (nextSpawn.current <= 0) {
       const emoji = OBSTACLE_EMOJIS[Math.floor(Math.random() * OBSTACLE_EMOJIS.length)];
       obstacles.current.push({ x: W + 10, emoji, w: 24, h: 30 });
-      nextSpawn.current = MIN_GAP + Math.floor(Math.random() * (MAX_GAP - MIN_GAP));
+      nextSpawn.current = difficulty.minGap + Math.floor(Math.random() * (difficulty.maxGap - difficulty.minGap));
     }
 
     for (const o of obstacles.current) {
@@ -195,7 +207,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
     ctx.fillText(String(score.current).padStart(5, "0"), W - 12, 10);
 
     rafId.current = requestAnimationFrame(gameLoop);
-  }, [playerEmoji, onGameOver]);
+  }, [playerEmoji, difficulty, onGameOver]);
 
   function drawGameOver(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = "rgba(0,0,0,0.15)";
@@ -235,7 +247,7 @@ export function DinoGame({ playerEmoji, onGameStart, onGameOver }: DinoGameProps
     jumping.current = false;
     obstacles.current = [];
     score.current = 0;
-    speed.current = INITIAL_SPEED;
+    speed.current = difficulty.initialSpeed;
     frame.current = 0;
     nextSpawn.current = 100;
     groundOffset.current = 0;

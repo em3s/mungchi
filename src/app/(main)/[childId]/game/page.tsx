@@ -8,9 +8,15 @@ import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import { useUser } from "@/hooks/useUser";
 import { BottomNav } from "@/components/BottomNav";
-import { DinoGame } from "@/components/DinoGame";
+import { DinoGame, DINO_DIFFICULTIES, type DinoDifficultyKey } from "@/components/DinoGame";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
+
+const DIFFICULTY_INFO: Record<DinoDifficultyKey, { label: string; cost: number; color: string }> = {
+  easy:     { label: "쉬움",       cost: 5, color: "bg-green-500" },
+  hard:     { label: "어려움",     cost: 3, color: "bg-amber-500" },
+  veryHard: { label: "많이 어려움", cost: 1, color: "bg-red-500" },
+};
 
 export default function GamePage({
   params,
@@ -22,8 +28,10 @@ export default function GamePage({
   const { message: toastMsg, showToast } = useToast();
   const { override: themeOverride } = useThemeOverride(childId);
 
-  const [highScore, setHighScore] = useState(0);
+  const [difficulty, setDifficulty] = useState<DinoDifficultyKey>("easy");
+  const [highScores, setHighScores] = useState<Record<string, number>>({});
   const [lastScore, setLastScore] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
   const deductingRef = useRef(false);
   const { allowed } = useFeatureGuard(childId, "game");
 
@@ -34,12 +42,14 @@ export default function GamePage({
 
   if (!allowed || !user) return null;
 
-  const canPlay = balance !== undefined && balance >= 1;
+  const info = DIFFICULTY_INFO[difficulty];
+  const canPlay = balance !== undefined && balance >= info.cost;
 
   async function handleGameStart() {
     if (deductingRef.current) return;
     deductingRef.current = true;
-    const result = await addTransaction(childId, -1, "game", "🦖 공룡 달리기");
+    setPlaying(true);
+    const result = await addTransaction(childId, -info.cost, "game", `🦖 공룡 달리기 (${info.label})`);
     deductingRef.current = false;
     if (result.ok && result.newBalance !== undefined) {
       mutateBalance(result.newBalance, { revalidate: false });
@@ -48,10 +58,14 @@ export default function GamePage({
 
   function handleGameOver(score: number) {
     setLastScore(score);
-    if (score > highScore) {
-      setHighScore(score);
+    setPlaying(false);
+    const prev = highScores[difficulty] ?? 0;
+    if (score > prev) {
+      setHighScores((h) => ({ ...h, [difficulty]: score }));
     }
   }
+
+  const highScore = highScores[difficulty] ?? 0;
 
   return (
     <div className={`theme-preset-${themeOverride || user.theme} min-h-screen bg-[var(--bg)] pb-24`}>
@@ -69,18 +83,43 @@ export default function GamePage({
       </div>
 
       {/* Title */}
-      <div className="text-center mb-4">
+      <div className="text-center mb-3">
         <h1 className="text-xl font-black text-gray-800">🦖 공룡 달리기</h1>
-        <p className="text-xs text-gray-400 mt-1">
-          장애물을 피해 달려보세요! (1🍪)
-        </p>
       </div>
+
+      {/* Difficulty selector */}
+      {!playing && (
+        <div className="flex justify-center gap-2 mb-4 px-4">
+          {(Object.keys(DIFFICULTY_INFO) as DinoDifficultyKey[]).map((key) => {
+            const d = DIFFICULTY_INFO[key];
+            const active = difficulty === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setDifficulty(key)}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                  active
+                    ? `${d.color} text-white shadow-md scale-105`
+                    : "bg-gray-100 text-gray-500 active:scale-95"
+                }`}
+              >
+                <div>{d.label}</div>
+                <div className={`text-[10px] mt-0.5 ${active ? "text-white/80" : "text-gray-400"}`}>
+                  {d.cost}🍪
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Game area */}
       <div className="px-4">
         {canPlay ? (
           <DinoGame
+            key={difficulty}
             playerEmoji="🦖"
+            difficulty={DINO_DIFFICULTIES[difficulty]}
             onGameStart={handleGameStart}
             onGameOver={handleGameOver}
           />
