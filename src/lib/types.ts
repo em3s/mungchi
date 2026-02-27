@@ -80,7 +80,9 @@ export type CoinTransactionType =
   | "exchange"
   | "admin_adjust"
   | "vocab_quiz"
-  | "game";
+  | "game"
+  | "pet_buy"
+  | "pet_item";
 
 export interface CoinTransaction {
   id: string;
@@ -148,6 +150,70 @@ export interface VocabQuiz {
 }
 
 export type VocabQuizType = "basic" | "spelling";
+
+// === 동물 키우기 (pet) 타입 ===
+
+export interface PetCatalog {
+  id: string;
+  name: string;
+  emoji_baby: string;
+  emoji_teen: string;
+  emoji_adult: string;
+  cost: number;
+  description: string | null;
+  sort_order: number;
+  active: boolean;
+  created_at: string;
+}
+
+export interface PetItemCatalog {
+  id: string;
+  name: string;
+  emoji: string;
+  category: "food" | "house" | "toy" | "care";
+  cost: number;
+  hunger_effect: number;
+  happiness_effect: number;
+  health_effect: number;
+  exp_effect: number;
+  passive_happiness_bonus: number;
+  description: string | null;
+  sort_order: number;
+  active: boolean;
+  created_at: string;
+}
+
+export interface PetState {
+  user_id: string;
+  catalog_id: string;
+  nickname: string;
+  hunger: number;       // 0-100 (DB에 저장된 마지막 값)
+  happiness: number;    // 0-100
+  health: number;       // 0-100
+  level: number;        // 1-5
+  exp: number;
+  last_fed_at: string;
+  last_played_at: string;
+  last_cared_at: string;
+  adopted_at: string;
+  updated_at: string;
+}
+
+export interface PetInventoryItem {
+  id: string;
+  user_id: string;
+  item_id: string;
+  quantity: number;
+  updated_at: string;
+}
+
+// 클라이언트에서 계산된 실시간 스탯
+export interface PetLiveStats {
+  hunger: number;
+  happiness: number;
+  health: number;
+  passiveHappinessBonus: number; // 집 아이템에서 오는 보너스
+}
 
 export interface CalendarEvent {
   uid: string;

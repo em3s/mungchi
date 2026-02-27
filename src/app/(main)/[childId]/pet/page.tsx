@@ -1,0 +1,620 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import useSWR from "swr";
+import { useUser } from "@/hooks/useUser";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
+import { useThemeOverride } from "@/hooks/useThemeOverride";
+import { useToast } from "@/hooks/useToast";
+import { BottomNav } from "@/components/BottomNav";
+import { Toast } from "@/components/Toast";
+import { addTransaction, getBalance } from "@/lib/coins";
+import {
+  getPetCatalogs,
+  getPetItemCatalogs,
+  getPetState,
+  getPetInventory,
+  adoptPet,
+  savePetState,
+  addInventoryItem,
+  useInventoryItem,
+  calcLiveStats,
+  calcHouseBonus,
+  getLevelFromExp,
+  getExpToNextLevel,
+  getPetEmoji,
+  getPetMood,
+  LEVEL_EXP_THRESHOLDS,
+} from "@/lib/pets";
+import type { PetCatalog, PetItemCatalog, PetLiveStats } from "@/lib/types";
+
+// ===== 스탯 바 =====
+function StatBar({
+  label,
+  value,
+  color,
+  icon,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  icon: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-base w-5">{icon}</span>
+      <span className="text-xs text-gray-500 w-10">{label}</span>
+      <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${color}`}
+          style={{ width: `${value}%` }}
+        />
+      </div>
+      <span className="text-xs text-gray-400 w-8 text-right">{value}</span>
+    </div>
+  );
+}
+
+// ===== 펫 없을 때: 입양 화면 =====
+function AdoptView({
+  userId,
+  catalogs,
+  balance,
+  onAdopted,
+}: {
+  userId: string;
+  catalogs: PetCatalog[];
+  balance: number;
+  onAdopted: () => void;
+}) {
+  const [selected, setSelected] = useState<PetCatalog | null>(null);
+  const [nickname, setNickname] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleAdopt = async () => {
+    if (!selected || !nickname.trim()) return;
+    if (balance < selected.cost) return;
+    setLoading(true);
+
+    const txResult = await addTransaction(
+      userId,
+      -selected.cost,
+      "pet_buy",
+      `${selected.emoji_baby} ${selected.name} 입양`,
+      selected.id,
+    );
+    if (!txResult.ok) {
+      setLoading(false);
+      return;
+    }
+
+    const adoptResult = await adoptPet(userId, selected.id, nickname.trim());
+    setLoading(false);
+    if (adoptResult.ok) onAdopted();
+  };
+
+  return (
+    <div className="flex flex-col gap-6 px-4 py-6">
+      <div className="text-center">
+        <div className="text-4xl mb-2">🐾</div>
+        <h2 className="text-xl font-bold text-gray-800">동물 친구를 입양해요!</h2>
+        <p className="text-sm text-gray-500 mt-1">초코로 귀여운 동물을 키워보세요</p>
+      </div>
+
+      {/* 펫 선택 */}
+      <div className="grid grid-cols-3 gap-3">
+        {catalogs.map((cat) => {
+          const canAfford = balance >= cat.cost;
+          const isSelected = selected?.id === cat.id;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => canAfford && setSelected(cat)}
+              className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all ${
+                isSelected
+                  ? "border-[var(--accent)] bg-[var(--accent)]/10 scale-105"
+                  : canAfford
+                  ? "border-gray-200 bg-white active:scale-95"
+                  : "border-gray-100 bg-gray-50 opacity-50"
+              }`}
+            >
+              <span className="text-3xl">{cat.emoji_baby}</span>
+              <span className="text-xs font-semibold text-gray-700">{cat.name}</span>
+              <span className="text-xs text-[var(--accent)] font-bold">🍪{cat.cost}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 이름 입력 */}
+      {selected && (
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <p className="text-sm text-gray-600 mb-2 font-medium">
+            {selected.emoji_baby} {selected.name}의 이름을 지어주세요
+          </p>
+          <input
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]"
+            placeholder="이름 입력..."
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            maxLength={10}
+          />
+          {selected.description && (
+            <p className="text-xs text-gray-400 mt-2">{selected.description}</p>
+          )}
+          <button
+            onClick={handleAdopt}
+            disabled={!nickname.trim() || loading || balance < selected.cost}
+            className="mt-3 w-full py-2.5 rounded-xl bg-[var(--accent)] text-white font-bold text-sm disabled:opacity-50 active:scale-95 transition-all"
+          >
+            {loading ? "입양 중..." : `🍪${selected.cost} 초코로 입양하기`}
+          </button>
+        </div>
+      )}
+
+      {balance === 0 && (
+        <p className="text-center text-xs text-gray-400">초코가 없어요. 할일을 완료하면 초코를 받아요! 🍪</p>
+      )}
+    </div>
+  );
+}
+
+// ===== 아이템 카드 =====
+function ItemCard({
+  item,
+  qty,
+  balance,
+  onBuy,
+  onUse,
+}: {
+  item: PetItemCatalog;
+  qty: number;
+  balance: number;
+  onBuy: (item: PetItemCatalog) => void;
+  onUse: (item: PetItemCatalog) => void;
+}) {
+  const isHouse = item.category === "house";
+  const canAfford = balance >= item.cost;
+
+  return (
+    <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">{item.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
+          {item.description && (
+            <p className="text-xs text-gray-400 leading-tight">{item.description}</p>
+          )}
+        </div>
+        <span className="text-xs text-[var(--accent)] font-bold shrink-0">🍪{item.cost}</span>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => onBuy(item)}
+          disabled={!canAfford}
+          className="flex-1 py-1.5 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold disabled:opacity-40 active:scale-95 transition-all"
+        >
+          구매
+        </button>
+        {!isHouse && (
+          <button
+            onClick={() => onUse(item)}
+            disabled={qty <= 0}
+            className="flex-1 py-1.5 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold disabled:opacity-40 active:scale-95 transition-all"
+          >
+            사용 {qty > 0 ? `(${qty})` : ""}
+          </button>
+        )}
+        {isHouse && qty > 0 && (
+          <div className="flex-1 py-1.5 rounded-xl bg-green-50 text-green-600 text-xs font-bold text-center">
+            보유중 ✓
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ===== 메인 페이지 =====
+export default function PetPage({
+  params,
+}: {
+  params: Promise<{ childId: string }>;
+}) {
+  const { childId, user } = useUser(params);
+  useFeatureGuard(childId, "pet");
+  const { override: themeOverride } = useThemeOverride(childId);
+  const { message: toastMsg, showToast } = useToast();
+
+  const [tab, setTab] = useState<"main" | "shop">("main");
+  const [shopCategory, setShopCategory] = useState<"food" | "house" | "toy" | "care">("food");
+  const [liveStats, setLiveStats] = useState<PetLiveStats | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [adoptKey, setAdoptKey] = useState(0); // 입양 후 리페치 트리거
+
+  // SWR 데이터
+  const { data: balance = 0, mutate: mutateBalance } = useSWR(
+    childId ? `coin_balance:${childId}` : null,
+    () => getBalance(childId),
+  );
+  const { data: petState, mutate: mutatePetState } = useSWR(
+    childId ? [`pet_state:${childId}`, adoptKey] : null,
+    () => getPetState(childId),
+  );
+  const { data: catalogs = [] } = useSWR("pet_catalogs", getPetCatalogs);
+  const { data: itemCatalogs = [] } = useSWR("pet_item_catalogs", getPetItemCatalogs);
+  const { data: inventory = [], mutate: mutateInventory } = useSWR(
+    childId ? `pet_inventory:${childId}` : null,
+    () => getPetInventory(childId),
+  );
+
+  const catalog = catalogs.find((c) => c.id === petState?.catalog_id) ?? null;
+
+  // house bonus 계산
+  const houseBonus = calcHouseBonus(inventory, itemCatalogs);
+
+  // 실시간 스탯 업데이트 (1분마다)
+  useEffect(() => {
+    if (!petState) { setLiveStats(null); return; }
+    const update = () => setLiveStats(calcLiveStats(petState, houseBonus));
+    update();
+    const timer = setInterval(update, 60_000);
+    return () => clearInterval(timer);
+  }, [petState, houseBonus]);
+
+  // 인벤토리에서 아이템 수량 조회
+  const getQty = (itemId: string) =>
+    inventory.find((inv) => inv.item_id === itemId)?.quantity ?? 0;
+
+  // 아이템 구매
+  const handleBuy = useCallback(
+    async (item: PetItemCatalog) => {
+      if (balance < item.cost || actionLoading) return;
+      setActionLoading(true);
+
+      const txResult = await addTransaction(
+        childId,
+        -item.cost,
+        "pet_item",
+        `${item.emoji} ${item.name} 구매`,
+        item.id,
+      );
+      if (!txResult.ok) {
+        showToast("초코가 부족해요 🍪");
+        setActionLoading(false);
+        return;
+      }
+
+      const invResult = await addInventoryItem(childId, item.id, 1);
+      if (!invResult.ok) {
+        showToast("구매에 실패했어요");
+        setActionLoading(false);
+        return;
+      }
+
+      mutateBalance();
+      mutateInventory();
+      showToast(`${item.emoji} ${item.name} 구매 완료!`);
+      setActionLoading(false);
+    },
+    [childId, balance, actionLoading, mutateBalance, mutateInventory, showToast],
+  );
+
+  // 아이템 사용
+  const handleUse = useCallback(
+    async (item: PetItemCatalog) => {
+      if (!petState || getQty(item.id) <= 0 || actionLoading) return;
+      setActionLoading(true);
+
+      const useResult = await useInventoryItem(childId, item.id);
+      if (!useResult.ok) {
+        showToast("사용에 실패했어요");
+        setActionLoading(false);
+        return;
+      }
+
+      // 스탯 업데이트
+      const currentStats = calcLiveStats(petState, houseBonus);
+      const newHunger = Math.min(100, currentStats.hunger + item.hunger_effect);
+      const newHappiness = Math.min(100, currentStats.happiness + item.happiness_effect);
+      const newHealth = Math.min(100, currentStats.health + item.health_effect);
+      const newExp = petState.exp + item.exp_effect;
+      const newLevel = getLevelFromExp(newExp);
+
+      const now = new Date().toISOString();
+      const patch: Parameters<typeof savePetState>[1] = {
+        hunger: newHunger,
+        happiness: newHappiness,
+        health: newHealth,
+        exp: newExp,
+        level: newLevel,
+        ...(item.hunger_effect > 0 ? { last_fed_at: now } : {}),
+        ...(item.happiness_effect > 0 ? { last_played_at: now } : {}),
+        ...(item.health_effect > 0 ? { last_cared_at: now } : {}),
+      };
+
+      await savePetState(childId, patch);
+      mutatePetState();
+      mutateInventory();
+
+      const wasLevelUp = newLevel > petState.level;
+      showToast(wasLevelUp ? `🎉 레벨 업! Lv.${newLevel}` : `${item.emoji} 사용했어요!`);
+      setActionLoading(false);
+    },
+    [childId, petState, inventory, houseBonus, actionLoading, mutatePetState, mutateInventory, showToast],
+  );
+
+  // 놀기 (아이템 없이도 가능, 쿨타임 30분)
+  const handlePlay = useCallback(async () => {
+    if (!petState || actionLoading) return;
+    const lastPlayed = new Date(petState.last_played_at).getTime();
+    const cooldown = 30 * 60 * 1000;
+    if (Date.now() - lastPlayed < cooldown) {
+      const remainMin = Math.ceil((cooldown - (Date.now() - lastPlayed)) / 60000);
+      showToast(`${remainMin}분 후에 또 놀 수 있어요 🎾`);
+      return;
+    }
+
+    setActionLoading(true);
+    const currentStats = calcLiveStats(petState, houseBonus);
+    const newHappiness = Math.min(100, currentStats.happiness + 15);
+    const newExp = petState.exp + 8;
+    const newLevel = getLevelFromExp(newExp);
+
+    await savePetState(childId, {
+      happiness: newHappiness,
+      exp: newExp,
+      level: newLevel,
+      last_played_at: new Date().toISOString(),
+    });
+
+    mutatePetState();
+    const wasLevelUp = newLevel > petState.level;
+    showToast(wasLevelUp ? `🎉 레벨 업! Lv.${newLevel}` : "신나게 놀았어요! 🎾");
+    setActionLoading(false);
+  }, [childId, petState, houseBonus, actionLoading, mutatePetState, showToast]);
+
+  if (!childId) return null;
+
+  const themeClass = themeOverride
+    ? `theme-${themeOverride}`
+    : user
+    ? `theme-${user.theme}`
+    : "";
+
+  const hasPet = !!petState;
+
+  // 필터된 상점 아이템
+  const shopItems = itemCatalogs.filter((i) => i.category === shopCategory);
+
+  const expProgress = petState ? getExpToNextLevel(petState.exp) : null;
+
+  return (
+    <div className={`min-h-screen bg-gray-50 pb-24 ${themeClass}`}>
+      <div className="max-w-[480px] mx-auto">
+
+        {/* 헤더 */}
+        <div className="px-4 pt-6 pb-3 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-800">🐾 동물친구</h1>
+          {hasPet && (
+            <span className="text-sm text-gray-500">
+              잔액 <span className="text-[var(--accent)] font-bold">🍪{balance}</span>
+            </span>
+          )}
+        </div>
+
+        {/* 펫 없을 때 */}
+        {!hasPet && (
+          <AdoptView
+            userId={childId}
+            catalogs={catalogs}
+            balance={balance}
+            onAdopted={() => {
+              setAdoptKey((k) => k + 1);
+              mutateBalance();
+            }}
+          />
+        )}
+
+        {/* 펫 있을 때 */}
+        {hasPet && catalog && liveStats && (
+          <>
+            {/* 탭 */}
+            <div className="px-4 mb-3 flex gap-2">
+              {(["main", "shop"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
+                    tab === t
+                      ? "bg-[var(--accent)] text-white"
+                      : "bg-white text-gray-500 border border-gray-200"
+                  }`}
+                >
+                  {t === "main" ? "🐾 내 동물" : "🛒 상점"}
+                </button>
+              ))}
+            </div>
+
+            {/* 메인 탭 */}
+            {tab === "main" && (
+              <div className="px-4 flex flex-col gap-4">
+                {/* 펫 카드 */}
+                <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-center">
+                  <div className="text-7xl mb-2 animate-bounce-slow">
+                    {getPetEmoji(catalog, petState.level)}
+                  </div>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <span className="text-lg font-bold text-gray-800">{petState.nickname}</span>
+                    <span className="text-xs bg-[var(--accent)]/10 text-[var(--accent)] px-2 py-0.5 rounded-full font-bold">
+                      Lv.{petState.level}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-4">{getPetMood(liveStats)}</p>
+
+                  {/* 스탯 */}
+                  <div className="flex flex-col gap-2.5">
+                    <StatBar
+                      label="배고픔"
+                      value={liveStats.hunger}
+                      icon="🍖"
+                      color={liveStats.hunger > 50 ? "bg-orange-400" : liveStats.hunger > 20 ? "bg-yellow-400" : "bg-red-400"}
+                    />
+                    <StatBar
+                      label="행복도"
+                      value={liveStats.happiness}
+                      icon="😊"
+                      color={liveStats.happiness > 50 ? "bg-pink-400" : liveStats.happiness > 20 ? "bg-yellow-400" : "bg-red-400"}
+                    />
+                    <StatBar
+                      label="건강"
+                      value={liveStats.health}
+                      icon="❤️"
+                      color={liveStats.health > 50 ? "bg-green-400" : liveStats.health > 20 ? "bg-yellow-400" : "bg-red-400"}
+                    />
+                  </div>
+
+                  {/* 경험치 */}
+                  {expProgress && (
+                    <div className="mt-3 flex flex-col gap-1">
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>경험치</span>
+                        <span>
+                          {expProgress.current}/{expProgress.needed} → Lv.{petState.level + 1}
+                        </span>
+                      </div>
+                      <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="h-full bg-[var(--accent)] rounded-full transition-all duration-500"
+                          style={{ width: `${(expProgress.current / expProgress.needed) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {!expProgress && petState.level >= 5 && (
+                    <p className="mt-2 text-xs text-[var(--accent)] font-bold">✨ 최대 레벨!</p>
+                  )}
+                </div>
+
+                {/* 액션 버튼 */}
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <p className="text-xs text-gray-400 mb-3 font-medium">인벤토리로 상호작용</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* 먹이 — 인벤토리에서 첫 번째 food 아이템 사용 */}
+                    {itemCatalogs.filter((i) => i.category === "food").map((item) => {
+                      const qty = getQty(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleUse(item)}
+                          disabled={qty <= 0 || actionLoading}
+                          className="flex items-center gap-2 p-2.5 rounded-xl bg-orange-50 border border-orange-100 disabled:opacity-40 active:scale-95 transition-all"
+                        >
+                          <span className="text-xl">{item.emoji}</span>
+                          <div className="flex flex-col text-left">
+                            <span className="text-xs font-bold text-gray-700">{item.name}</span>
+                            <span className="text-xs text-gray-400">{qty > 0 ? `${qty}개 보유` : "없음"}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* 놀기 버튼 */}
+                  <button
+                    onClick={handlePlay}
+                    disabled={actionLoading}
+                    className="mt-2 w-full py-2.5 rounded-xl bg-pink-50 border border-pink-100 text-sm font-bold text-pink-600 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <span>🎾</span>
+                    <span>같이 놀기 (+15 행복, 쿨타임 30분)</span>
+                  </button>
+                </div>
+
+                {/* 인벤토리 */}
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <p className="text-sm font-bold text-gray-700 mb-3">🎒 인벤토리</p>
+                  {inventory.filter((inv) => inv.quantity > 0).length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-4">아이템이 없어요. 상점에서 구매해보세요!</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {inventory
+                        .filter((inv) => inv.quantity > 0)
+                        .map((inv) => {
+                          const item = itemCatalogs.find((i) => i.id === inv.item_id);
+                          if (!item) return null;
+                          return (
+                            <div
+                              key={inv.id}
+                              className="flex items-center gap-1.5 bg-gray-50 rounded-xl px-2.5 py-1.5"
+                            >
+                              <span className="text-base">{item.emoji}</span>
+                              <span className="text-xs font-medium text-gray-700">{item.name}</span>
+                              <span className="text-xs font-bold text-[var(--accent)]">×{inv.quantity}</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 상점 탭 */}
+            {tab === "shop" && (
+              <div className="px-4 flex flex-col gap-4">
+                {/* 잔액 */}
+                <div className="bg-[var(--accent)]/10 rounded-2xl px-4 py-3 flex items-center justify-between">
+                  <span className="text-sm text-gray-600 font-medium">내 초코</span>
+                  <span className="text-lg font-bold text-[var(--accent)]">🍪 {balance}</span>
+                </div>
+
+                {/* 카테고리 탭 */}
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  {(
+                    [
+                      { key: "food", label: "먹이", icon: "🍖" },
+                      { key: "house", label: "집", icon: "🏠" },
+                      { key: "toy", label: "장난감", icon: "🎾" },
+                      { key: "care", label: "케어", icon: "🪮" },
+                    ] as const
+                  ).map((cat) => (
+                    <button
+                      key={cat.key}
+                      onClick={() => setShopCategory(cat.key)}
+                      className={`shrink-0 px-3 py-1.5 rounded-xl text-sm font-bold transition-all ${
+                        shopCategory === cat.key
+                          ? "bg-[var(--accent)] text-white"
+                          : "bg-white text-gray-500 border border-gray-200"
+                      }`}
+                    >
+                      {cat.icon} {cat.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 아이템 목록 */}
+                <div className="grid grid-cols-1 gap-3">
+                  {shopItems.map((item) => (
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      qty={getQty(item.id)}
+                      balance={balance}
+                      onBuy={handleBuy}
+                      onUse={handleUse}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <BottomNav childId={childId} />
+      <Toast message={toastMsg} />
+    </div>
+  );
+}

@@ -9,10 +9,10 @@ import { mutate } from "swr";
 type Stage = "stable" | "testing";
 
 const CODE_DEFAULTS = {
-  sihyun: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing", sound: "testing" },
-  misong: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing", sound: "testing" },
-  dad: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing", sound: "testing" },
-  mom: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing", sound: "testing" },
+  sihyun: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing", sound: "testing", pet: "testing" },
+  misong: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing", sound: "testing", pet: "testing" },
+  dad: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing", sound: "testing", pet: "testing" },
+  mom: { map: "testing", star: "testing", coins: "testing", vocab: "testing", game: "testing", weather: "testing", sound: "testing", pet: "testing" },
 } as const;
 
 type UserId = keyof typeof CODE_DEFAULTS;
@@ -26,6 +26,7 @@ export const ALL_FEATURES: { key: FeatureKey; label: string }[] = [
   { key: "game", label: "미니게임" },
   { key: "weather", label: "날씨" },
   { key: "sound", label: "사운드" },
+  { key: "pet", label: "동물친구" },
 ];
 
 // --- DB (SWR 캐시) ---
