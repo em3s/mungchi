@@ -1,11 +1,12 @@
 "use client";
 
-import { use, useState, useCallback } from "react";
+import { use, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { USERS, THEME_PRESETS, STAR_EMOJIS } from "@/lib/constants";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { useEmojiOverride } from "@/hooks/useEmojiOverride";
 import { BottomNav } from "@/components/BottomNav";
+import { PinModal } from "@/components/PinModal";
 
 export default function SettingsPage({
   params,
@@ -17,6 +18,26 @@ export default function SettingsPage({
   const user = USERS.find((u) => u.id === childId);
   const { override, loaded, setTheme } = useThemeOverride(childId);
   const { override: emojiOverride, loaded: emojiLoaded, setEmoji } = useEmojiOverride(childId);
+  const [showAdminPin, setShowAdminPin] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleLongPressStart = useCallback(() => {
+    longPressTimer.current = setTimeout(() => setShowAdminPin(true), 700);
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleAdminSuccess = useCallback(() => {
+    setShowAdminPin(false);
+    localStorage.setItem("mungchi_admin", "true");
+    sessionStorage.setItem("mungchi_supervisor", "true");
+    router.push("/admin");
+  }, [router]);
 
   if (!user) {
     router.replace("/");
@@ -28,8 +49,28 @@ export default function SettingsPage({
 
   return (
     <>
+      {showAdminPin && (
+        <PinModal
+          title="관리자 확인"
+          subtitle="관리자 비밀번호를 입력하세요"
+          emoji="🔧"
+          onSuccess={handleAdminSuccess}
+          onCancel={() => setShowAdminPin(false)}
+        />
+      )}
+
       <div className="pt-6 pb-4">
-        <h1 className="text-xl font-bold text-center">⚙️ 설정</h1>
+        <h1
+          className="text-xl font-bold text-center select-none cursor-default"
+          onMouseDown={handleLongPressStart}
+          onMouseUp={handleLongPressEnd}
+          onMouseLeave={handleLongPressEnd}
+          onTouchStart={handleLongPressStart}
+          onTouchEnd={handleLongPressEnd}
+          onTouchCancel={handleLongPressEnd}
+        >
+          ⚙️ 설정
+        </h1>
       </div>
 
       <section className="bg-white rounded-2xl p-5 shadow-sm">
