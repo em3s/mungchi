@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>뭉치 빌더스 데이 — 기획 카드</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    background: white;
+    color: #222;
+  }
+
+  .card {
+    width: 100%;
+    height: 267mm; /* A4(297mm) - margin(12mm×2) - small buffer */
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 3px solid #6c5ce7;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  /* 헤더 */
+  .card-header {
+    background: #6c5ce7;
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .card-header .title {
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: -0.3px;
+  }
+  .card-header .sub {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  .card-header .num {
+    font-size: 28px;
+    font-weight: 900;
+    opacity: 0.35;
+  }
+
+  /* 섹션 공통 */
+  .section {
+    border-bottom: 2px solid #ede9ff;
+    padding: 14px 20px;
+    flex-shrink: 0;
+  }
+  .section:last-child { border-bottom: none; }
+
+  .label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6c5ce7;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .label span {
+    font-size: 15px;
+    margin-right: 4px;
+  }
+
+  /* 기능 이름 */
+  .name-area {
+    border: 2px solid #d4cefc;
+    border-radius: 8px;
+    height: 46px;
+    background: #faf9ff;
+  }
+
+  /* 이유 */
+  .reason-area {
+    border: 2px solid #d4cefc;
+    border-radius: 8px;
+    height: 62px;
+    background: #faf9ff;
+  }
+
+  /* 비포/애프터 */
+  .drawing-row {
+    display: flex;
+    gap: 12px;
+    padding: 14px 20px;
+    flex: 1;
+    min-height: 0;
+  }
+  .drawing-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .drawing-area {
+    flex: 1;
+    border: 2px dashed #bbb;
+    border-radius: 10px;
+    background: #fafafa;
+    min-height: 0;
+  }
+  .drawing-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c5ce7;
+    font-size: 28px;
+    flex-shrink: 0;
+    align-self: center;
+    margin-bottom: 20px;
+  }
+
+  /* 초코 보상 */
+  .reward-section {
+    padding: 12px 20px;
+    background: #faf9ff;
+    border-top: 2px solid #ede9ff;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+  .reward-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #6c5ce7;
+    white-space: nowrap;
+  }
+  .choco-boxes {
+    display: flex;
+    gap: 8px;
+  }
+  .choco-box {
+    width: 34px;
+    height: 34px;
+    border: 2px solid #d4cefc;
+    border-radius: 6px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #ccc;
+  }
+  .author-section {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-top: 2px solid #ede9ff;
+    flex-shrink: 0;
+    background: white;
+  }
+  .author-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #888;
+    white-space: nowrap;
+  }
+  .author-line {
+    flex: 1;
+    border-bottom: 2px solid #d4cefc;
+    height: 22px;
+  }
+  .round-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #888;
+    white-space: nowrap;
+  }
+  .round-line {
+    width: 50px;
+    border-bottom: 2px solid #d4cefc;
+    height: 22px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 카드 10장 반복 -->
+<!-- JS로 동적 생성 -->
+<script>
+  const count = 10;
+  for (let i = 1; i <= count; i++) {
+    document.write(`
+    <div class="card">
+
+      <div class="card-header">
+        <div>
+          <div class="title">🏗️ 뭉치 빌더스 데이 — 기획 카드</div>
+          <div class="sub">내가 만들고 싶은 기능을 그려봐!</div>
+        </div>
+        <div class="num">#${String(i).padStart(2,'0')}</div>
+      </div>
+
+      <div class="section">
+        <div class="label"><span>💡</span> 기능 이름</div>
+        <div class="name-area"></div>
+      </div>
+
+      <div class="section">
+        <div class="label"><span>🤔</span> 왜 있으면 좋아요?</div>
+        <div class="reason-area"></div>
+      </div>
+
+      <div class="drawing-row">
+        <div class="drawing-box">
+          <div class="drawing-label">📱 지금 뭉치 모습</div>
+          <div class="drawing-area"></div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="drawing-box">
+          <div class="drawing-label">✨ 만들고 난 모습</div>
+          <div class="drawing-area"></div>
+        </div>
+      </div>
+
+      <div class="reward-section">
+        <div class="reward-label">🍪 받고 싶은 초코 보상</div>
+        <div class="choco-boxes">
+          <div class="choco-box">🍪</div>
+          <div class="choco-box">🍪</div>
+          <div class="choco-box">🍪</div>
+          <div class="choco-box">🍪</div>
+          <div class="choco-box">🍪</div>
+        </div>
+        <div style="font-size:11px; color:#aaa;">원하는 만큼 동그라미 쳐!</div>
+      </div>
+
+      <div class="author-section">
+        <div class="author-label">기획자</div>
+        <div class="author-line"></div>
+        <div class="round-label">라운드</div>
+        <div class="round-line"></div>
+      </div>
+
+    </div>
+    `);
+  }
+</script>
+
+</body>
+</html>
