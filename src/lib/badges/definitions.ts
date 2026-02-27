@@ -97,6 +97,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // 연속 (streak) — 1회만 획득
   // ============================================================
   {
+    id: "streak-2",
+    name: "이틀의 불꽃",
+    description: "2일 연속 올클리어! 불꽃이 피어나고 있어요!",
+    hint: "이틀 연속으로 올클리어 해봐! 불꽃이 켜질 거야 🕯️",
+    emoji: "🕯️",
+    grade: "common",
+    category: "streak",
+    condition: (ctx) => ctx.streak >= 2,
+    repeatable: false,
+  },
+  {
     id: "streak-3",
     name: "3일 연속!",
     description: "3일 연속 모든 할일을 완료했어요!",
@@ -207,6 +218,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     repeatable: false,
   },
   {
+    id: "streak-100",
+    name: "100일의 신화",
+    description: "100일 연속 올클리어! 전설이 시작됐어요!",
+    hint: "100일 연속... 이건 신화야! 💯",
+    emoji: "🌠",
+    grade: "legendary",
+    category: "streak",
+    condition: (ctx) => ctx.streak >= 100,
+    repeatable: false,
+  },
+  {
     id: "streak-120",
     name: "120일 불멸",
     description: "120일 연속 올클리어! 4개월 내내!",
@@ -244,6 +266,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // 마일스톤 — 누적 완료 개수
   // ============================================================
   {
+    id: "total-5",
+    name: "다섯 걸음",
+    description: "총 5개의 할일을 완료했어요!",
+    hint: "할일 5개를 끝내봐! 손가락으로 다 셀 수 있어~ 🐾",
+    emoji: "🐾",
+    grade: "common",
+    category: "milestone",
+    condition: (ctx) => ctx.totalCompleted >= 5,
+    repeatable: false,
+  },
+  {
     id: "total-10",
     name: "10개 돌파",
     description: "총 10개의 할일을 완료했어요!",
@@ -252,6 +285,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     grade: "common",
     category: "milestone",
     condition: (ctx) => ctx.totalCompleted >= 10,
+    repeatable: false,
+  },
+  {
+    id: "total-20",
+    name: "스무 계단",
+    description: "총 20개의 할일을 완료했어요!",
+    hint: "할일 20개! 계단 스무 개를 올라왔어~ 🪜",
+    emoji: "🪜",
+    grade: "common",
+    category: "milestone",
+    condition: (ctx) => ctx.totalCompleted >= 20,
     repeatable: false,
   },
   {
@@ -277,6 +321,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     repeatable: false,
   },
   {
+    id: "total-75",
+    name: "꾸준히 쌓아요",
+    description: "총 75개의 할일을 완료했어요!",
+    hint: "75개! 꾸준함의 힘이 느껴져~ 🧱",
+    emoji: "🧱",
+    grade: "common",
+    category: "milestone",
+    condition: (ctx) => ctx.totalCompleted >= 75,
+    repeatable: false,
+  },
+  {
     id: "total-100",
     name: "100개 돌파",
     description: "총 100개의 할일을 완료! 세 자릿수!",
@@ -285,6 +340,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     grade: "rare",
     category: "milestone",
     condition: (ctx) => ctx.totalCompleted >= 100,
+    repeatable: false,
+  },
+  {
+    id: "total-150",
+    name: "150 고개",
+    description: "총 150개의 할일을 완료했어요!",
+    hint: "150 고개를 넘었어! 포기하지 않은 거야~ 🐢",
+    emoji: "🐢",
+    grade: "rare",
+    category: "milestone",
+    condition: (ctx) => ctx.totalCompleted >= 150,
     repeatable: false,
   },
   {
@@ -307,6 +373,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     grade: "rare",
     category: "milestone",
     condition: (ctx) => ctx.totalCompleted >= 300,
+    repeatable: false,
+  },
+  {
+    id: "total-400",
+    name: "400 관문",
+    description: "총 400개의 할일을 완료! 500이 코앞!",
+    hint: "400개 완료! 500까지 이제 얼마 안 남았어! ⚔️",
+    emoji: "⚔️",
+    grade: "epic",
+    category: "milestone",
+    condition: (ctx) => ctx.totalCompleted >= 400,
     repeatable: false,
   },
   {
@@ -391,6 +468,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     repeatable: false,
   },
   {
+    id: "perfect-3",
+    name: "세 번의 완벽",
+    description: "3일 올클리어를 달성했어요!",
+    hint: "올클리어한 날이 3일이 되면 딸 수 있어! ✨",
+    emoji: "✨",
+    grade: "common",
+    category: "milestone",
+    condition: (ctx) => ctx.totalPerfectDays >= 3,
+    repeatable: false,
+  },
+  {
     id: "perfect-5",
     name: "올클 5일",
     description: "5일이나 올클리어! 꾸준해요!",
@@ -402,6 +490,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     repeatable: false,
   },
   {
+    id: "perfect-7",
+    name: "일주일 올클러",
+    description: "7일 올클리어! 꾸준한 완벽주의자!",
+    hint: "올클리어한 날 7일 달성! 연속 아니어도 돼 🎆",
+    emoji: "🎆",
+    grade: "rare",
+    category: "milestone",
+    condition: (ctx) => ctx.totalPerfectDays >= 7,
+    repeatable: false,
+  },
+  {
     id: "perfect-10",
     name: "올클 10일",
     description: "10일 올클리어! 진짜 잘하고 있어요!",
@@ -410,6 +509,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     grade: "common",
     category: "milestone",
     condition: (ctx) => ctx.totalPerfectDays >= 10,
+    repeatable: false,
+  },
+  {
+    id: "perfect-15",
+    name: "보름의 완벽",
+    description: "15일 올클리어! 보름달처럼 빛나요!",
+    hint: "15일 올클리어! 보름달처럼 꽉 찬 기분이야 🌕",
+    emoji: "🌕",
+    grade: "rare",
+    category: "milestone",
+    condition: (ctx) => ctx.totalPerfectDays >= 15,
     repeatable: false,
   },
   {
@@ -432,6 +542,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     grade: "rare",
     category: "milestone",
     condition: (ctx) => ctx.totalPerfectDays >= 30,
+    repeatable: false,
+  },
+  {
+    id: "perfect-40",
+    name: "40일의 기적",
+    description: "40일 올클리어! 매일 기적을 만들고 있어요!",
+    hint: "40일 올클! 기적을 만드는 사람이 여기 있어! 🌙",
+    emoji: "🌙",
+    grade: "epic",
+    category: "milestone",
+    condition: (ctx) => ctx.totalPerfectDays >= 40,
     repeatable: false,
   },
   {
@@ -494,6 +615,28 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // 마일스톤 — 참여 일수
   // ============================================================
   {
+    id: "active-3",
+    name: "뭉치와 첫 만남",
+    description: "뭉치와 3일을 함께했어요!",
+    hint: "뭉치와 3일을 함께! 이제 친구가 됐어~ 🐣",
+    emoji: "🐣",
+    grade: "common",
+    category: "milestone",
+    condition: (ctx) => ctx.totalActiveDays >= 3,
+    repeatable: false,
+  },
+  {
+    id: "active-5",
+    name: "뭉치 새싹",
+    description: "5일 동안 함께! 이제 새싹이에요!",
+    hint: "뭉치와 5일! 새싹이 돋아나기 시작해~ 🌱",
+    emoji: "🌱",
+    grade: "common",
+    category: "milestone",
+    condition: (ctx) => ctx.totalActiveDays >= 5,
+    repeatable: false,
+  },
+  {
     id: "active-7",
     name: "1주일 참여",
     description: "7일 동안 할일이 있었어요!",
@@ -516,6 +659,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     repeatable: false,
   },
   {
+    id: "active-21",
+    name: "3주 단짝",
+    description: "21일 동안 꾸준히 참여했어요!",
+    hint: "3주(21일) 동안 함께! 이제 단짝 사이야~ 🤗",
+    emoji: "🤗",
+    grade: "rare",
+    category: "milestone",
+    condition: (ctx) => ctx.totalActiveDays >= 21,
+    repeatable: false,
+  },
+  {
     id: "active-30",
     name: "한 달 참여",
     description: "30일 동안 함께했어요!",
@@ -524,6 +678,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     grade: "rare",
     category: "milestone",
     condition: (ctx) => ctx.totalActiveDays >= 30,
+    repeatable: false,
+  },
+  {
+    id: "active-45",
+    name: "45일 친구",
+    description: "45일 동안 함께했어요! 한 달 반!",
+    hint: "한 달 반(45일)을 함께! 진짜 친구가 됐어 🌺",
+    emoji: "🌺",
+    grade: "rare",
+    category: "milestone",
+    condition: (ctx) => ctx.totalActiveDays >= 45,
     repeatable: false,
   },
   {
@@ -538,6 +703,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     repeatable: false,
   },
   {
+    id: "active-90",
+    name: "석 달 동반자",
+    description: "90일! 석 달을 함께한 특별한 친구!",
+    hint: "3개월(90일)을 함께! 진짜 특별한 사이야~ 🌠",
+    emoji: "🌠",
+    grade: "epic",
+    category: "milestone",
+    condition: (ctx) => ctx.totalActiveDays >= 90,
+    repeatable: false,
+  },
+  {
     id: "active-100",
     name: "100일 참여",
     description: "100일 동안 함께한 우리!",
@@ -546,6 +722,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     grade: "epic",
     category: "milestone",
     condition: (ctx) => ctx.totalActiveDays >= 100,
+    repeatable: false,
+  },
+  {
+    id: "active-120",
+    name: "넉 달의 여정",
+    description: "120일! 넉 달의 기나긴 여정을 함께!",
+    hint: "4개월(120일)을 함께! 이 여정이 진짜 대단해~ 🚀",
+    emoji: "🚀",
+    grade: "epic",
+    category: "milestone",
+    condition: (ctx) => ctx.totalActiveDays >= 120,
     repeatable: false,
   },
   {
@@ -585,6 +772,17 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // ============================================================
   // 주간 (weekly) — 매주 반복 획득 가능
   // ============================================================
+  {
+    id: "weekly-ok",
+    name: "나름 잘 했어",
+    description: "이번 주 달성률 50% 이상!",
+    hint: "이번 주 달성률을 50% 이상 만들어봐! 🌿",
+    emoji: "🌿",
+    grade: "common",
+    category: "weekly",
+    condition: (ctx) => ctx.weekRate >= 0.5,
+    repeatable: true,
+  },
   {
     id: "weekly-good",
     name: "좋은 한 주",
@@ -684,6 +882,42 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
       ctx.todayDayOfWeek === 5 && ctx.todayRate === 1 && ctx.todayTotal > 0,
     repeatable: true,
   },
+  {
+    id: "tuesday-fighter",
+    name: "화요일의 뚝심",
+    description: "화요일에 올클리어! 한 주의 두 번째 날도 완벽!",
+    hint: "화요일에도 올클하면 화요일의 뚝심! 🔧",
+    emoji: "🔧",
+    grade: "rare",
+    category: "special",
+    condition: (ctx) =>
+      ctx.todayDayOfWeek === 2 && ctx.todayRate === 1 && ctx.todayTotal > 0,
+    repeatable: true,
+  },
+  {
+    id: "wednesday-peak",
+    name: "고개를 넘다",
+    description: "수요일에 올클리어! 한 주의 고개를 넘었어요!",
+    hint: "수요일은 한 주의 고개야! 넘으면 내리막이야~ ⛰️",
+    emoji: "⛰️",
+    grade: "rare",
+    category: "special",
+    condition: (ctx) =>
+      ctx.todayDayOfWeek === 3 && ctx.todayRate === 1 && ctx.todayTotal > 0,
+    repeatable: true,
+  },
+  {
+    id: "thursday-almost",
+    name: "내일이 기다려",
+    description: "목요일에 올클리어! 금요일이 코앞!",
+    hint: "목요일 올클! 내일 금요일이라 더 신나지? 🌤️",
+    emoji: "🌤️",
+    grade: "rare",
+    category: "special",
+    condition: (ctx) =>
+      ctx.todayDayOfWeek === 4 && ctx.todayRate === 1 && ctx.todayTotal > 0,
+    repeatable: true,
+  },
 
   // ============================================================
   // 히든 뱃지 — 획득 전에는 보이지 않음!
@@ -751,6 +985,48 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     grade: "legendary",
     category: "special",
     condition: (ctx) => ctx.streak >= 50 && ctx.totalCompleted >= 500,
+    repeatable: false,
+    hidden: true,
+  },
+  {
+    id: "hidden-lazy-comeback",
+    name: "극적 반전",
+    description: "어제 할일을 하나도 못 했는데 오늘 올클리어!",
+    hint: "???",
+    emoji: "🎭",
+    grade: "epic",
+    category: "special",
+    condition: (ctx) =>
+      ctx.yesterdayRate === 0 && ctx.todayRate === 1 && ctx.todayTotal > 0,
+    repeatable: false,
+    hidden: true,
+  },
+  {
+    id: "hidden-night-owl",
+    name: "야행성 수호자",
+    description: "밤 10시가 넘어서도 올클리어! 멈출 수 없는 의지!",
+    hint: "???",
+    emoji: "🦉",
+    grade: "rare",
+    category: "special",
+    condition: (ctx) =>
+      ctx.todayRate === 1 &&
+      ctx.todayTotal > 0 &&
+      ctx.currentHourKST >= 22 &&
+      ctx.currentHourKST < 24,
+    repeatable: false,
+    hidden: true,
+  },
+  {
+    id: "hidden-sibling-long",
+    name: "찰떡 남매",
+    description: "남매가 7일 이상 연속으로 함께 올클! 환상의 팀!",
+    hint: "???",
+    emoji: "👯",
+    grade: "legendary",
+    category: "special",
+    condition: (ctx) =>
+      ctx.streak >= 7 && ctx.siblingTodayRate === 1 && ctx.todayRate === 1,
     repeatable: false,
     hidden: true,
   },
