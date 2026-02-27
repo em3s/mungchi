@@ -706,8 +706,8 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   },
   {
     id: "hidden-both-perfect-3",
-    name: "환상의 형제",
-    description: "형제 모두 3일 연속 올클리어!",
+    name: "환상의 남매",
+    description: "남매 모두 3일 연속 올클리어!",
     hint: "???",
     emoji: "👫",
     grade: "legendary",
