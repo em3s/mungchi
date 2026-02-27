@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useThemeOverride } from "@/hooks/useThemeOverride";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import { useUser } from "@/hooks/useUser";
@@ -14,13 +14,7 @@ function getCtx(): AudioContext {
   return audioCtx;
 }
 
-function playTone(
-  freq: number,
-  type: OscillatorType,
-  dur: number,
-  gain = 0.3,
-  delay = 0,
-) {
+function playTone(freq: number, type: OscillatorType, dur: number, gain = 0.3, delay = 0) {
   const c = getCtx();
   const osc = c.createOscillator();
   const g = c.createGain();
@@ -28,8 +22,7 @@ function playTone(
   osc.frequency.value = freq;
   g.gain.setValueAtTime(gain, c.currentTime + delay);
   g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
-  osc.connect(g);
-  g.connect(c.destination);
+  osc.connect(g); g.connect(c.destination);
   osc.start(c.currentTime + delay);
   osc.stop(c.currentTime + delay + dur);
 }
@@ -45,104 +38,130 @@ function playNoise(dur: number, gain = 0.1, delay = 0) {
   const g = c.createGain();
   g.gain.setValueAtTime(gain, c.currentTime + delay);
   g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
-  src.connect(g);
-  g.connect(c.destination);
+  src.connect(g); g.connect(c.destination);
   src.start(c.currentTime + delay);
 }
 
-// ── Synthesized sounds ──
+// ── 효과음 ──
 const synth = {
-  correct() {
-    playTone(880, "sine", 0.15, 0.3, 0);
-    playTone(1174.66, "sine", 0.3, 0.3, 0.12);
-  },
-  wrong() {
-    playTone(300, "square", 0.15, 0.15, 0);
-    playTone(220, "square", 0.25, 0.15, 0.12);
-  },
-  coinPickup() {
-    playTone(987.77, "sine", 0.08, 0.25, 0);
-    playTone(1318.51, "sine", 0.08, 0.25, 0.07);
-    playTone(1567.98, "sine", 0.2, 0.25, 0.14);
-  },
+  correct() { playTone(880, "sine", 0.15, 0.3, 0); playTone(1174.66, "sine", 0.3, 0.3, 0.12); },
+  wrong() { playTone(300, "square", 0.15, 0.15, 0); playTone(220, "square", 0.25, 0.15, 0.12); },
+  coinPickup() { playTone(987.77, "sine", 0.08, 0.25, 0); playTone(1318.51, "sine", 0.08, 0.25, 0.07); playTone(1567.98, "sine", 0.2, 0.25, 0.14); },
   quizComplete() {
-    playTone(523.25, "sine", 0.12, 0.25, 0);
-    playTone(659.25, "sine", 0.12, 0.25, 0.1);
-    playTone(783.99, "sine", 0.12, 0.25, 0.2);
-    playTone(1046.5, "sine", 0.35, 0.3, 0.3);
+    playTone(523.25, "sine", 0.12, 0.25, 0); playTone(659.25, "sine", 0.12, 0.25, 0.1);
+    playTone(783.99, "sine", 0.12, 0.25, 0.2); playTone(1046.5, "sine", 0.35, 0.3, 0.3);
     playTone(783.99, "sine", 0.12, 0.2, 0.3);
   },
-  checkPop() {
-    playTone(600, "sine", 0.06, 0.2, 0);
-    playTone(900, "sine", 0.08, 0.15, 0.04);
-  },
-  coinDing() {
-    playTone(1200, "sine", 0.25, 0.2, 0);
-  },
+  checkPop() { playTone(600, "sine", 0.06, 0.2, 0); playTone(900, "sine", 0.08, 0.15, 0.04); },
+  coinDing() { playTone(1200, "sine", 0.25, 0.2, 0); },
   allClear() {
-    playTone(523.25, "triangle", 0.15, 0.3, 0);
-    playTone(659.25, "triangle", 0.15, 0.3, 0.12);
-    playTone(783.99, "triangle", 0.15, 0.3, 0.24);
-    playTone(1046.5, "triangle", 0.15, 0.3, 0.36);
-    playTone(1318.51, "triangle", 0.4, 0.35, 0.48);
-    playTone(783.99, "sine", 0.4, 0.15, 0.48);
+    playTone(523.25, "triangle", 0.15, 0.3, 0); playTone(659.25, "triangle", 0.15, 0.3, 0.12);
+    playTone(783.99, "triangle", 0.15, 0.3, 0.24); playTone(1046.5, "triangle", 0.15, 0.3, 0.36);
+    playTone(1318.51, "triangle", 0.4, 0.35, 0.48); playTone(783.99, "sine", 0.4, 0.15, 0.48);
     playTone(523.25, "sine", 0.4, 0.1, 0.48);
   },
   jump() {
+    const c = getCtx(); const osc = c.createOscillator(); const g = c.createGain();
+    osc.type = "sine"; osc.frequency.setValueAtTime(300, c.currentTime); osc.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.12);
+    g.gain.setValueAtTime(0.2, c.currentTime); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
+    osc.connect(g); g.connect(c.destination); osc.start(c.currentTime); osc.stop(c.currentTime + 0.15);
+  },
+  gameOver() { playTone(440, "square", 0.2, 0.15, 0); playTone(330, "square", 0.2, 0.15, 0.2); playTone(220, "square", 0.4, 0.15, 0.4); },
+  whack() { playNoise(0.08, 0.3, 0); playTone(200, "square", 0.1, 0.25, 0); playTone(100, "sine", 0.08, 0.2, 0.03); },
+  goldenWhack() { playNoise(0.06, 0.25, 0); playTone(200, "square", 0.08, 0.2, 0); playTone(1200, "sine", 0.1, 0.2, 0.05); playTone(1600, "sine", 0.15, 0.25, 0.1); playTone(2000, "sine", 0.2, 0.2, 0.15); },
+  badgeUnlock() { playTone(523.25, "sine", 0.1, 0.2, 0); playTone(659.25, "sine", 0.1, 0.2, 0.08); playTone(783.99, "sine", 0.1, 0.2, 0.16); playTone(1046.5, "sine", 0.1, 0.2, 0.24); playTone(1318.51, "sine", 0.3, 0.3, 0.32); playTone(1567.98, "sine", 0.2, 0.1, 0.4); },
+  purchase() { playTone(800, "sine", 0.05, 0.2, 0); playTone(1000, "sine", 0.05, 0.2, 0.05); playTone(1200, "sine", 0.05, 0.2, 0.1); playNoise(0.08, 0.1, 0.15); playTone(1500, "sine", 0.2, 0.25, 0.18); },
+};
+
+// ── BGM 스케줄러 ──
+type Note = { freq: number; dur: number; gain?: number; type?: OscillatorType };
+
+// 공룡 달리기 BGM — 경쾌한 8비트 액션 (120 BPM, 8분음표 = 0.25s)
+const DINO_BGM: Note[] = [
+  // Melody A
+  { freq: 329.63, dur: 0.25 }, { freq: 329.63, dur: 0.25 }, { freq: 392.00, dur: 0.25 }, { freq: 329.63, dur: 0.25 },
+  { freq: 523.25, dur: 0.25 }, { freq: 493.88, dur: 0.25 }, { freq: 440.00, dur: 0.25 }, { freq: 392.00, dur: 0.25 },
+  { freq: 329.63, dur: 0.25 }, { freq: 392.00, dur: 0.25 }, { freq: 440.00, dur: 0.25 }, { freq: 392.00, dur: 0.25 },
+  { freq: 329.63, dur: 0.25 }, { freq: 293.66, dur: 0.25 }, { freq: 261.63, dur: 0.50 },
+  // Melody B
+  { freq: 392.00, dur: 0.25 }, { freq: 440.00, dur: 0.25 }, { freq: 523.25, dur: 0.25 }, { freq: 440.00, dur: 0.25 },
+  { freq: 392.00, dur: 0.25 }, { freq: 329.63, dur: 0.25 }, { freq: 261.63, dur: 0.25 }, { freq: 329.63, dur: 0.25 },
+  { freq: 440.00, dur: 0.25 }, { freq: 523.25, dur: 0.25 }, { freq: 659.25, dur: 0.25 }, { freq: 523.25, dur: 0.25 },
+  { freq: 440.00, dur: 0.25 }, { freq: 392.00, dur: 0.25 }, { freq: 329.63, dur: 0.50 },
+];
+
+// 두더지 잡기 BGM — 통통 튀는 8비트 (130 BPM, 8분음표 = 0.23s)
+const MOLE_BGM: Note[] = [
+  // Pentatonic fun loop C D E G A
+  { freq: 261.63, dur: 0.23 }, { freq: 329.63, dur: 0.23 }, { freq: 392.00, dur: 0.23 }, { freq: 523.25, dur: 0.23 },
+  { freq: 440.00, dur: 0.23 }, { freq: 392.00, dur: 0.23 }, { freq: 329.63, dur: 0.23 }, { freq: 392.00, dur: 0.23 },
+  { freq: 440.00, dur: 0.23 }, { freq: 523.25, dur: 0.23 }, { freq: 659.25, dur: 0.23 }, { freq: 523.25, dur: 0.23 },
+  { freq: 440.00, dur: 0.23 }, { freq: 392.00, dur: 0.23 }, { freq: 329.63, dur: 0.46 },
+  { freq: 392.00, dur: 0.23 }, { freq: 440.00, dur: 0.23 }, { freq: 523.25, dur: 0.23 }, { freq: 440.00, dur: 0.23 },
+  { freq: 392.00, dur: 0.23 }, { freq: 329.63, dur: 0.23 }, { freq: 261.63, dur: 0.23 }, { freq: 329.63, dur: 0.23 },
+  { freq: 523.25, dur: 0.23 }, { freq: 440.00, dur: 0.23 }, { freq: 392.00, dur: 0.23 }, { freq: 329.63, dur: 0.23 },
+  { freq: 261.63, dur: 0.46 }, { freq: 0, dur: 0.23 }, { freq: 261.63, dur: 0.23 },
+];
+
+class BGMPlayer {
+  private isPlaying = false;
+  private nextNoteTime = 0;
+  private noteIdx = 0;
+  private timerId: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(private notes: Note[], private oscType: OscillatorType = "square", private vol = 0.12) {}
+
+  private scheduleNote(note: Note, time: number) {
+    if (note.freq === 0) return;
     const c = getCtx();
     const osc = c.createOscillator();
     const g = c.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(300, c.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.12);
-    g.gain.setValueAtTime(0.2, c.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
-    osc.connect(g);
-    g.connect(c.destination);
-    osc.start(c.currentTime);
-    osc.stop(c.currentTime + 0.15);
-  },
-  gameOver() {
-    playTone(440, "square", 0.2, 0.15, 0);
-    playTone(330, "square", 0.2, 0.15, 0.2);
-    playTone(220, "square", 0.4, 0.15, 0.4);
-  },
-  whack() {
-    playNoise(0.08, 0.3, 0);
-    playTone(200, "square", 0.1, 0.25, 0);
-    playTone(100, "sine", 0.08, 0.2, 0.03);
-  },
-  goldenWhack() {
-    playNoise(0.06, 0.25, 0);
-    playTone(200, "square", 0.08, 0.2, 0);
-    playTone(1200, "sine", 0.1, 0.2, 0.05);
-    playTone(1600, "sine", 0.15, 0.25, 0.1);
-    playTone(2000, "sine", 0.2, 0.2, 0.15);
-  },
-  badgeUnlock() {
-    playTone(523.25, "sine", 0.1, 0.2, 0);
-    playTone(659.25, "sine", 0.1, 0.2, 0.08);
-    playTone(783.99, "sine", 0.1, 0.2, 0.16);
-    playTone(1046.5, "sine", 0.1, 0.2, 0.24);
-    playTone(1318.51, "sine", 0.3, 0.3, 0.32);
-    playTone(1567.98, "sine", 0.2, 0.1, 0.4);
-  },
-  purchase() {
-    playTone(800, "sine", 0.05, 0.2, 0);
-    playTone(1000, "sine", 0.05, 0.2, 0.05);
-    playTone(1200, "sine", 0.05, 0.2, 0.1);
-    playNoise(0.08, 0.1, 0.15);
-    playTone(1500, "sine", 0.2, 0.25, 0.18);
-  },
-};
+    osc.type = this.oscType;
+    osc.frequency.value = note.freq;
+    const v = (note.gain ?? 1) * this.vol;
+    g.gain.setValueAtTime(v, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + note.dur * 0.85);
+    osc.connect(g); g.connect(c.destination);
+    osc.start(time); osc.stop(time + note.dur);
+  }
 
-type SoundEntry = {
-  key: string;
-  label: string;
-  desc: string;
-  play: () => void;
-  style: string;
-};
+  private tick() {
+    const c = getCtx();
+    const lookAhead = 0.1;
+    while (this.nextNoteTime < c.currentTime + lookAhead) {
+      this.scheduleNote(this.notes[this.noteIdx % this.notes.length], this.nextNoteTime);
+      this.nextNoteTime += this.notes[this.noteIdx % this.notes.length].dur;
+      this.noteIdx++;
+    }
+    if (this.isPlaying) {
+      this.timerId = setTimeout(() => this.tick(), 25);
+    }
+  }
+
+  start() {
+    if (this.isPlaying) return;
+    this.isPlaying = true;
+    this.noteIdx = 0;
+    this.nextNoteTime = getCtx().currentTime + 0.05;
+    this.tick();
+  }
+
+  stop() {
+    this.isPlaying = false;
+    if (this.timerId !== null) { clearTimeout(this.timerId); this.timerId = null; }
+  }
+
+  get playing() { return this.isPlaying; }
+}
+
+// BGM 인스턴스 (싱글톤)
+let dinoBGM: BGMPlayer | null = null;
+let moleBGM: BGMPlayer | null = null;
+function getDinoBGM() { if (!dinoBGM) dinoBGM = new BGMPlayer(DINO_BGM, "square", 0.12); return dinoBGM; }
+function getMoleBGM() { if (!moleBGM) moleBGM = new BGMPlayer(MOLE_BGM, "triangle", 0.1); return moleBGM; }
+
+// ── 효과음 섹션 데이터 ──
+type SoundEntry = { key: string; label: string; desc: string; play: () => void; style: string };
 
 const SECTIONS: { title: string; icon: string; sounds: SoundEntry[] }[] = [
   {
@@ -165,7 +184,7 @@ const SECTIONS: { title: string; icon: string; sounds: SoundEntry[] }[] = [
     ],
   },
   {
-    title: "게임",
+    title: "게임 효과음",
     icon: "🎮",
     sounds: [
       { key: "jump", label: "🦘 점프", desc: "슝", play: synth.jump, style: "bg-green-50 text-green-700 active:bg-green-100" },
@@ -184,6 +203,13 @@ const SECTIONS: { title: string; icon: string; sounds: SoundEntry[] }[] = [
   },
 ];
 
+type BGMEntry = { key: string; label: string; desc: string; player: () => BGMPlayer; accent: string };
+
+const BGM_LIST: BGMEntry[] = [
+  { key: "dino", label: "🦖 공룡 달리기", desc: "경쾌한 8비트 액션", player: getDinoBGM, accent: "bg-violet-500" },
+  { key: "mole", label: "🐹 두더지 잡기", desc: "통통 튀는 8비트", player: getMoleBGM, accent: "bg-amber-500" },
+];
+
 export default function SoundDemoPage({
   params,
 }: {
@@ -192,15 +218,38 @@ export default function SoundDemoPage({
   const { childId, user } = useUser(params);
   const { override: themeOverride } = useThemeOverride(childId);
   const { allowed } = useFeatureGuard(childId, "sound");
-  const [playing, setPlaying] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [playingSfx, setPlayingSfx] = useState<string | null>(null);
+  const [playingBgm, setPlayingBgm] = useState<string | null>(null);
+  const sfxTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const handlePlay = useCallback((entry: SoundEntry) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setPlaying(entry.key);
-    entry.play();
-    timerRef.current = setTimeout(() => setPlaying(null), 600);
+  // BGM 정리 (페이지 이탈 시)
+  useEffect(() => {
+    return () => {
+      getDinoBGM().stop();
+      getMoleBGM().stop();
+    };
   }, []);
+
+  const handleSfx = useCallback((entry: SoundEntry) => {
+    if (sfxTimerRef.current) clearTimeout(sfxTimerRef.current);
+    setPlayingSfx(entry.key);
+    entry.play();
+    sfxTimerRef.current = setTimeout(() => setPlayingSfx(null), 600);
+  }, []);
+
+  const handleBgm = useCallback((entry: BGMEntry) => {
+    const player = entry.player();
+    if (playingBgm === entry.key) {
+      // 현재 재생 중이면 정지
+      player.stop();
+      setPlayingBgm(null);
+    } else {
+      // 다른 BGM 정지 후 시작
+      BGM_LIST.forEach((b) => { if (b.key !== entry.key) b.player().stop(); });
+      player.start();
+      setPlayingBgm(entry.key);
+    }
+  }, [playingBgm]);
 
   if (!allowed || !user) return null;
 
@@ -209,16 +258,52 @@ export default function SoundDemoPage({
       {/* Header */}
       <div className="text-center pt-6 pb-4">
         <h1 className="text-xl font-black text-gray-800">🔊 사운드 데모</h1>
-        <p className="text-xs text-gray-400 mt-1">
-          각 버튼을 눌러 효과음을 들어보세요
-        </p>
-        <p className="text-[10px] text-gray-300 mt-0.5">
-          Web Audio API — 코드로 생성된 사운드
-        </p>
+        <p className="text-xs text-gray-400 mt-1">Web Audio API — 코드로 생성된 사운드</p>
       </div>
 
-      {/* Sound sections */}
-      <div className="px-4 space-y-5">
+      <div className="px-4 space-y-6">
+        {/* BGM 섹션 */}
+        <div>
+          <h2 className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-1">
+            <span>🎵</span>
+            <span>배경음악 (BGM)</span>
+            <span className="ml-1 text-[10px] font-normal text-gray-400">— 루핑 재생</span>
+          </h2>
+          <div className="space-y-1.5">
+            {BGM_LIST.map((b) => {
+              const isOn = playingBgm === b.key;
+              return (
+                <button
+                  key={b.key}
+                  onClick={() => handleBgm(b)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 ${
+                    isOn
+                      ? `${b.accent} text-white shadow-md`
+                      : "bg-white text-gray-700 border border-gray-200 active:scale-[0.98]"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    {isOn && (
+                      <span className="flex gap-0.5 items-end h-4">
+                        {[0, 1, 2].map((i) => (
+                          <span key={i} className="w-1 bg-white/80 rounded-full animate-bounce" style={{ height: `${8 + i * 3}px`, animationDelay: `${i * 0.1}s` }} />
+                        ))}
+                      </span>
+                    )}
+                    {!isOn && <span className="text-base">▶</span>}
+                    {b.label}
+                  </span>
+                  <span className={`text-xs ${isOn ? "text-white/80" : "text-gray-400"}`}>
+                    {isOn ? "■ 정지" : b.desc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-gray-300 mt-2 text-center">※ BGM 파일 교체 가능 — Pixabay/OpenGameArt CC0 음원</p>
+        </div>
+
+        {/* 효과음 섹션들 */}
         {SECTIONS.map((section) => (
           <div key={section.title}>
             <h2 className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-1">
@@ -229,9 +314,9 @@ export default function SoundDemoPage({
               {section.sounds.map((s) => (
                 <button
                   key={s.key}
-                  onClick={() => handlePlay(s)}
+                  onClick={() => handleSfx(s)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 ${s.style} ${
-                    playing === s.key ? "scale-[0.97] ring-2 ring-[var(--accent)]/30" : ""
+                    playingSfx === s.key ? "scale-[0.97] ring-2 ring-[var(--accent)]/30" : ""
                   }`}
                 >
                   <span>{s.label}</span>
