@@ -76,23 +76,22 @@ const synth = {
 // ── BGM 스케줄러 ──
 type Note = { freq: number; dur: number; gain?: number; type?: OscillatorType };
 
-// 공룡 달리기 BGM — 경쾌한 8비트 액션 (120 BPM, 8분음표 = 0.25s)
+// ── 합성 BGM 노트 배열 ──
+
+// 공룡 달리기 BGM — 경쾌한 8비트 액션 (120 BPM, 8분음표=0.25s)
 const DINO_BGM: Note[] = [
-  // Melody A
   { freq: 329.63, dur: 0.25 }, { freq: 329.63, dur: 0.25 }, { freq: 392.00, dur: 0.25 }, { freq: 329.63, dur: 0.25 },
   { freq: 523.25, dur: 0.25 }, { freq: 493.88, dur: 0.25 }, { freq: 440.00, dur: 0.25 }, { freq: 392.00, dur: 0.25 },
   { freq: 329.63, dur: 0.25 }, { freq: 392.00, dur: 0.25 }, { freq: 440.00, dur: 0.25 }, { freq: 392.00, dur: 0.25 },
   { freq: 329.63, dur: 0.25 }, { freq: 293.66, dur: 0.25 }, { freq: 261.63, dur: 0.50 },
-  // Melody B
   { freq: 392.00, dur: 0.25 }, { freq: 440.00, dur: 0.25 }, { freq: 523.25, dur: 0.25 }, { freq: 440.00, dur: 0.25 },
   { freq: 392.00, dur: 0.25 }, { freq: 329.63, dur: 0.25 }, { freq: 261.63, dur: 0.25 }, { freq: 329.63, dur: 0.25 },
   { freq: 440.00, dur: 0.25 }, { freq: 523.25, dur: 0.25 }, { freq: 659.25, dur: 0.25 }, { freq: 523.25, dur: 0.25 },
   { freq: 440.00, dur: 0.25 }, { freq: 392.00, dur: 0.25 }, { freq: 329.63, dur: 0.50 },
 ];
 
-// 두더지 잡기 BGM — 통통 튀는 8비트 (130 BPM, 8분음표 = 0.23s)
+// 두더지 잡기 BGM — 통통 튀는 8비트 (130 BPM, 8분음표=0.23s)
 const MOLE_BGM: Note[] = [
-  // Pentatonic fun loop C D E G A
   { freq: 261.63, dur: 0.23 }, { freq: 329.63, dur: 0.23 }, { freq: 392.00, dur: 0.23 }, { freq: 523.25, dur: 0.23 },
   { freq: 440.00, dur: 0.23 }, { freq: 392.00, dur: 0.23 }, { freq: 329.63, dur: 0.23 }, { freq: 392.00, dur: 0.23 },
   { freq: 440.00, dur: 0.23 }, { freq: 523.25, dur: 0.23 }, { freq: 659.25, dur: 0.23 }, { freq: 523.25, dur: 0.23 },
@@ -103,6 +102,100 @@ const MOLE_BGM: Note[] = [
   { freq: 261.63, dur: 0.46 }, { freq: 0, dur: 0.23 }, { freq: 261.63, dur: 0.23 },
 ];
 
+// 재즈 스윙 — G 도리안, 110 BPM, 스윙 8분음표 (long=0.36s, short=0.18s)
+const JAZZ_BGM: Note[] = [
+  // Phrase A
+  { freq: 392.00, dur: 0.36 }, { freq: 440.00, dur: 0.18 },
+  { freq: 466.16, dur: 0.36 }, { freq: 392.00, dur: 0.18 },
+  { freq: 349.23, dur: 0.36 }, { freq: 329.63, dur: 0.18 },
+  { freq: 293.66, dur: 0.54 },
+  { freq: 440.00, dur: 0.36 }, { freq: 392.00, dur: 0.18 },
+  { freq: 349.23, dur: 0.36 }, { freq: 392.00, dur: 0.18 },
+  { freq: 440.00, dur: 0.36 }, { freq: 466.16, dur: 0.18 },
+  { freq: 392.00, dur: 0.54 },
+  // Phrase B (higher)
+  { freq: 523.25, dur: 0.36 }, { freq: 466.16, dur: 0.18 },
+  { freq: 440.00, dur: 0.36 }, { freq: 392.00, dur: 0.18 },
+  { freq: 349.23, dur: 0.36 }, { freq: 293.66, dur: 0.18 },
+  { freq: 261.63, dur: 0.54 },
+  { freq: 0, dur: 0.18 },
+  { freq: 293.66, dur: 0.36 }, { freq: 349.23, dur: 0.18 },
+  { freq: 392.00, dur: 0.36 }, { freq: 440.00, dur: 0.18 },
+  { freq: 392.00, dur: 0.54 }, { freq: 0, dur: 0.18 },
+];
+
+// 보스 배틀 — E 단조, 155 BPM, 긴장감 (16분음표=0.097s)
+const BOSS_BGM: Note[] = [
+  // Heavy riff
+  { freq: 329.63, dur: 0.097 }, { freq: 0, dur: 0.097 },
+  { freq: 329.63, dur: 0.097 }, { freq: 0, dur: 0.097 },
+  { freq: 329.63, dur: 0.194 },
+  { freq: 392.00, dur: 0.097 }, { freq: 0, dur: 0.097 },
+  { freq: 329.63, dur: 0.194 },
+  { freq: 277.18, dur: 0.097 }, // C#4 (tritone dissonance)
+  { freq: 261.63, dur: 0.097 },
+  { freq: 246.94, dur: 0.38 },
+  // High response
+  { freq: 659.25, dur: 0.097 }, { freq: 0, dur: 0.097 },
+  { freq: 659.25, dur: 0.097 }, { freq: 0, dur: 0.097 },
+  { freq: 659.25, dur: 0.194 },
+  { freq: 783.99, dur: 0.097 }, { freq: 659.25, dur: 0.097 },
+  { freq: 587.33, dur: 0.194 }, { freq: 523.25, dur: 0.194 },
+  { freq: 493.88, dur: 0.38 },
+  // Rising chromatic threat
+  { freq: 329.63, dur: 0.097 }, { freq: 349.23, dur: 0.097 },
+  { freq: 392.00, dur: 0.097 }, { freq: 440.00, dur: 0.097 },
+  { freq: 493.88, dur: 0.097 }, { freq: 523.25, dur: 0.097 },
+  { freq: 587.33, dur: 0.097 }, { freq: 659.25, dur: 0.097 },
+  { freq: 783.99, dur: 0.194 }, { freq: 0, dur: 0.097 }, { freq: 659.25, dur: 0.194 },
+  { freq: 329.63, dur: 0.38 }, { freq: 0, dur: 0.001 },
+];
+
+// 평화로운 탐험 — C 장조, 72 BPM, 잔잔함 (4분음표=0.833s)
+const PEACEFUL_BGM: Note[] = [
+  { freq: 523.25, dur: 0.833 }, { freq: 587.33, dur: 0.417 }, { freq: 659.25, dur: 0.417 },
+  { freq: 783.99, dur: 0.833 }, { freq: 659.25, dur: 0.417 }, { freq: 587.33, dur: 0.417 },
+  { freq: 523.25, dur: 1.667 }, { freq: 0, dur: 0.001 },
+  { freq: 659.25, dur: 0.833 }, { freq: 783.99, dur: 0.417 }, { freq: 880.00, dur: 0.417 },
+  { freq: 987.77, dur: 0.833 }, { freq: 0, dur: 0.417 }, { freq: 880.00, dur: 0.417 },
+  { freq: 783.99, dur: 0.417 }, { freq: 659.25, dur: 0.417 }, { freq: 523.25, dur: 0.833 },
+  { freq: 440.00, dur: 1.667 }, { freq: 0, dur: 0.001 },
+  // Bridge — ascending
+  { freq: 523.25, dur: 0.417 }, { freq: 659.25, dur: 0.417 }, { freq: 783.99, dur: 0.417 }, { freq: 880.00, dur: 0.417 },
+  { freq: 987.77, dur: 0.833 }, { freq: 0, dur: 0.417 }, { freq: 880.00, dur: 0.417 },
+  { freq: 783.99, dur: 0.417 }, { freq: 659.25, dur: 0.417 }, { freq: 523.25, dur: 1.667 },
+  { freq: 0, dur: 0.001 },
+];
+
+// 빠른 레이싱 — C 장조, 175 BPM, 질주감 (8분음표=0.171s)
+const RACING_BGM: Note[] = [
+  // Rising rocket launch
+  { freq: 523.25, dur: 0.171 }, { freq: 587.33, dur: 0.171 }, { freq: 659.25, dur: 0.171 }, { freq: 698.46, dur: 0.171 },
+  { freq: 783.99, dur: 0.171 }, { freq: 880.00, dur: 0.171 }, { freq: 987.77, dur: 0.171 }, { freq: 1046.50, dur: 0.171 },
+  // High melody
+  { freq: 1046.50, dur: 0.171 }, { freq: 987.77, dur: 0.171 }, { freq: 880.00, dur: 0.171 }, { freq: 987.77, dur: 0.171 },
+  { freq: 880.00, dur: 0.171 }, { freq: 783.99, dur: 0.171 }, { freq: 698.46, dur: 0.171 }, { freq: 783.99, dur: 0.171 },
+  { freq: 659.25, dur: 0.171 }, { freq: 698.46, dur: 0.171 }, { freq: 783.99, dur: 0.171 }, { freq: 659.25, dur: 0.171 },
+  { freq: 587.33, dur: 0.171 }, { freq: 523.25, dur: 0.171 }, { freq: 440.00, dur: 0.171 }, { freq: 523.25, dur: 0.171 },
+  // Turnaround
+  { freq: 587.33, dur: 0.171 }, { freq: 659.25, dur: 0.171 }, { freq: 783.99, dur: 0.342 },
+  { freq: 0, dur: 0.171 }, { freq: 783.99, dur: 0.171 }, { freq: 0, dur: 0.171 }, { freq: 523.25, dur: 0.171 },
+];
+
+// 별빛 — 몽환적 앰비언트, 50 BPM, triangle (4분음표=1.2s)
+const STARLIGHT_BGM: Note[] = [
+  { freq: 1046.50, dur: 1.2, gain: 0.8 }, { freq: 0, dur: 0.6 },
+  { freq: 1174.66, dur: 0.6, gain: 0.6 }, { freq: 1318.51, dur: 1.8, gain: 0.7 },
+  { freq: 0, dur: 0.6 },
+  { freq: 1174.66, dur: 1.2, gain: 0.6 }, { freq: 1046.50, dur: 0.6, gain: 0.4 },
+  { freq: 987.77, dur: 1.8, gain: 0.6 }, { freq: 0, dur: 0.6 },
+  { freq: 880.00, dur: 0.6, gain: 0.4 }, { freq: 987.77, dur: 0.6, gain: 0.5 },
+  { freq: 1046.50, dur: 1.8, gain: 0.7 }, { freq: 0, dur: 0.6 },
+  { freq: 1174.66, dur: 0.6, gain: 0.5 }, { freq: 1318.51, dur: 2.4, gain: 0.8 },
+  { freq: 0, dur: 0.6 },
+];
+
+// ── BGM 플레이어 (합성) ──
 class BGMPlayer {
   private isPlaying = false;
   private nextNoteTime = 0;
@@ -154,11 +247,59 @@ class BGMPlayer {
   get playing() { return this.isPlaying; }
 }
 
-// BGM 인스턴스 (싱글톤)
+// ── BGM 플레이어 (파일 기반) ──
+class FileBGMPlayer {
+  private audio: HTMLAudioElement | null = null;
+  private _playing = false;
+
+  constructor(private src: string, private vol = 0.35) {}
+
+  start() {
+    if (this._playing) return;
+    if (typeof window === "undefined") return;
+    if (!this.audio) {
+      this.audio = new Audio(this.src);
+      this.audio.loop = true;
+      this.audio.volume = this.vol;
+    }
+    this.audio.play().catch(() => { this._playing = false; });
+    this._playing = true;
+  }
+
+  stop() {
+    if (this.audio) { this.audio.pause(); this.audio.currentTime = 0; }
+    this._playing = false;
+  }
+
+  get playing() { return this._playing; }
+}
+
+// ── BGM 싱글톤 팩토리 ──
+type AnyBGMPlayer = BGMPlayer | FileBGMPlayer;
 let dinoBGM: BGMPlayer | null = null;
 let moleBGM: BGMPlayer | null = null;
+let jazzBGM: BGMPlayer | null = null;
+let bossBGM: BGMPlayer | null = null;
+let peacefulBGM: BGMPlayer | null = null;
+let racingBGM: BGMPlayer | null = null;
+let starlightBGM: BGMPlayer | null = null;
+let fileActionBGM: FileBGMPlayer | null = null;
+let fileFunBGM: FileBGMPlayer | null = null;
+
 function getDinoBGM() { if (!dinoBGM) dinoBGM = new BGMPlayer(DINO_BGM, "square", 0.12); return dinoBGM; }
 function getMoleBGM() { if (!moleBGM) moleBGM = new BGMPlayer(MOLE_BGM, "triangle", 0.1); return moleBGM; }
+function getJazzBGM() { if (!jazzBGM) jazzBGM = new BGMPlayer(JAZZ_BGM, "sawtooth", 0.09); return jazzBGM; }
+function getBossBGM() { if (!bossBGM) bossBGM = new BGMPlayer(BOSS_BGM, "square", 0.13); return bossBGM; }
+function getPeacefulBGM() { if (!peacefulBGM) peacefulBGM = new BGMPlayer(PEACEFUL_BGM, "triangle", 0.08); return peacefulBGM; }
+function getRacingBGM() { if (!racingBGM) racingBGM = new BGMPlayer(RACING_BGM, "square", 0.1); return racingBGM; }
+function getStarlightBGM() { if (!starlightBGM) starlightBGM = new BGMPlayer(STARLIGHT_BGM, "triangle", 0.07); return starlightBGM; }
+function getFileActionBGM() { if (!fileActionBGM) fileActionBGM = new FileBGMPlayer("/sounds/bgm-action.mp3"); return fileActionBGM; }
+function getFileFunBGM() { if (!fileFunBGM) fileFunBGM = new FileBGMPlayer("/sounds/bgm-fun.mp3"); return fileFunBGM; }
+
+function stopAllBGM() {
+  [dinoBGM, moleBGM, jazzBGM, bossBGM, peacefulBGM, racingBGM, starlightBGM, fileActionBGM, fileFunBGM]
+    .forEach((p) => p?.stop());
+}
 
 // ── 효과음 섹션 데이터 ──
 type SoundEntry = { key: string; label: string; desc: string; play: () => void; style: string };
@@ -203,11 +344,28 @@ const SECTIONS: { title: string; icon: string; sounds: SoundEntry[] }[] = [
   },
 ];
 
-type BGMEntry = { key: string; label: string; desc: string; player: () => BGMPlayer; accent: string };
+type BGMEntry = {
+  key: string;
+  label: string;
+  desc: string;
+  player: () => AnyBGMPlayer;
+  accent: string;
+  tag?: string;
+};
 
-const BGM_LIST: BGMEntry[] = [
-  { key: "dino", label: "🦖 공룡 달리기", desc: "경쾌한 8비트 액션", player: getDinoBGM, accent: "bg-violet-500" },
-  { key: "mole", label: "🐹 두더지 잡기", desc: "통통 튀는 8비트", player: getMoleBGM, accent: "bg-amber-500" },
+const BGM_SYNTH: BGMEntry[] = [
+  { key: "dino",      label: "🦖 공룡 달리기",   desc: "경쾌한 8비트 액션",       player: getDinoBGM,     accent: "bg-violet-500" },
+  { key: "mole",      label: "🐹 두더지 잡기",    desc: "통통 튀는 8비트",         player: getMoleBGM,     accent: "bg-amber-500" },
+  { key: "jazz",      label: "🎷 재즈 스윙",      desc: "스윙 리듬 G 도리안",      player: getJazzBGM,     accent: "bg-blue-500" },
+  { key: "boss",      label: "👾 보스 배틀",      desc: "강렬한 E 단조",           player: getBossBGM,     accent: "bg-red-700" },
+  { key: "peaceful",  label: "🌿 평화로운 탐험",  desc: "잔잔한 C 장조",           player: getPeacefulBGM, accent: "bg-green-500" },
+  { key: "racing",    label: "🏎️ 빠른 레이싱",   desc: "질주감 175 BPM",          player: getRacingBGM,   accent: "bg-orange-500" },
+  { key: "starlight", label: "✨ 별빛",            desc: "몽환적 앰비언트 50 BPM",  player: getStarlightBGM, accent: "bg-indigo-400" },
+];
+
+const BGM_FILE: BGMEntry[] = [
+  { key: "file_action", label: "🎮 게임 액션 BGM", desc: "bgm-action.mp3", player: getFileActionBGM, accent: "bg-gray-600", tag: "MP3" },
+  { key: "file_fun",    label: "🎉 신나는 BGM",    desc: "bgm-fun.mp3",    player: getFileFunBGM,    accent: "bg-gray-600", tag: "MP3" },
 ];
 
 export default function SoundDemoPage({
@@ -222,12 +380,9 @@ export default function SoundDemoPage({
   const [playingBgm, setPlayingBgm] = useState<string | null>(null);
   const sfxTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // BGM 정리 (페이지 이탈 시)
+  // 페이지 이탈 시 모든 BGM 정지
   useEffect(() => {
-    return () => {
-      getDinoBGM().stop();
-      getMoleBGM().stop();
-    };
+    return () => stopAllBGM();
   }, []);
 
   const handleSfx = useCallback((entry: SoundEntry) => {
@@ -240,12 +395,10 @@ export default function SoundDemoPage({
   const handleBgm = useCallback((entry: BGMEntry) => {
     const player = entry.player();
     if (playingBgm === entry.key) {
-      // 현재 재생 중이면 정지
       player.stop();
       setPlayingBgm(null);
     } else {
-      // 다른 BGM 정지 후 시작
-      BGM_LIST.forEach((b) => { if (b.key !== entry.key) b.player().stop(); });
+      stopAllBGM();
       player.start();
       setPlayingBgm(entry.key);
     }
@@ -253,54 +406,77 @@ export default function SoundDemoPage({
 
   if (!allowed || !user) return null;
 
+  const renderBGMButton = (b: BGMEntry) => {
+    const isOn = playingBgm === b.key;
+    return (
+      <button
+        key={b.key}
+        onClick={() => handleBgm(b)}
+        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 ${
+          isOn
+            ? `${b.accent} text-white shadow-md`
+            : "bg-white text-gray-700 border border-gray-200 active:scale-[0.98]"
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          {isOn && (
+            <span className="flex gap-0.5 items-end h-4">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="w-1 bg-white/80 rounded-full animate-bounce" style={{ height: `${8 + i * 3}px`, animationDelay: `${i * 0.1}s` }} />
+              ))}
+            </span>
+          )}
+          {!isOn && <span className="text-base">▶</span>}
+          {b.label}
+          {b.tag && (
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isOn ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+              {b.tag}
+            </span>
+          )}
+        </span>
+        <span className={`text-xs ${isOn ? "text-white/80" : "text-gray-400"}`}>
+          {isOn ? "■ 정지" : b.desc}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <div className={`theme-preset-${themeOverride || user.theme} min-h-screen bg-[var(--bg)] pb-24`}>
       {/* Header */}
       <div className="text-center pt-6 pb-4">
         <h1 className="text-xl font-black text-gray-800">🔊 사운드 데모</h1>
-        <p className="text-xs text-gray-400 mt-1">Web Audio API — 코드로 생성된 사운드</p>
+        <p className="text-xs text-gray-400 mt-1">Web Audio API 합성음 + MP3 파일 지원</p>
       </div>
 
       <div className="px-4 space-y-6">
-        {/* BGM 섹션 */}
+        {/* 합성 BGM */}
         <div>
           <h2 className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-1">
             <span>🎵</span>
-            <span>배경음악 (BGM)</span>
-            <span className="ml-1 text-[10px] font-normal text-gray-400">— 루핑 재생</span>
+            <span>배경음악 — 합성</span>
+            <span className="ml-1 text-[10px] font-normal text-gray-400">Web Audio API 루프</span>
           </h2>
           <div className="space-y-1.5">
-            {BGM_LIST.map((b) => {
-              const isOn = playingBgm === b.key;
-              return (
-                <button
-                  key={b.key}
-                  onClick={() => handleBgm(b)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 ${
-                    isOn
-                      ? `${b.accent} text-white shadow-md`
-                      : "bg-white text-gray-700 border border-gray-200 active:scale-[0.98]"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    {isOn && (
-                      <span className="flex gap-0.5 items-end h-4">
-                        {[0, 1, 2].map((i) => (
-                          <span key={i} className="w-1 bg-white/80 rounded-full animate-bounce" style={{ height: `${8 + i * 3}px`, animationDelay: `${i * 0.1}s` }} />
-                        ))}
-                      </span>
-                    )}
-                    {!isOn && <span className="text-base">▶</span>}
-                    {b.label}
-                  </span>
-                  <span className={`text-xs ${isOn ? "text-white/80" : "text-gray-400"}`}>
-                    {isOn ? "■ 정지" : b.desc}
-                  </span>
-                </button>
-              );
-            })}
+            {BGM_SYNTH.map(renderBGMButton)}
           </div>
-          <p className="text-[10px] text-gray-300 mt-2 text-center">※ BGM 파일 교체 가능 — Pixabay/OpenGameArt CC0 음원</p>
+        </div>
+
+        {/* 파일 BGM */}
+        <div>
+          <h2 className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-1">
+            <span>🎵</span>
+            <span>배경음악 — MP3 파일</span>
+          </h2>
+          <div className="space-y-1.5">
+            {BGM_FILE.map(renderBGMButton)}
+          </div>
+          <div className="mt-2 px-1 py-2 bg-gray-50 rounded-xl text-[10px] text-gray-400 leading-relaxed">
+            <div className="font-semibold text-gray-500 mb-0.5">📂 파일 넣는 방법</div>
+            <div>• <code className="bg-gray-100 px-1 rounded">public/sounds/bgm-action.mp3</code></div>
+            <div>• <code className="bg-gray-100 px-1 rounded">public/sounds/bgm-fun.mp3</code></div>
+            <div className="mt-1">Pixabay · OpenGameArt · Freesound 에서 CC0 파일 다운로드</div>
+          </div>
         </div>
 
         {/* 효과음 섹션들 */}
