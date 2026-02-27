@@ -232,6 +232,7 @@ export default function PetPage({
   const [liveStats, setLiveStats] = useState<PetLiveStats | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [adoptKey, setAdoptKey] = useState(0); // 입양 후 리페치 트리거
+  const [showGuide, setShowGuide] = useState(false);
 
   // SWR 데이터
   const { data: balance = 0, mutate: mutateBalance } = useSWR(
@@ -394,14 +395,169 @@ export default function PetPage({
     <div className={`min-h-screen bg-gray-50 pb-24 ${themeClass}`}>
       <div className="max-w-[480px] mx-auto">
 
+        {/* 설명서 모달 */}
+        {showGuide && (
+          <div
+            className="fixed inset-0 bg-black/50 z-[999] flex items-end justify-center animate-fade-in"
+            onClick={() => setShowGuide(false)}
+          >
+            <div
+              className="bg-white rounded-t-3xl w-full max-w-[480px] max-h-[80vh] overflow-y-auto pb-safe"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-gray-800">🐾 동물 키우기 설명서</h2>
+                <button
+                  onClick={() => setShowGuide(false)}
+                  className="text-gray-400 text-xl font-bold px-2"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="px-5 py-4 flex flex-col gap-5 text-sm text-gray-700">
+
+                {/* 입양 */}
+                <section>
+                  <h3 className="font-bold text-gray-800 mb-2">🏠 동물 입양하기</h3>
+                  <p className="leading-relaxed text-gray-500">
+                    초코를 내고 원하는 동물을 입양해요. 이름을 직접 지어줄 수 있어요!
+                  </p>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-center">
+                    {[
+                      { e: "🐶", n: "강아지", c: 50 },
+                      { e: "🐱", n: "고양이", c: 50 },
+                      { e: "🐹", n: "햄스터", c: 30 },
+                      { e: "🐰", n: "토끼", c: 40 },
+                      { e: "🐣", n: "병아리", c: 35 },
+                      { e: "🐟", n: "물고기", c: 20 },
+                    ].map((p) => (
+                      <div key={p.n} className="bg-gray-50 rounded-xl py-2">
+                        <div className="text-2xl">{p.e}</div>
+                        <div className="font-semibold">{p.n}</div>
+                        <div className="text-[var(--accent)] font-bold">🍪{p.c}</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* 스탯 */}
+                <section>
+                  <h3 className="font-bold text-gray-800 mb-2">📊 스탯 (0~100)</h3>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-start gap-2 bg-orange-50 rounded-xl p-3">
+                      <span className="text-xl">🍖</span>
+                      <div>
+                        <p className="font-semibold">배고픔</p>
+                        <p className="text-xs text-gray-500">4시간마다 -10씩 줄어요. 0이 되면 건강이 나빠져요!</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 bg-pink-50 rounded-xl p-3">
+                      <span className="text-xl">😊</span>
+                      <div>
+                        <p className="font-semibold">행복도</p>
+                        <p className="text-xs text-gray-500">6시간마다 -8씩 줄어요. 놀아주거나 장난감을 주면 올라가요.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 bg-green-50 rounded-xl p-3">
+                      <span className="text-xl">❤️</span>
+                      <div>
+                        <p className="font-semibold">건강</p>
+                        <p className="text-xs text-gray-500">배고픔이 20 이하면 서서히 줄어요. 케어 아이템으로 회복해요.</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* 상호작용 */}
+                <section>
+                  <h3 className="font-bold text-gray-800 mb-2">🎮 상호작용</h3>
+                  <div className="flex flex-col gap-2 text-xs">
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-2.5">
+                      <span className="text-base">🍖</span>
+                      <span><b>먹이 주기</b> — 인벤토리의 먹이를 선택해서 줘요</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-2.5">
+                      <span className="text-base">🎾</span>
+                      <span><b>같이 놀기</b> — 아이템 없이도 가능! 쿨타임 30분</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-2.5">
+                      <span className="text-base">🪮</span>
+                      <span><b>케어</b> — 브러시·목욕으로 건강과 행복도 회복</span>
+                    </div>
+                  </div>
+                </section>
+
+                {/* 상점 */}
+                <section>
+                  <h3 className="font-bold text-gray-800 mb-2">🛒 상점 아이템</h3>
+                  <div className="flex flex-col gap-2 text-xs">
+                    <div className="bg-orange-50 rounded-xl p-3">
+                      <p className="font-semibold mb-1">🍖 먹이 (소모품)</p>
+                      <p className="text-gray-500">사료 5🍪 · 간식 3🍪 · 특별간식 10🍪</p>
+                      <p className="text-gray-400 mt-0.5">구매하면 인벤토리에 저장돼요</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-3">
+                      <p className="font-semibold mb-1">🏠 집 (영구 효과)</p>
+                      <p className="text-gray-500">아늑한 집 30🍪 (+10 행복) · 멋진 집 80🍪 (+20 행복)</p>
+                      <p className="text-gray-400 mt-0.5">보유하면 행복도가 항상 높게 유지돼요!</p>
+                    </div>
+                    <div className="bg-yellow-50 rounded-xl p-3">
+                      <p className="font-semibold mb-1">🎾 장난감 (소모품)</p>
+                      <p className="text-gray-500">공 8🍪 · 인형 12🍪 · 터널 15🍪</p>
+                      <p className="text-gray-400 mt-0.5">사용하면 행복도 + 경험치가 올라가요</p>
+                    </div>
+                    <div className="bg-green-50 rounded-xl p-3">
+                      <p className="font-semibold mb-1">🪮 케어 (소모품)</p>
+                      <p className="text-gray-500">브러시 8🍪 · 목욕세트 5🍪</p>
+                      <p className="text-gray-400 mt-0.5">건강과 행복도를 회복해줘요</p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* 레벨 */}
+                <section>
+                  <h3 className="font-bold text-gray-800 mb-2">⭐ 레벨 성장</h3>
+                  <p className="text-gray-500 text-xs mb-2">먹이 주기·놀기·케어를 할 때마다 경험치가 쌓여요!</p>
+                  <div className="flex flex-col gap-1.5 text-xs">
+                    {[
+                      { lv: 1, emoji: "아기", exp: "0~49", tip: "🐶 아기 모습" },
+                      { lv: 2, emoji: "아기", exp: "50~149", tip: "✨ 조금 더 성장" },
+                      { lv: 3, emoji: "청소년", exp: "150~299", tip: "🐕 청소년 모습으로 변해요" },
+                      { lv: 4, emoji: "어른", exp: "300~499", tip: "💪 다 컸어요!" },
+                      { lv: 5, emoji: "어른", exp: "500+", tip: "👑 최대 레벨 달성!" },
+                    ].map((row) => (
+                      <div key={row.lv} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2">
+                        <span className="font-bold text-[var(--accent)] w-10">Lv.{row.lv}</span>
+                        <span className="text-gray-400 w-14">{row.exp}</span>
+                        <span className="text-gray-600">{row.tip}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <p className="text-center text-xs text-gray-400 pb-2">꾸준히 돌봐주면 건강하게 자라요 💕</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 헤더 */}
         <div className="px-4 pt-6 pb-3 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-800">🐾 동물친구</h1>
-          {hasPet && (
-            <span className="text-sm text-gray-500">
-              잔액 <span className="text-[var(--accent)] font-bold">🍪{balance}</span>
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowGuide(true)}
+              className="text-gray-400 text-sm font-bold w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:bg-gray-200"
+            >
+              ?
+            </button>
+            {hasPet && (
+              <span className="text-sm text-gray-500">
+                잔액 <span className="text-[var(--accent)] font-bold">🍪{balance}</span>
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 펫 없을 때 */}
