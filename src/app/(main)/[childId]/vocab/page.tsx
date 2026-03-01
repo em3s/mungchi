@@ -67,6 +67,7 @@ export default function VocabPage({
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editWord, setEditWord] = useState("");
   const [editMeaning, setEditMeaning] = useState("");
+  const [repeatCount, setRepeatCount] = useState<1 | 3 | 5>(1);
   const editWordRef = useRef<HTMLInputElement>(null);
 
   // Vocab lists
@@ -464,14 +465,29 @@ export default function VocabPage({
                   <div className="text-xs font-semibold text-gray-500 tracking-wider">
                     단어 ({entries.length}){!isDailyList && <> · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span></>}
                   </div>
-                  {!isDailyList && !showAddForm && (
-                    <button
-                      onClick={() => setShowAddForm(true)}
-                      className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)]"
-                    >
-                      + 추가
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {([1, 3, 5] as const).map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setRepeatCount(n)}
+                        className={`text-xs px-2 py-1 rounded-lg font-semibold transition-colors ${
+                          repeatCount === n
+                            ? "bg-[var(--accent,#6c5ce7)] text-white"
+                            : "bg-gray-100 text-gray-400"
+                        }`}
+                      >
+                        {n}회
+                      </button>
+                    ))}
+                    {!isDailyList && !showAddForm && (
+                      <button
+                        onClick={() => setShowAddForm(true)}
+                        className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)] ml-1"
+                      >
+                        + 추가
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {entries.length === 0 && !showAddForm ? (
@@ -548,7 +564,7 @@ export default function VocabPage({
                             </button>
                           )}
                           <button
-                            onClick={() => speakWord(entry.word)}
+                            onClick={() => speakWord(entry.word, repeatCount)}
                             className="text-gray-400 text-base active:text-[var(--accent,#6c5ce7)] transition-colors shrink-0"
                             aria-label={`${entry.word} 발음 듣기`}
                           >

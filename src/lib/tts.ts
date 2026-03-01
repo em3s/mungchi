@@ -41,19 +41,30 @@ async function ensureVoice(): Promise<void> {
   voicesLoaded = true;
 }
 
-export async function speakWord(word: string): Promise<void> {
+function speakOnce(word: string): Promise<void> {
+  return new Promise((resolve) => {
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = "en-US";
+    u.rate = 0.9;
+    if (englishVoice) u.voice = englishVoice;
+    u.onend = () => resolve();
+    u.onerror = () => resolve();
+    speechSynthesis.speak(u);
+  });
+}
+
+const REPEAT_PAUSE_MS = 2000;
+
+export async function speakWord(word: string, times: number = 1): Promise<void> {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
 
   speechSynthesis.cancel();
   await ensureVoice();
 
-  const u = new SpeechSynthesisUtterance(word);
-  u.lang = "en-US";
-  u.rate = 0.9;
-
-  if (englishVoice) {
-    u.voice = englishVoice;
+  for (let i = 0; i < times; i++) {
+    await speakOnce(word);
+    if (i < times - 1) {
+      await new Promise((resolve) => setTimeout(resolve, REPEAT_PAUSE_MS));
+    }
   }
-
-  speechSynthesis.speak(u);
 }
