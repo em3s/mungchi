@@ -102,10 +102,14 @@ export function VocabQuiz({
     setShowResult(true);
   }
 
+  function normalizeSpelling(s: string) {
+    return s.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+  }
+
   function handleSpellingSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!answer.trim()) return;
-    const correct = answer.toLowerCase().trim() === current.entry.word.toLowerCase().trim();
+    const correct = normalizeSpelling(answer) === normalizeSpelling(current.entry.word);
     setIsCorrect(correct);
     if (correct) {
       setTotalCorrect((prev) => prev + 1);
