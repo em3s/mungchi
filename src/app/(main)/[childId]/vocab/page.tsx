@@ -79,6 +79,9 @@ export default function VocabPage({
   // 토글 (localStorage)
   const [toggles, setToggles] = useState<Record<string, [string, string, string]>>({});
 
+  // TTS 재생 중 여부
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
   // 롱프레스 메뉴
   const [menuEntryId, setMenuEntryId] = useState<string | null>(null);
 
@@ -204,6 +207,12 @@ export default function VocabPage({
 
   function cancelLongPress() {
     clearTimeout(longPressTimerRef.current);
+  }
+
+  async function handleSpeak(fn: () => Promise<void>) {
+    if (isSpeaking) return;
+    setIsSpeaking(true);
+    try { await fn(); } finally { setIsSpeaking(false); }
   }
 
   async function handleTitleSave() {
@@ -643,8 +652,9 @@ export default function VocabPage({
 
                             {/* 한국어 TTS */}
                             <button
-                              onClick={() => speakKorean(entry.meaning, 1, koVoiceName || undefined)}
-                              className="w-7 h-7 flex items-center justify-center text-orange-400 active:text-orange-600 shrink-0 text-xs font-bold"
+                              onClick={() => handleSpeak(() => speakKorean(entry.meaning, 1, koVoiceName || undefined))}
+                              disabled={isSpeaking}
+                              className="w-7 h-7 flex items-center justify-center text-orange-400 active:text-orange-600 shrink-0 text-xs font-bold disabled:opacity-30"
                               aria-label="한국어 발음"
                             >
                               한
@@ -652,8 +662,9 @@ export default function VocabPage({
 
                             {/* 영어 TTS 1회 */}
                             <button
-                              onClick={() => speakWord(entry.word, 1, enVoiceName || undefined)}
-                              className="w-7 h-7 flex items-center justify-center text-blue-400 active:text-blue-600 shrink-0 text-xs font-bold"
+                              onClick={() => handleSpeak(() => speakWord(entry.word, 1, enVoiceName || undefined))}
+                              disabled={isSpeaking}
+                              className="w-7 h-7 flex items-center justify-center text-blue-400 active:text-blue-600 shrink-0 text-xs font-bold disabled:opacity-30"
                               aria-label="영어 발음"
                             >
                               영
@@ -661,8 +672,9 @@ export default function VocabPage({
 
                             {/* 영어 TTS 3회 */}
                             <button
-                              onClick={() => speakWord(entry.word, 3, enVoiceName || undefined)}
-                              className="w-7 h-7 flex items-center justify-center text-blue-300 active:text-blue-500 shrink-0 text-xs font-bold"
+                              onClick={() => handleSpeak(() => speakWord(entry.word, 3, enVoiceName || undefined))}
+                              disabled={isSpeaking}
+                              className="w-7 h-7 flex items-center justify-center text-blue-300 active:text-blue-500 shrink-0 text-xs font-bold disabled:opacity-30"
                               aria-label="영어 발음 3회"
                             >
                               영<sub>3</sub>
