@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/useToast";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { useLongPress } from "@/hooks/useLongPress";
-import { speakWord } from "@/lib/tts";
+import { speakWord, speakKorean, getAvailableVoices } from "@/lib/tts";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
 type ViewState = "home" | "list" | "quiz" | "result";
@@ -69,6 +69,19 @@ export default function VocabPage({
   const [editMeaning, setEditMeaning] = useState("");
   const [repeatCount, setRepeatCount] = useState<1 | 3 | 5>(1);
   const editWordRef = useRef<HTMLInputElement>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // TTS 화자
+  const [enVoices, setEnVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [koVoices, setKoVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [enVoiceName, setEnVoiceName] = useState("");
+  const [koVoiceName, setKoVoiceName] = useState("");
+
+  // 토글 (localStorage)
+  const [toggles, setToggles] = useState<Record<string, [string, string, string]>>({});
+
+  // 롱프레스 메뉴
+  const [menuEntryId, setMenuEntryId] = useState<string | null>(null);
 
   // Vocab lists
   const [vocabLists, setVocabLists] = useState<
@@ -100,6 +113,23 @@ export default function VocabPage({
     loadDictionary();
     getVocabConfig().then(setConfig);
   }, [childId, vocabAllowed, loadLists]);
+
+  // TTS 화자 로드
+  useEffect(() => {
+    getAvailableVoices().then((voices) => {
+      setEnVoices(voices.filter((v) => v.lang.startsWith("en")));
+      setKoVoices(voices.filter((v) => v.lang.startsWith("ko")));
+      setEnVoiceName(localStorage.getItem("vocab_voice_en") ?? "");
+      setKoVoiceName(localStorage.getItem("vocab_voice_ko") ?? "");
+    });
+  }, []);
+
+  // 토글 로드 (리스트 변경 시)
+  useEffect(() => {
+    if (!selectedListId) return;
+    const saved = localStorage.getItem(`vocab_toggles_${selectedListId}`);
+    setToggles(saved ? (JSON.parse(saved) as Record<string, [string, string, string]>) : {});
+  }, [selectedListId]);
 
   // Load entries when selectedListId changes (list view only)
   useEffect(() => {
@@ -148,8 +178,33 @@ export default function VocabPage({
     setEntries([]);
     setListTitleState("");
     setShowAddForm(false);
+    setToggles({});
+    setMenuEntryId(null);
     setView("home");
     loadLists();
+  }
+
+  const TOGGLE_CYCLE = ["", "O", "△", "□", "✕"];
+
+  function cycleToggle(entryId: string, slot: 0 | 1 | 2) {
+    setToggles((prev) => {
+      const cur = prev[entryId]?.[slot] ?? "";
+      const idx = TOGGLE_CYCLE.indexOf(cur);
+      const next = TOGGLE_CYCLE[(idx + 1) % TOGGLE_CYCLE.length];
+      const entry: [string, string, string] = [...(prev[entryId] ?? ["", "", ""])] as [string, string, string];
+      entry[slot] = next;
+      const updated = { ...prev, [entryId]: entry };
+      if (selectedListId) localStorage.setItem(`vocab_toggles_${selectedListId}`, JSON.stringify(updated));
+      return updated;
+    });
+  }
+
+  function startLongPress(entryId: string) {
+    longPressTimerRef.current = setTimeout(() => setMenuEntryId(entryId), 800);
+  }
+
+  function cancelLongPress() {
+    clearTimeout(longPressTimerRef.current);
   }
 
   async function handleTitleSave() {
@@ -461,32 +516,55 @@ export default function VocabPage({
 
               {/* Word List */}
               <div className="mb-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-semibold text-gray-500 tracking-wider">
-                    단어 ({entries.length}){!isDailyList && <> · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span></>}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs font-semibold text-gray-500 tracking-wider">
+                      단어 ({entries.length}){!isDailyList && <> · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span></>}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {([1, 3, 5] as const).map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => setRepeatCount(n)}
+                          className={`text-xs px-2 py-1 rounded-lg font-semibold transition-colors ${
+                            repeatCount === n
+                              ? "bg-[var(--accent,#6c5ce7)] text-white"
+                              : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {n}회
+                        </button>
+                      ))}
+                      {!isDailyList && !showAddForm && (
+                        <button
+                          onClick={() => setShowAddForm(true)}
+                          className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)] ml-1"
+                        >
+                          + 추가
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {/* TTS 화자 선택 */}
                   <div className="flex items-center gap-1.5">
-                    {([1, 3, 5] as const).map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setRepeatCount(n)}
-                        className={`text-xs px-2 py-1 rounded-lg font-semibold transition-colors ${
-                          repeatCount === n
-                            ? "bg-[var(--accent,#6c5ce7)] text-white"
-                            : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        {n}회
-                      </button>
-                    ))}
-                    {!isDailyList && !showAddForm && (
-                      <button
-                        onClick={() => setShowAddForm(true)}
-                        className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)] ml-1"
-                      >
-                        + 추가
-                      </button>
-                    )}
+                    <span className="text-xs text-gray-400 shrink-0">🇺🇸</span>
+                    <select
+                      value={enVoiceName}
+                      onChange={(e) => { setEnVoiceName(e.target.value); localStorage.setItem("vocab_voice_en", e.target.value); }}
+                      className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 bg-white min-w-0"
+                    >
+                      <option value="">기본</option>
+                      {enVoices.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
+                    </select>
+                    <span className="text-xs text-gray-400 shrink-0">🇰🇷</span>
+                    <select
+                      value={koVoiceName}
+                      onChange={(e) => { setKoVoiceName(e.target.value); localStorage.setItem("vocab_voice_ko", e.target.value); }}
+                      className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 bg-white min-w-0"
+                    >
+                      <option value="">기본</option>
+                      {koVoices.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
+                    </select>
                   </div>
                 </div>
 
@@ -496,7 +574,7 @@ export default function VocabPage({
                   </div>
                 ) : (
                   <ul className="flex flex-col gap-2">
-                    {entries.map((entry) => {
+                    {entries.map((entry, index) => {
                       if (!isDailyList && editingEntryId === entry.id) {
                         return (
                           <li
@@ -539,57 +617,82 @@ export default function VocabPage({
                       return (
                         <li
                           key={entry.id}
-                          className="flex items-center gap-3 bg-white rounded-[14px] px-4 py-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-[18px] md:gap-4 md:rounded-2xl"
+                          className="bg-white rounded-[14px] px-3 py-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
                         >
-                          {!isDailyList && (
+                          <div className="flex items-center gap-1.5">
+                            {/* 번호 */}
+                            <span className="text-xs text-gray-300 w-5 text-right shrink-0">{index + 1}</span>
+
+                            {/* 단어+뜻 — long press target */}
+                            <div
+                              className="flex-1 min-w-0 py-0.5 select-none"
+                              onPointerDown={() => !isDailyList && startLongPress(entry.id)}
+                              onPointerUp={cancelLongPress}
+                              onPointerLeave={cancelLongPress}
+                              onTouchMove={cancelLongPress}
+                            >
+                              <div className="text-sm font-semibold text-gray-800 truncate">{entry.word}</div>
+                              <div className="text-xs text-gray-400 truncate mt-0.5">{entry.meaning}</div>
+                            </div>
+
+                            {/* 영어 TTS */}
                             <button
-                              onClick={async () => {
-                                const newVal = !entry.spelling;
-                                const ok = await toggleSpelling(childId, selectedListId!, entry.id, newVal);
-                                if (ok) {
-                                  setEntries((prev) =>
-                                    prev.map((e) =>
-                                      e.id === entry.id ? { ...e, spelling: newVal } : e,
-                                    ),
-                                  );
-                                }
-                              }}
-                              className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm md:w-[34px] md:h-[34px] md:text-base ${
-                                entry.spelling
-                                  ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
-                                  : "bg-white border-[var(--accent,#6c5ce7)]"
-                              }`}
+                              onClick={() => speakWord(entry.word, repeatCount, enVoiceName || undefined)}
+                              className="w-7 h-7 flex items-center justify-center text-blue-400 active:text-blue-600 shrink-0 text-base"
+                              aria-label="영어 발음"
                             >
-                              {entry.spelling ? "✓" : ""}
+                              🔊
                             </button>
-                          )}
-                          <button
-                            onClick={() => speakWord(entry.word, repeatCount)}
-                            className="text-gray-400 text-base active:text-[var(--accent,#6c5ce7)] transition-colors shrink-0"
-                            aria-label={`${entry.word} 발음 듣기`}
-                          >
-                            ▶
-                          </button>
-                          {isDailyList ? (
-                            <span className="flex-1 text-base md:text-lg">
-                              {entry.word}  <span className="text-gray-400">{entry.meaning}</span>
-                            </span>
-                          ) : (
-                            <span
-                              onClick={() => handleStartEdit(entry)}
-                              className="flex-1 text-base md:text-lg"
-                            >
-                              {entry.word}  <span className="text-gray-400">{entry.meaning}</span>
-                            </span>
-                          )}
-                          {!isDailyList && (
+
+                            {/* 한국어 TTS */}
                             <button
-                              onClick={() => handleRemoveWord(entry.id)}
-                              className="text-gray-400 text-sm px-1 active:text-red-500 transition-colors"
+                              onClick={() => speakKorean(entry.meaning, repeatCount, koVoiceName || undefined)}
+                              className="w-7 h-7 flex items-center justify-center text-orange-400 active:text-orange-600 shrink-0 text-base"
+                              aria-label="한국어 발음"
                             >
-                              ✕
+                              🗣️
                             </button>
-                          )}
+
+                            {/* 스펠링 체크 */}
+                            {!isDailyList && (
+                              <button
+                                onClick={async () => {
+                                  const newVal = !entry.spelling;
+                                  const ok = await toggleSpelling(childId, selectedListId!, entry.id, newVal);
+                                  if (ok) {
+                                    setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, spelling: newVal } : e));
+                                  }
+                                }}
+                                className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm ${
+                                  entry.spelling
+                                    ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
+                                    : "bg-white border-[var(--accent,#6c5ce7)]"
+                                }`}
+                              >
+                                {entry.spelling ? "✓" : ""}
+                              </button>
+                            )}
+
+                            {/* 3개 토글 */}
+                            {!isDailyList && ([0, 1, 2] as const).map((slot) => {
+                              const val = toggles[entry.id]?.[slot] ?? "";
+                              const styleMap: Record<string, string> = {
+                                "O": "text-green-600 bg-green-50 border-green-200",
+                                "△": "text-amber-500 bg-amber-50 border-amber-200",
+                                "□": "text-blue-500 bg-blue-50 border-blue-200",
+                                "✕": "text-red-400 bg-red-50 border-red-200",
+                              };
+                              return (
+                                <button
+                                  key={slot}
+                                  onClick={() => cycleToggle(entry.id, slot)}
+                                  className={`w-7 h-7 rounded-md border flex items-center justify-center text-xs font-bold shrink-0 transition-all ${styleMap[val] ?? "text-gray-200 bg-gray-50 border-gray-100"}`}
+                                >
+                                  {val || "·"}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </li>
                       );
                     })}
@@ -680,6 +783,50 @@ export default function VocabPage({
           >
             돌아가기
           </button>
+        </div>
+      )}
+
+      {/* 롱프레스 메뉴 */}
+      {menuEntryId && (
+        <div
+          className="fixed inset-0 z-50 flex items-end bg-black/20"
+          onClick={() => setMenuEntryId(null)}
+        >
+          <div
+            className="w-full bg-white rounded-t-2xl shadow-2xl p-4 pb-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {(() => {
+              const entry = entries.find((e) => e.id === menuEntryId);
+              if (!entry) return null;
+              return (
+                <>
+                  <div className="text-sm font-bold text-gray-700 mb-4 px-1">
+                    {entry.word}
+                    <span className="text-gray-400 font-normal ml-2">{entry.meaning}</span>
+                  </div>
+                  <button
+                    onClick={() => { handleStartEdit(entry); setMenuEntryId(null); }}
+                    className="w-full py-3.5 text-left px-4 rounded-xl active:bg-gray-50 text-gray-700 font-semibold text-sm"
+                  >
+                    ✏️ 수정
+                  </button>
+                  <button
+                    onClick={() => { handleRemoveWord(menuEntryId); setMenuEntryId(null); }}
+                    className="w-full py-3.5 text-left px-4 rounded-xl active:bg-red-50 text-red-500 font-semibold text-sm"
+                  >
+                    🗑 삭제
+                  </button>
+                  <button
+                    onClick={() => setMenuEntryId(null)}
+                    className="w-full py-3.5 text-left px-4 rounded-xl active:bg-gray-50 text-gray-400 text-sm"
+                  >
+                    취소
+                  </button>
+                </>
+              );
+            })()}
+          </div>
         </div>
       )}
 
