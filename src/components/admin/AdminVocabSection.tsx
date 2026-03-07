@@ -355,13 +355,9 @@ export function AdminVocabSection({ showToast }: Props) {
 
       {/* === 벌크 단어장 생성 === */}
       <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <input
-          type="text"
-          value={bulkVocabTitle}
-          onChange={(e) => setBulkVocabTitle(e.target.value)}
-          placeholder="제목"
-          className="w-full text-2xl font-black text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-200 mb-4"
-        />
+        {bulkVocabTitle && (
+          <div className="text-2xl font-black text-gray-800 mb-4">{bulkVocabTitle}</div>
+        )}
 
         {/* 대상 유저 */}
         <div className="mb-4">
