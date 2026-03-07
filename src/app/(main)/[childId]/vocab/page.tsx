@@ -51,6 +51,7 @@ export default function VocabPage({
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<ViewState>("home");
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [newListName, setNewListName] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [quizType, setQuizType] = useState<VocabQuizType>("basic");
   const [quizResult, setQuizResult] = useState<{
@@ -128,12 +129,14 @@ export default function VocabPage({
   }
 
   async function handleCreateNew() {
-    const result = await createList(childId, "새 단어장");
+    const name = newListName.trim();
+    if (!name) return;
+    const result = await createList(childId, name);
     if (result.ok && result.listId) {
-      setListTitleState("새 단어장");
+      setListTitleState(name);
       setSelectedListId(result.listId);
+      setNewListName("");
       setLoading(true);
-      setShowAddForm(true);
       setView("list");
     } else {
       showToast("단어장 생성에 실패했어요");
@@ -319,12 +322,23 @@ export default function VocabPage({
           </div>
 
           {/* New vocab list */}
-          <button
-            onClick={handleCreateNew}
-            className="w-full bg-[var(--accent,#6c5ce7)] text-white py-3 rounded-xl font-bold text-sm active:opacity-80 mb-6"
-          >
-            + 새 단어장
-          </button>
+          <div className="flex items-center gap-2 mb-6">
+            <input
+              type="text"
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleCreateNew(); }}
+              placeholder="새 단어장 이름"
+              className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-700"
+            />
+            <button
+              onClick={handleCreateNew}
+              disabled={!newListName.trim()}
+              className="bg-[var(--accent,#6c5ce7)] text-white px-4 py-3 rounded-xl font-bold text-sm whitespace-nowrap active:opacity-80 disabled:opacity-40"
+            >
+              + 새 단어장
+            </button>
+          </div>
 
           {/* Existing vocab lists */}
           {vocabLists.length === 0 ? (
@@ -412,18 +426,17 @@ export default function VocabPage({
       {view === "list" && (
         <>
           {/* Title */}
-          <div className="mb-5">
+          <div className="mb-4">
             {isDailyList ? (
-              <div className="text-3xl font-black text-gray-800 px-1">🌟 오늘의 단어장</div>
+              <div className="text-lg font-bold text-gray-800 px-1">🌟 오늘의 단어장</div>
             ) : (
               <input
                 type="text"
                 value={listTitle}
                 onChange={(e) => setListTitleState(e.target.value)}
                 onBlur={handleTitleSave}
-                placeholder="제목"
-                autoFocus
-                className="w-full text-3xl font-black text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-200 px-1"
+                placeholder="단어장 이름"
+                className="w-full text-lg font-bold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 px-1"
               />
             )}
           </div>
