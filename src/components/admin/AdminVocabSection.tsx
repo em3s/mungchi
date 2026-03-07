@@ -355,11 +355,16 @@ export function AdminVocabSection({ showToast }: Props) {
 
       {/* === 벌크 단어장 생성 === */}
       <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h2 className="text-lg font-bold mb-4">📖 벌크 단어장 생성</h2>
+        <input
+          type="text"
+          value={bulkVocabTitle}
+          onChange={(e) => setBulkVocabTitle(e.target.value)}
+          placeholder="제목"
+          className="w-full text-2xl font-black text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-200 mb-4"
+        />
 
         {/* 대상 유저 */}
         <div className="mb-4">
-          <label className="text-sm font-semibold text-gray-600 block mb-2">대상 아이</label>
           <div className="flex gap-3">
             {USERS.map((child) => (
               <button
@@ -382,18 +387,6 @@ export function AdminVocabSection({ showToast }: Props) {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* 단어장 이름 */}
-        <div className="mb-4">
-          <label className="text-sm font-semibold text-gray-600 block mb-1">단어장 이름</label>
-          <input
-            type="text"
-            value={bulkVocabTitle}
-            onChange={(e) => setBulkVocabTitle(e.target.value)}
-            placeholder="예: 동물 단어, 3월 1주차"
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-          />
         </div>
 
         {/* 형식 가이드 — 클릭하면 복사 */}
@@ -485,8 +478,22 @@ export function AdminVocabSection({ showToast }: Props) {
             try {
               let totalCreated = 0;
               for (const childId of bulkVocabChildIds) {
-                const { ok, listId } = await createList(childId, listName);
-                if (!ok || !listId) continue;
+                // 기존 단어장 이름 매칭 → 있으면 기존에 추가, 없으면 신규 생성
+                const { data: existing } = await supabase
+                  .from("vocab_list_meta")
+                  .select("id")
+                  .eq("user_id", childId)
+                  .eq("name", listName)
+                  .maybeSingle();
+
+                let listId: string;
+                if (existing?.id) {
+                  listId = existing.id;
+                } else {
+                  const { ok, listId: newId } = await createList(childId, listName);
+                  if (!ok || !newId) continue;
+                  listId = newId;
+                }
 
                 const rows = words.map((w) => ({
                   user_id: childId,
