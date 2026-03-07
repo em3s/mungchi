@@ -67,7 +67,7 @@ export default function VocabPage({
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editWord, setEditWord] = useState("");
   const [editMeaning, setEditMeaning] = useState("");
-  const [repeatCount, setRepeatCount] = useState<1 | 3 | 5>(1);
+  const [playMode, setPlayMode] = useState<"한" | "영" | "영₃">("영");
   const editWordRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -522,17 +522,17 @@ export default function VocabPage({
                       단어 ({entries.length}){!isDailyList && <> · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span></>}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      {([1, 3, 5] as const).map((n) => (
+                      {(["한", "영", "영₃"] as const).map((mode) => (
                         <button
-                          key={n}
-                          onClick={() => setRepeatCount(n)}
+                          key={mode}
+                          onClick={() => setPlayMode(mode)}
                           className={`text-xs px-2 py-1 rounded-lg font-semibold transition-colors ${
-                            repeatCount === n
+                            playMode === mode
                               ? "bg-[var(--accent,#6c5ce7)] text-white"
                               : "bg-gray-100 text-gray-400"
                           }`}
                         >
-                          {n}회
+                          {mode === "영₃" ? <span>영<sub>3</sub></span> : mode}
                         </button>
                       ))}
                       {!isDailyList && !showAddForm && (
@@ -623,37 +623,7 @@ export default function VocabPage({
                             {/* 번호 */}
                             <span className="text-xs text-gray-300 w-5 text-right shrink-0">{index + 1}</span>
 
-                            {/* 단어+뜻 — long press target */}
-                            <div
-                              className="flex-1 min-w-0 py-0.5 select-none"
-                              onPointerDown={() => !isDailyList && startLongPress(entry.id)}
-                              onPointerUp={cancelLongPress}
-                              onPointerLeave={cancelLongPress}
-                              onTouchMove={cancelLongPress}
-                            >
-                              <div className="text-sm font-semibold text-gray-800 truncate">{entry.word}</div>
-                              <div className="text-xs text-gray-400 truncate mt-0.5">{entry.meaning}</div>
-                            </div>
-
-                            {/* 영어 TTS */}
-                            <button
-                              onClick={() => speakWord(entry.word, repeatCount, enVoiceName || undefined)}
-                              className="w-7 h-7 flex items-center justify-center text-blue-400 active:text-blue-600 shrink-0 text-base"
-                              aria-label="영어 발음"
-                            >
-                              🔊
-                            </button>
-
-                            {/* 한국어 TTS */}
-                            <button
-                              onClick={() => speakKorean(entry.meaning, repeatCount, koVoiceName || undefined)}
-                              className="w-7 h-7 flex items-center justify-center text-orange-400 active:text-orange-600 shrink-0 text-base"
-                              aria-label="한국어 발음"
-                            >
-                              🗣️
-                            </button>
-
-                            {/* 스펠링 체크 */}
+                            {/* 스펠링 체크 — 번호 바로 옆 */}
                             {!isDailyList && (
                               <button
                                 onClick={async () => {
@@ -672,6 +642,36 @@ export default function VocabPage({
                                 {entry.spelling ? "✓" : ""}
                               </button>
                             )}
+
+                            {/* 단어+뜻 — long press target */}
+                            <div
+                              className="flex-1 min-w-0 py-0.5 select-none"
+                              onPointerDown={() => !isDailyList && startLongPress(entry.id)}
+                              onPointerUp={cancelLongPress}
+                              onPointerLeave={cancelLongPress}
+                              onTouchMove={cancelLongPress}
+                            >
+                              <div className="text-sm font-semibold text-gray-800 truncate">{entry.word}</div>
+                              <div className="text-xs text-gray-400 truncate mt-0.5">{entry.meaning}</div>
+                            </div>
+
+                            {/* 영어 TTS */}
+                            <button
+                              onClick={() => speakWord(entry.word, playMode === "영₃" ? 3 : 1, enVoiceName || undefined)}
+                              className="w-7 h-7 flex items-center justify-center text-blue-400 active:text-blue-600 shrink-0 text-xs font-bold"
+                              aria-label="영어 발음"
+                            >
+                              영
+                            </button>
+
+                            {/* 한국어 TTS */}
+                            <button
+                              onClick={() => speakKorean(entry.meaning, 1, koVoiceName || undefined)}
+                              className="w-7 h-7 flex items-center justify-center text-orange-400 active:text-orange-600 shrink-0 text-xs font-bold"
+                              aria-label="한국어 발음"
+                            >
+                              한
+                            </button>
 
                             {/* 3개 토글 */}
                             {!isDailyList && ([0, 1, 2] as const).map((slot) => {
