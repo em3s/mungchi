@@ -67,7 +67,6 @@ export default function VocabPage({
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editWord, setEditWord] = useState("");
   const [editMeaning, setEditMeaning] = useState("");
-  const [playMode, setPlayMode] = useState<"한" | "영" | "영₃">("영");
   const editWordRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -522,19 +521,6 @@ export default function VocabPage({
                       단어 ({entries.length}){!isDailyList && <> · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span></>}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      {(["한", "영", "영₃"] as const).map((mode) => (
-                        <button
-                          key={mode}
-                          onClick={() => setPlayMode(mode)}
-                          className={`text-xs px-2 py-1 rounded-lg font-semibold transition-colors ${
-                            playMode === mode
-                              ? "bg-[var(--accent,#6c5ce7)] text-white"
-                              : "bg-gray-100 text-gray-400"
-                          }`}
-                        >
-                          {mode === "영₃" ? <span>영<sub>3</sub></span> : mode}
-                        </button>
-                      ))}
                       {!isDailyList && !showAddForm && (
                         <button
                           onClick={() => setShowAddForm(true)}
@@ -655,15 +641,6 @@ export default function VocabPage({
                               <div className="text-xs text-gray-400 truncate mt-0.5">{entry.meaning}</div>
                             </div>
 
-                            {/* 영어 TTS */}
-                            <button
-                              onClick={() => speakWord(entry.word, playMode === "영₃" ? 3 : 1, enVoiceName || undefined)}
-                              className="w-7 h-7 flex items-center justify-center text-blue-400 active:text-blue-600 shrink-0 text-xs font-bold"
-                              aria-label="영어 발음"
-                            >
-                              영
-                            </button>
-
                             {/* 한국어 TTS */}
                             <button
                               onClick={() => speakKorean(entry.meaning, 1, koVoiceName || undefined)}
@@ -671,6 +648,24 @@ export default function VocabPage({
                               aria-label="한국어 발음"
                             >
                               한
+                            </button>
+
+                            {/* 영어 TTS 1회 */}
+                            <button
+                              onClick={() => speakWord(entry.word, 1, enVoiceName || undefined)}
+                              className="w-7 h-7 flex items-center justify-center text-blue-400 active:text-blue-600 shrink-0 text-xs font-bold"
+                              aria-label="영어 발음"
+                            >
+                              영
+                            </button>
+
+                            {/* 영어 TTS 3회 */}
+                            <button
+                              onClick={() => speakWord(entry.word, 3, enVoiceName || undefined)}
+                              className="w-7 h-7 flex items-center justify-center text-blue-300 active:text-blue-500 shrink-0 text-xs font-bold"
+                              aria-label="영어 발음 3회"
+                            >
+                              영<sub>3</sub>
                             </button>
 
                             {/* 3개 토글 */}
