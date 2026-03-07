@@ -407,8 +407,18 @@ export function AdminVocabSection({ showToast }: Props) {
 
         <textarea
           value={bulkVocabText}
-          onChange={(e) => setBulkVocabText(e.target.value)}
-          placeholder={"apple | 사과\nbook | 책\ncat | 고양이"}
+          onChange={(e) => {
+            const text = e.target.value;
+            const firstLine = text.split("\n")[0].trim();
+            const titleMatch = firstLine.match(/^\[(.+)\]$/);
+            if (titleMatch) {
+              setBulkVocabTitle(titleMatch[1]);
+              setBulkVocabText(text.split("\n").slice(1).join("\n").trimStart());
+            } else {
+              setBulkVocabText(text);
+            }
+          }}
+          placeholder={"[단어장 제목]\napple | 사과\nbook | 책"}
           rows={5}
           className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none mb-2"
         />
