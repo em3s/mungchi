@@ -76,8 +76,8 @@ export default function VocabPage({
   const [enVoiceName, setEnVoiceName] = useState("");
   const [koVoiceName, setKoVoiceName] = useState("");
 
-  // 토글 (localStorage)
-  const [toggles, setToggles] = useState<Record<string, [string, string, string]>>({});
+  // 토글 (localStorage) — 2개, 빈값/체크
+  const [toggles, setToggles] = useState<Record<string, [string, string]>>({});
 
   // TTS 재생 중 여부
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -130,7 +130,7 @@ export default function VocabPage({
   useEffect(() => {
     if (!selectedListId) return;
     const saved = localStorage.getItem(`vocab_toggles_${selectedListId}`);
-    setToggles(saved ? (JSON.parse(saved) as Record<string, [string, string, string]>) : {});
+    setToggles(saved ? (JSON.parse(saved) as Record<string, [string, string]>) : {});
   }, [selectedListId]);
 
   // Load entries when selectedListId changes (list view only)
@@ -186,14 +186,11 @@ export default function VocabPage({
     loadLists();
   }
 
-  const TOGGLE_CYCLE = ["", "O", "△", "□", "✕"];
-
-  function cycleToggle(entryId: string, slot: 0 | 1 | 2) {
+  function cycleToggle(entryId: string, slot: 0 | 1) {
     setToggles((prev) => {
       const cur = prev[entryId]?.[slot] ?? "";
-      const idx = TOGGLE_CYCLE.indexOf(cur);
-      const next = TOGGLE_CYCLE[(idx + 1) % TOGGLE_CYCLE.length];
-      const entry: [string, string, string] = [...(prev[entryId] ?? ["", "", ""])] as [string, string, string];
+      const next = cur === "✓" ? "" : "✓";
+      const entry: [string, string] = [...(prev[entryId] ?? ["", ""])] as [string, string];
       entry[slot] = next;
       const updated = { ...prev, [entryId]: entry };
       if (selectedListId) localStorage.setItem(`vocab_toggles_${selectedListId}`, JSON.stringify(updated));
@@ -540,27 +537,6 @@ export default function VocabPage({
                       )}
                     </div>
                   </div>
-                  {/* TTS 화자 선택 */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-gray-400 shrink-0">🇺🇸</span>
-                    <select
-                      value={enVoiceName}
-                      onChange={(e) => { setEnVoiceName(e.target.value); localStorage.setItem("vocab_voice_en", e.target.value); }}
-                      className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 bg-white min-w-0"
-                    >
-                      <option value="">기본</option>
-                      {enVoices.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
-                    </select>
-                    <span className="text-xs text-gray-400 shrink-0">🇰🇷</span>
-                    <select
-                      value={koVoiceName}
-                      onChange={(e) => { setKoVoiceName(e.target.value); localStorage.setItem("vocab_voice_ko", e.target.value); }}
-                      className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 bg-white min-w-0"
-                    >
-                      <option value="">기본</option>
-                      {koVoices.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
-                    </select>
-                  </div>
                 </div>
 
                 {entries.length === 0 && !showAddForm ? (
@@ -680,20 +656,18 @@ export default function VocabPage({
                               영<sub>3</sub>
                             </button>
 
-                            {/* 3개 토글 */}
-                            {!isDailyList && ([0, 1, 2] as const).map((slot) => {
+                            {/* 2개 토글 */}
+                            {!isDailyList && ([0, 1] as const).map((slot) => {
                               const val = toggles[entry.id]?.[slot] ?? "";
-                              const styleMap: Record<string, string> = {
-                                "O": "text-green-600 bg-green-50 border-green-200",
-                                "△": "text-amber-500 bg-amber-50 border-amber-200",
-                                "□": "text-blue-500 bg-blue-50 border-blue-200",
-                                "✕": "text-red-400 bg-red-50 border-red-200",
-                              };
                               return (
                                 <button
                                   key={slot}
                                   onClick={() => cycleToggle(entry.id, slot)}
-                                  className={`w-7 h-7 rounded-md border flex items-center justify-center text-xs font-bold shrink-0 transition-all ${styleMap[val] ?? "text-gray-200 bg-gray-50 border-gray-100"}`}
+                                  className={`w-7 h-7 rounded-md border flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
+                                    val === "✓"
+                                      ? "text-green-600 bg-green-50 border-green-200"
+                                      : "text-gray-200 bg-gray-50 border-gray-100"
+                                  }`}
                                 >
                                   {val || "·"}
                                 </button>
@@ -843,6 +817,7 @@ export default function VocabPage({
         <VocabSettings
           onClose={() => setShowSettings(false)}
           onToast={showToast}
+          onVoiceChange={(en, ko) => { setEnVoiceName(en); setKoVoiceName(ko); }}
         />
       )}
     </div>
