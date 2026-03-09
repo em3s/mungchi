@@ -515,11 +515,10 @@ export default function DashboardPage({
                       isSelected ? prev.filter((p) => p !== preset) : [...prev, preset]
                     )
                   }
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${chipColor(preset)} ${
-                    isSelected ? "ring-2 ring-offset-1 ring-gray-400" : "opacity-60"
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-opacity ${chipColor(preset)} ${
+                    isSelected ? "opacity-100" : "opacity-30"
                   }`}
                 >
-                  {isSelected && <span className="mr-1">✓</span>}
                   {preset}
                 </button>
               );
