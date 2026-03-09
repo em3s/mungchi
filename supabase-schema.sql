@@ -36,7 +36,6 @@ CREATE TRIGGER tasks_updated_at
 -- 할일 프리셋 (유저별 빠른 추가 chips)
 CREATE TABLE task_presets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL,
   title TEXT NOT NULL,
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now()

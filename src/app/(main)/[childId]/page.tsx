@@ -138,7 +138,7 @@ export default function DashboardPage({
   }, [loadTasks]);
 
   useEffect(() => {
-    getPresets(childId).then((ps) => setPresets(ps.map((p) => p.title)));
+    getPresets().then((ps) => setPresets(ps.map((p) => p.title)));
   }, [childId]);
 
   useEffect(() => {

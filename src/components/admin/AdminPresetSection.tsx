@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { USERS } from "@/lib/constants";
 import { getPresets, addPreset, deletePreset, type TaskPreset } from "@/lib/presets";
 
 interface Props {
@@ -9,16 +8,15 @@ interface Props {
 }
 
 export function AdminPresetSection({ showToast }: Props) {
-  const [selectedUserId, setSelectedUserId] = useState(USERS[0].id);
   const [presets, setPresets] = useState<TaskPreset[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const loadPresets = useCallback(async () => {
-    const data = await getPresets(selectedUserId);
+    const data = await getPresets();
     setPresets(data);
-  }, [selectedUserId]);
+  }, []);
 
   useEffect(() => {
     loadPresets();
@@ -28,7 +26,7 @@ export function AdminPresetSection({ showToast }: Props) {
     const title = newTitle.trim();
     if (!title) return;
     setLoading(true);
-    const ok = await addPreset(selectedUserId, title);
+    const ok = await addPreset(title);
     setLoading(false);
     if (ok) {
       showToast(`"${title}" 프리셋 추가!`);
@@ -53,23 +51,6 @@ export function AdminPresetSection({ showToast }: Props) {
   return (
     <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
       <h2 className="text-lg font-bold mb-4">⚡ 할일 프리셋</h2>
-
-      {/* 유저 선택 */}
-      <div className="flex gap-2 mb-4 flex-wrap">
-        {USERS.map((u) => (
-          <button
-            key={u.id}
-            onClick={() => setSelectedUserId(u.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
-              selectedUserId === u.id
-                ? "bg-[#6c5ce7] text-white shadow-md"
-                : "bg-gray-100 text-gray-500"
-            }`}
-          >
-            {u.emoji} {u.name}
-          </button>
-        ))}
-      </div>
 
       {/* 현재 프리셋 목록 */}
       <div className="mb-4">
