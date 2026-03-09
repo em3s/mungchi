@@ -4,12 +4,10 @@ import { useState } from "react";
 
 interface TaskFormProps {
   onSubmit: (title: string) => void;
-  onSubmitMultiple?: (titles: string[]) => void;
   onCancel: () => void;
   presets?: string[];
 }
 
-// 텍스트 해시 기반 고정 chip 색상
 const CHIP_COLORS = [
   "bg-violet-100 text-violet-700 active:bg-violet-200",
   "bg-blue-100 text-blue-700 active:bg-blue-200",
@@ -23,7 +21,7 @@ const CHIP_COLORS = [
   "bg-indigo-100 text-indigo-700 active:bg-indigo-200",
 ];
 
-function chipColor(text: string): string {
+export function chipColor(text: string): string {
   let hash = 0;
   for (let i = 0; i < text.length; i++) {
     hash = text.charCodeAt(i) + ((hash << 5) - hash);
@@ -31,10 +29,8 @@ function chipColor(text: string): string {
   return CHIP_COLORS[Math.abs(hash) % CHIP_COLORS.length];
 }
 
-export function TaskForm({ onSubmit, onSubmitMultiple, onCancel, presets }: TaskFormProps) {
+export function TaskForm({ onSubmit, onCancel, presets }: TaskFormProps) {
   const [title, setTitle] = useState("");
-  const [multiMode, setMultiMode] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,82 +40,22 @@ export function TaskForm({ onSubmit, onSubmitMultiple, onCancel, presets }: Task
     setTitle("");
   }
 
-  function toggleSelect(preset: string) {
-    setSelected((prev) =>
-      prev.includes(preset) ? prev.filter((p) => p !== preset) : [...prev, preset]
-    );
-  }
-
-  function handleMultiSubmit() {
-    if (selected.length === 0) return;
-    onSubmitMultiple?.(selected);
-    setSelected([]);
-    setMultiMode(false);
-  }
-
-  function exitMultiMode() {
-    setMultiMode(false);
-    setSelected([]);
-  }
-
   return (
     <div className="bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-4">
-      {/* 프리셋 chips */}
+      {/* 프리셋 chips — 클릭 시 즉시 1개 추가 */}
       {presets && presets.length > 0 && (
-        <>
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1 scrollbar-hide">
-            {presets.map((preset) => {
-              const base = chipColor(preset);
-              const isSelected = selected.includes(preset);
-              return (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => multiMode ? toggleSelect(preset) : onSubmit(preset)}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                    multiMode
-                      ? isSelected
-                        ? "ring-2 ring-offset-1 ring-gray-400 scale-95 " + base
-                        : base + " opacity-60"
-                      : base
-                  }`}
-                >
-                  {multiMode && isSelected && <span className="mr-1">✓</span>}
-                  {preset}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* 멀티 모드 액션 */}
-          {multiMode ? (
-            <div className="flex gap-2 mb-2">
-              <button
-                type="button"
-                onClick={handleMultiSubmit}
-                disabled={selected.length === 0}
-                className="flex-1 py-1.5 rounded-xl text-sm font-semibold text-white bg-[var(--accent,#6c5ce7)] disabled:opacity-40 active:opacity-80"
-              >
-                {selected.length > 0 ? `${selected.length}개 추가` : "선택하세요"}
-              </button>
-              <button
-                type="button"
-                onClick={exitMultiMode}
-                className="px-4 py-1.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 active:bg-gray-200"
-              >
-                취소
-              </button>
-            </div>
-          ) : (
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1 scrollbar-hide">
+          {presets.map((preset) => (
             <button
+              key={preset}
               type="button"
-              onClick={() => setMultiMode(true)}
-              className="w-full mb-2 py-1.5 rounded-xl text-xs font-semibold text-gray-400 bg-gray-50 active:bg-gray-100"
+              onClick={() => onSubmit(preset)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${chipColor(preset)}`}
             >
-              한번에 추가
+              {preset}
             </button>
-          )}
-        </>
+          ))}
+        </div>
       )}
 
       {/* 입력 폼 */}

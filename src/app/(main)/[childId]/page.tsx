@@ -27,6 +27,7 @@ import { useFeatureFlags } from "@/hooks/useFeatureGuard";
 import { isFeatureEnabled } from "@/lib/features";
 import { addTransaction } from "@/lib/coins";
 import { getPresets } from "@/lib/presets";
+import { chipColor } from "@/components/TaskForm";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { TimelineBar } from "@/components/TimelineBar";
 
@@ -45,6 +46,8 @@ export default function DashboardPage({
   const [showConfetti, setShowConfetti] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showMultiForm, setShowMultiForm] = useState(false);
+  const [multiSelected, setMultiSelected] = useState<string[]>([]);
   const [confirmUntoggle, setConfirmUntoggle] = useState<Task | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
   const [presets, setPresets] = useState<string[]>([]);
@@ -479,20 +482,74 @@ export default function DashboardPage({
         <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider md:text-sm">
           {activeLabel} — 할 일 ({todoTasks.length})
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)] active:opacity-80"
-        >
-          + 추가
-        </button>
+        <div className="flex gap-2">
+          {presets.length > 0 && (
+            <button
+              onClick={() => { setShowMultiForm(true); setShowAddForm(false); setMultiSelected([]); }}
+              className="text-sm font-semibold px-3 py-1 rounded-xl text-[var(--accent,#6c5ce7)] bg-[var(--accent,#6c5ce7)]/10 active:opacity-80"
+            >
+              + 한번에
+            </button>
+          )}
+          <button
+            onClick={() => { setShowAddForm(true); setShowMultiForm(false); }}
+            className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)] active:opacity-80"
+          >
+            + 추가
+          </button>
+        </div>
       </div>
+
+      {/* 한번에 추가 — 프리셋 멀티 셀렉 */}
+      {showMultiForm && presets.length > 0 && (
+        <div className="mb-3 bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="flex flex-wrap gap-2 mb-3">
+            {presets.map((preset) => {
+              const isSelected = multiSelected.includes(preset);
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() =>
+                    setMultiSelected((prev) =>
+                      isSelected ? prev.filter((p) => p !== preset) : [...prev, preset]
+                    )
+                  }
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${chipColor(preset)} ${
+                    isSelected ? "ring-2 ring-offset-1 ring-gray-400" : "opacity-60"
+                  }`}
+                >
+                  {isSelected && <span className="mr-1">✓</span>}
+                  {preset}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (multiSelected.length > 0) handleAddMultipleTasks(multiSelected);
+              }}
+              disabled={multiSelected.length === 0}
+              className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-[var(--accent,#6c5ce7)] disabled:opacity-40 active:opacity-80"
+            >
+              {multiSelected.length > 0 ? `${multiSelected.length}개 추가` : "선택하세요"}
+            </button>
+            <button
+              onClick={() => { setShowMultiForm(false); setMultiSelected([]); }}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 active:bg-gray-200"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add Form */}
       {showAddForm && (
         <div className="mb-3">
           <TaskForm
             onSubmit={handleAddTask}
-            onSubmitMultiple={handleAddMultipleTasks}
             onCancel={() => setShowAddForm(false)}
             presets={presets}
           />
