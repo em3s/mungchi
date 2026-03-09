@@ -26,6 +26,7 @@ import { useUser } from "@/hooks/useUser";
 import { useFeatureFlags } from "@/hooks/useFeatureGuard";
 import { isFeatureEnabled } from "@/lib/features";
 import { addTransaction } from "@/lib/coins";
+import { getPresets } from "@/lib/presets";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { TimelineBar } from "@/components/TimelineBar";
 
@@ -46,6 +47,7 @@ export default function DashboardPage({
   const [showAddForm, setShowAddForm] = useState(false);
   const [confirmUntoggle, setConfirmUntoggle] = useState<Task | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
+  const [presets, setPresets] = useState<string[]>([]);
   const prevRateRef = useRef<number | null>(null);
   const cheerRef = useRef({ rate: -1, message: "" });
   const bonusGivenRef = useRef(false);
@@ -134,6 +136,10 @@ export default function DashboardPage({
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    getPresets(childId).then((ps) => setPresets(ps.map((p) => p.title)));
+  }, [childId]);
 
   useEffect(() => {
     loadMonth();
@@ -470,6 +476,7 @@ export default function DashboardPage({
           <TaskForm
             onSubmit={handleAddTask}
             onCancel={() => setShowAddForm(false)}
+            presets={presets}
           />
         </div>
       )}
