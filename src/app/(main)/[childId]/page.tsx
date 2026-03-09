@@ -320,6 +320,23 @@ export default function DashboardPage({
     showToast("할일 추가 완료!");
   }
 
+  // 할일 여러 개 한번에 추가
+  async function handleAddMultipleTasks(titles: string[]) {
+    const targetDate = selectedDate || today;
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert(titles.map((title) => ({ user_id: childId, title, date: targetDate, priority: 0 })))
+      .select();
+
+    if (error || !data) { showToast("추가 실패"); return; }
+
+    if (selectedDate && dayTasks) setDayTasks([...dayTasks, ...data]);
+    if (!selectedDate || targetDate === today) setTasks((prev) => [...prev, ...data]);
+    loadMonth();
+    setShowAddForm(false);
+    showToast(`${data.length}개 할일 추가 완료!`);
+  }
+
   // 할일 수정
   async function handleEdit(task: Task, newTitle: string) {
     const { error } = await supabase.from("tasks").update({ title: newTitle }).eq("id", task.id);
@@ -475,6 +492,7 @@ export default function DashboardPage({
         <div className="mb-3">
           <TaskForm
             onSubmit={handleAddTask}
+            onSubmitMultiple={handleAddMultipleTasks}
             onCancel={() => setShowAddForm(false)}
             presets={presets}
           />
