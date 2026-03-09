@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/useToast";
 import { AdminFeatureFlags } from "@/components/admin/AdminFeatureFlags";
 import { AdminCoinSection } from "@/components/admin/AdminCoinSection";
 import { AdminVocabSection } from "@/components/admin/AdminVocabSection";
-import { AdminTaskSection } from "@/components/admin/AdminTaskSection";
 import { AdminPresetSection } from "@/components/admin/AdminPresetSection";
 
 const ADMIN_SESSION_KEY = "mungchi_admin";
@@ -78,7 +77,6 @@ export default function AdminPage() {
       <AdminCoinSection showToast={showToast} />
       <AdminVocabSection showToast={showToast} />
       <AdminPresetSection showToast={showToast} />
-      <AdminTaskSection showToast={showToast} />
 
       <SupervisorFAB />
       <Toast message={message} />
