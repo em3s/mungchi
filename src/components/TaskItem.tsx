@@ -1,41 +1,23 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { Task } from "@/lib/types";
 
 interface TaskItemProps {
   task: Task;
   onToggle?: (task: Task) => void;
-  onEdit?: (task: Task, newTitle: string) => void;
   onDelete?: (task: Task) => void;
   checkOnly?: boolean;
 }
 
-export function TaskItem({ task, onToggle, onEdit, onDelete, checkOnly }: TaskItemProps) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(task.title);
+export function TaskItem({ task, onToggle, onDelete, checkOnly }: TaskItemProps) {
   const [popping, setPopping] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleToggle = useCallback(() => {
     if (!onToggle) return;
     setPopping(true);
     onToggle(task);
   }, [onToggle, task]);
-
-  useEffect(() => {
-    if (editing) inputRef.current?.focus();
-  }, [editing]);
-
-  function commit() {
-    const trimmed = value.trim();
-    if (trimmed && trimmed !== task.title && onEdit) {
-      onEdit(task, trimmed);
-    } else {
-      setValue(task.title);
-    }
-    setEditing(false);
-  }
 
   return (
     <li
@@ -58,32 +40,14 @@ export function TaskItem({ task, onToggle, onEdit, onDelete, checkOnly }: TaskIt
           {task.completed ? "✓" : ""}
         </button>
       )}
-      {editing ? (
-        <input
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit();
-          }}
-          className="flex-1 text-base md:text-lg bg-transparent border-b-2 border-[var(--accent,#6c5ce7)] outline-none py-0"
-        />
-      ) : (
-        <span
-          onClick={() => {
-            if (!onEdit) return;
-            setValue(task.title);
-            setEditing(true);
-          }}
-          className={`flex-1 text-base md:text-lg ${
-            task.completed && !checkOnly ? "line-through" : ""
-          }`}
-        >
-          {task.title}
-        </span>
-      )}
-      {onDelete && !editing && (
+      <span
+        className={`flex-1 text-base md:text-lg ${
+          task.completed && !checkOnly ? "line-through" : ""
+        }`}
+      >
+        {task.title}
+      </span>
+      {onDelete && (
         <button
           onClick={() => onDelete(task)}
           className="text-gray-400 text-sm px-1 active:text-red-500 transition-colors"

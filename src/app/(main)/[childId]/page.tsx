@@ -342,24 +342,6 @@ export default function DashboardPage({
   }
 
   // 할일 수정
-  async function handleEdit(task: Task, newTitle: string) {
-    const { error } = await supabase.from("tasks").update({ title: newTitle }).eq("id", task.id);
-
-    if (error) {
-      showToast("수정 실패");
-      return;
-    }
-
-    const updateList = (list: Task[]) =>
-      list.map((t) => (t.id === task.id ? { ...t, title: newTitle } : t));
-
-    if (selectedDate && dayTasks) {
-      setDayTasks(updateList(dayTasks));
-    } else {
-      setTasks(updateList(tasks));
-    }
-  }
-
   // 할일 삭제 (확인 후)
   function handleDelete(task: Task) {
     setConfirmDelete(task);
@@ -578,7 +560,6 @@ export default function DashboardPage({
               key={t.id}
               task={t}
               onToggle={handleToggle}
-              onEdit={handleEdit}
               onDelete={handleDelete}
             />
           ))}
