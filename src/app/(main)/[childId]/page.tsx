@@ -336,7 +336,8 @@ export default function DashboardPage({
     if (selectedDate && dayTasks) setDayTasks([...dayTasks, ...data]);
     if (!selectedDate || targetDate === today) setTasks((prev) => [...prev, ...data]);
     loadMonth();
-    setShowAddForm(false);
+    setShowMultiForm(false);
+    setMultiSelected([]);
     showToast(`${data.length}개 할일 추가 완료!`);
   }
 
@@ -550,7 +551,6 @@ export default function DashboardPage({
           <TaskForm
             onSubmit={handleAddTask}
             onCancel={() => setShowAddForm(false)}
-            presets={presets}
           />
         </div>
       )}
