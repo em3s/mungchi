@@ -1,5 +1,20 @@
 // 영어/한국어 TTS — 화자 선택 지원
 
+// 기호만 구분자로 처리, 공백은 구문의 일부로 유지
+// 단어 내부 하이픈(well-known)은 보호, 기호·구두점만 쉬어 읽기
+const ALPHA_KO = "[a-zA-Z\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]";
+const INTRA_HYPHEN_RE = new RegExp(`(${ALPHA_KO})-(?=${ALPHA_KO})`, "g");
+// 영문자·한글·공백·\x01(하이픈 자리표) 이외 문자가 1개 이상이면 구분자
+const SYMBOL_SEP_RE = /[^a-zA-Z\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\s\x01]+/g;
+
+function splitForTTS(text: string): string[] {
+  return text
+    .replace(INTRA_HYPHEN_RE, "$1\x01") // 단어 내부 하이픈 보호
+    .split(SYMBOL_SEP_RE)
+    .map((p) => p.trim().replace(/\x01/g, "-")) // 하이픈 복원
+    .filter((p) => p.length > 0);
+}
+
 let defaultEnglishVoice: SpeechSynthesisVoice | null = null;
 let voicesLoaded = false;
 
@@ -46,6 +61,7 @@ function speakOnce(text: string, lang: string, voice: SpeechSynthesisVoice | nul
   });
 }
 
+const SYMBOL_PAUSE_MS = 700;
 const REPEAT_PAUSE_MS = 2000;
 
 export async function speakWord(word: string, times: number = 1, voiceName?: string): Promise<void> {
@@ -59,8 +75,12 @@ export async function speakWord(word: string, times: number = 1, voiceName?: str
     if (found) voice = found;
   }
 
+  const parts = splitForTTS(word);
   for (let i = 0; i < times; i++) {
-    await speakOnce(word, "en-US", voice);
+    for (let j = 0; j < parts.length; j++) {
+      await speakOnce(parts[j], "en-US", voice);
+      if (j < parts.length - 1) await new Promise((r) => setTimeout(r, SYMBOL_PAUSE_MS));
+    }
     if (i < times - 1) await new Promise((r) => setTimeout(r, REPEAT_PAUSE_MS));
   }
 }
