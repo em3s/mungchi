@@ -505,25 +505,30 @@ export default function DashboardPage({
       {showMultiForm && presets.length > 0 && (
         <div className="mb-3 bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
           <div className="flex flex-wrap gap-2 mb-3">
-            {presets.map((preset) => {
-              const isSelected = multiSelected.includes(preset);
-              return (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() =>
-                    setMultiSelected((prev) =>
-                      isSelected ? prev.filter((p) => p !== preset) : [...prev, preset]
-                    )
-                  }
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-opacity ${chipColor(preset)} ${
-                    isSelected ? "opacity-100" : "opacity-30"
-                  }`}
-                >
-                  {preset}
-                </button>
-              );
-            })}
+            {(() => {
+              const existingTitles = new Set(activeTasks.map((t) => t.title));
+              return presets.map((preset) => {
+                const isSelected = multiSelected.includes(preset);
+                const isExisting = existingTitles.has(preset);
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    disabled={isExisting}
+                    onClick={() =>
+                      setMultiSelected((prev) =>
+                        isSelected ? prev.filter((p) => p !== preset) : [...prev, preset]
+                      )
+                    }
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-opacity ${chipColor(preset)} ${
+                      isExisting ? "opacity-20 line-through cursor-not-allowed" : isSelected ? "opacity-100" : "opacity-30"
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                );
+              });
+            })()}
           </div>
           <div className="flex gap-2">
             <button
