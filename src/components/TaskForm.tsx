@@ -5,7 +5,6 @@ import { useState } from "react";
 interface TaskFormProps {
   onSubmit: (title: string) => void;
   onCancel: () => void;
-  presets?: string[];
 }
 
 const CHIP_COLORS = [
@@ -29,7 +28,7 @@ export function chipColor(text: string): string {
   return CHIP_COLORS[Math.abs(hash) % CHIP_COLORS.length];
 }
 
-export function TaskForm({ onSubmit, onCancel, presets }: TaskFormProps) {
+export function TaskForm({ onSubmit, onCancel }: TaskFormProps) {
   const [title, setTitle] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
@@ -42,23 +41,6 @@ export function TaskForm({ onSubmit, onCancel, presets }: TaskFormProps) {
 
   return (
     <div className="bg-white rounded-[14px] px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)] md:px-5 md:py-4">
-      {/* 프리셋 chips — 클릭 시 즉시 1개 추가 */}
-      {presets && presets.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1 scrollbar-hide">
-          {presets.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              onClick={() => onSubmit(preset)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${chipColor(preset)}`}
-            >
-              {preset}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* 입력 폼 */}
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"

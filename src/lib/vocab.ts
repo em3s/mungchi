@@ -121,11 +121,6 @@ async function _loadDictionaryImpl(): Promise<DictionaryEntry[]> {
   return dictCache;
 }
 
-export async function invalidateDictionary(): Promise<void> {
-  await clearDynamicCache();
-  dictCache = null;
-}
-
 // IndexedDB 전체 초기화 + 재로드 (설정에서 사전 리로드)
 export async function reloadDictionary(): Promise<number> {
   await resetAll();
