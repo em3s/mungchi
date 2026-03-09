@@ -19,10 +19,6 @@ export function AdminVocabSection({ showToast }: Props) {
     <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
       <h2 className="text-lg font-bold mb-4">📖 단어장 만들기</h2>
 
-      {bulkVocabTitle && (
-        <div className="text-2xl font-black text-gray-800 mb-4">{bulkVocabTitle}</div>
-      )}
-
       {/* 대상 유저 */}
       <div className="mb-4">
         <div className="flex gap-3 flex-wrap">
@@ -119,6 +115,44 @@ export function AdminVocabSection({ showToast }: Props) {
                     <span className="font-medium">{v.word}</span>
                     <span className="text-green-500 mx-1">→</span>
                     {v.meaning}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* 단어장 미리보기 */}
+      {(() => {
+        const listName = bulkVocabTitle.trim();
+        const textLines = bulkVocabText.split("\n").map((l) => l.trim()).filter(Boolean);
+        const words = textLines
+          .map((line) => {
+            const parts = line.split("|");
+            if (parts.length < 2) return null;
+            const word = parts[0].trim().toLowerCase();
+            const meaning = parts.slice(1).join("|").trim();
+            return word && meaning ? { word, meaning } : null;
+          })
+          .filter((r): r is { word: string; meaning: string } => r !== null);
+
+        if (!listName && words.length === 0) return null;
+
+        return (
+          <div className="mb-3 border border-[#6c5ce7]/20 rounded-xl overflow-hidden">
+            <div className="bg-[#6c5ce7]/8 px-4 py-2.5 border-b border-[#6c5ce7]/10">
+              <div className="font-bold text-[#6c5ce7] text-sm">
+                {listName || <span className="text-gray-300 font-normal">제목 없음</span>}
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">{words.length}개 단어</div>
+            </div>
+            {words.length > 0 && (
+              <div className="divide-y divide-gray-50 max-h-48 overflow-y-auto">
+                {words.map((w, i) => (
+                  <div key={i} className="flex justify-between items-center px-4 py-2 text-sm">
+                    <span className="font-medium text-gray-800">{w.word}</span>
+                    <span className="text-gray-400">{w.meaning}</span>
                   </div>
                 ))}
               </div>
