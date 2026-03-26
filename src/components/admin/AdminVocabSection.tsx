@@ -48,18 +48,22 @@ export function AdminVocabSection({ showToast }: Props) {
     setExtracting(true);
     try {
       const buffer = await file.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      const base64 = btoa(binary);
+
       const res = await fetch("/api/extract-vocab", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error ?? "API 오류");
       setRawText(data.text.trim());
       showToast("단어 추출 완료! 확인 후 단어장 만들기를 눌러주세요.");
-    } catch {
-      showToast("추출 실패 — 다시 시도해주세요");
+    } catch (e) {
+      showToast(`추출 실패: ${e instanceof Error ? e.message : "다시 시도해주세요"}`);
     } finally {
       setExtracting(false);
     }

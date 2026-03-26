@@ -42,8 +42,9 @@ export async function POST(req: NextRequest) {
   );
 
   if (!res.ok) {
-    const err = await res.text();
-    return NextResponse.json({ error: err }, { status: 500 });
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    const msg = err?.error?.message ?? err?.error ?? res.statusText;
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 
   const data = await res.json();
