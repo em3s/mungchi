@@ -47,16 +47,27 @@ export function AdminVocabSection({ showToast }: Props) {
   async function handleImageExtract(file: File) {
     setExtracting(true);
     try {
-      const buffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      let binary = "";
-      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-      const base64 = btoa(binary);
+      // Canvas로 JPEG 변환 (mimeType 통일, 용량 압축)
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX = 1600;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          resolve(dataUrl.split(",")[1]);
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
 
       const res = await fetch("/api/extract-vocab", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
+        body: JSON.stringify({ imageBase64: base64, mimeType: "image/jpeg" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "API 오류");
