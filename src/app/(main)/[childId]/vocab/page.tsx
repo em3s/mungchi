@@ -225,8 +225,10 @@ export default function VocabPage({
     if (result.ok && result.entry) {
       setEntries((prev) => [...prev, result.entry!]);
       showToast(`"${dictEntry.word}" 추가!`);
+    } else if (result.duplicate) {
+      showToast(`"${dictEntry.word}"는 이미 단어장에 있어요 (중복)`);
     } else {
-      showToast("이미 추가된 단어예요");
+      showToast("추가에 실패했어요");
     }
   }
 
@@ -235,8 +237,10 @@ export default function VocabPage({
     if (result.ok && result.entry) {
       setEntries((prev) => [...prev, result.entry!]);
       showToast(`"${word}" 추가!`);
+    } else if (result.duplicate) {
+      showToast(`"${word}"는 이미 단어장에 있어요 (중복)`);
     } else {
-      showToast("이미 추가된 단어예요");
+      showToast("추가에 실패했어요");
     }
   }
 

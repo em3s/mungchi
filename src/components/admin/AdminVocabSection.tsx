@@ -155,11 +155,13 @@ export function AdminVocabSection({ showToast }: Props) {
                 listId = newId;
               }
 
-              const rows = words.map((w) => ({
+              const baseTime = Date.now();
+              const rows = words.map((w, i) => ({
                 user_id: childId,
                 list_id: listId,
                 word: w.word,
                 meaning: w.meaning,
+                created_at: new Date(baseTime + i).toISOString(),
               }));
               const { error } = await supabase.from("vocab_entries").insert(rows);
               if (error) throw error;

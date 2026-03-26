@@ -247,7 +247,7 @@ export async function getEntries(
       .select("*")
       .eq("user_id", childId)
       .eq("list_id", listId)
-      .order("created_at");
+      .order("created_at", { ascending: true });
     return (data as VocabEntry[]) ?? [];
   });
 }
@@ -257,7 +257,7 @@ export async function addEntry(
   listId: string,
   dictEntry: DictionaryEntry | null,
   custom?: { word: string; meaning: string },
-): Promise<{ ok: boolean; entry?: VocabEntry }> {
+): Promise<{ ok: boolean; entry?: VocabEntry; duplicate?: boolean }> {
   const word = dictEntry?.word ?? custom?.word;
   const meaning = dictEntry?.meaning ?? custom?.meaning;
   if (!word || !meaning) return { ok: false };
@@ -275,7 +275,7 @@ export async function addEntry(
     .insert(row)
     .select()
     .single();
-  if (error) return { ok: false };
+  if (error) return { ok: false, duplicate: error.code === "23505" };
   invalidate(`vocab_entries:${childId}:${listId}`);
   invalidate(`vocab_lists:${childId}`);
   return { ok: true, entry: data as VocabEntry };
