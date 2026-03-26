@@ -42,6 +42,28 @@ export function AdminVocabSection({ showToast }: Props) {
   const [childIds, setChildIds] = useState<string[]>(["sihyun", "misong"]);
   const [rawText, setRawText] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+
+  async function handleImageExtract(file: File) {
+    setExtracting(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const res = await fetch("/api/extract-vocab", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setRawText(data.text.trim());
+      showToast("단어 추출 완료! 확인 후 단어장 만들기를 눌러주세요.");
+    } catch {
+      showToast("추출 실패 — 다시 시도해주세요");
+    } finally {
+      setExtracting(false);
+    }
+  }
 
   const { title, words, errors } = parseVocabText(rawText);
   const canSubmit = title.trim() !== "" && words.length > 0 && childIds.length > 0;
@@ -75,6 +97,22 @@ export function AdminVocabSection({ showToast }: Props) {
           ))}
         </div>
       </div>
+
+      {/* 이미지 추출 */}
+      <label className={`flex items-center justify-center gap-2 w-full py-3 mb-3 rounded-xl border-2 border-dashed font-semibold text-sm cursor-pointer transition-all ${extracting ? "border-gray-200 text-gray-300 bg-gray-50" : "border-[#6c5ce7]/40 text-[#6c5ce7] bg-[#6c5ce7]/5 active:bg-[#6c5ce7]/10"}`}>
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          disabled={extracting}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleImageExtract(file);
+            e.target.value = "";
+          }}
+        />
+        {extracting ? "🔍 추출 중..." : "📷 시험지 사진으로 추출"}
+      </label>
 
       {/* 형식 가이드 */}
       <button
