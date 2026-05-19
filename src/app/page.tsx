@@ -385,7 +385,7 @@ export default function VocabPage() {
                         className="bg-white rounded-[14px] px-3 py-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
                       >
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-gray-300 w-5 text-right shrink-0">{index + 1}</span>
+                          <span className="text-sm font-medium text-gray-400 w-6 text-right shrink-0 tabular-nums">{index + 1}</span>
 
                           <div
                             className="flex-1 min-w-0 py-0.5 select-none cursor-pointer"
