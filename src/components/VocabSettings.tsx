@@ -22,14 +22,22 @@ export function VocabSettings() {
     setEnVoiceName(name);
     localStorage.setItem("vocab_voice_en", name);
     const label = name || "default";
-    speakWord(`I am ${label}`, 1, name || undefined);
+    speakWord(
+      `I am ${label}. The quick brown fox jumps over the lazy dog.`,
+      1,
+      name || undefined,
+    );
   }
 
   function handleKoVoiceChange(name: string) {
     setKoVoiceName(name);
     localStorage.setItem("vocab_voice_ko", name);
     const label = name || "기본";
-    speakKorean(`저는 ${label} 입니다`, 1, name || undefined);
+    speakKorean(
+      `저는 ${label} 입니다. 다람쥐 헌 쳇바퀴에 타고파.`,
+      1,
+      name || undefined,
+    );
   }
 
   return (

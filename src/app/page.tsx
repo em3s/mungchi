@@ -344,7 +344,7 @@ export default function VocabPage() {
                       : "bg-white border border-gray-200 text-gray-600"
                   }`}
                 >
-                  {maskMode ? "가리기 종료" : "🙈 뜻 가리기"}
+                  {maskMode ? "가리기 종료" : "🙈 단어 가리기"}
                 </button>
               </div>
 
@@ -394,7 +394,7 @@ export default function VocabPage() {
                         </li>
                       );
                     }
-                    const meaningRevealed = !maskMode || revealed.has(entry.id);
+                    const wordRevealed = revealed.has(entry.id);
                     return (
                       <li
                         key={entry.id}
@@ -411,19 +411,20 @@ export default function VocabPage() {
                             onTouchMove={cancelLongPress}
                             onClick={maskMode ? () => toggleReveal(entry.id) : undefined}
                           >
-                            <div className="text-sm font-semibold text-gray-800 truncate">{entry.word}</div>
-                            {maskMode && !meaningRevealed ? (
-                              <div className="text-sm font-semibold text-gray-300 truncate tracking-widest mt-0.5">••••••</div>
+                            {maskMode ? (
+                              <>
+                                <div className="text-sm font-semibold text-gray-800 truncate">{entry.meaning}</div>
+                                {wordRevealed ? (
+                                  <div className="text-xs text-gray-400 truncate mt-0.5">{entry.word}</div>
+                                ) : (
+                                  <div className="text-xs text-gray-300 truncate tracking-widest mt-0.5">••••••</div>
+                                )}
+                              </>
                             ) : (
-                              <div
-                                className={`truncate mt-0.5 ${
-                                  maskMode
-                                    ? "text-sm font-semibold text-gray-800"
-                                    : "text-xs text-gray-400"
-                                }`}
-                              >
-                                {entry.meaning}
-                              </div>
+                              <>
+                                <div className="text-sm font-semibold text-gray-800 truncate">{entry.word}</div>
+                                <div className="text-xs text-gray-400 truncate mt-0.5">{entry.meaning}</div>
+                              </>
                             )}
                           </div>
 
