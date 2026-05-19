@@ -25,31 +25,31 @@ export function usePullToRefresh(
     let startY: number | null = null;
     let currentDist = 0;
     let isRefreshing = false;
-    let pressed = false;
+    let mousePressed = false;
 
-    function onDown(e: PointerEvent) {
+    function tryStart(y: number) {
       if (window.scrollY > 0 || isRefreshing) return;
-      pressed = true;
-      startY = e.clientY;
+      startY = y;
       currentDist = 0;
     }
 
-    function onMove(e: PointerEvent) {
-      if (!pressed || startY === null || isRefreshing) return;
-      const diff = e.clientY - startY;
+    function tryMove(
+      y: number,
+      e?: { cancelable: boolean; preventDefault: () => void },
+    ) {
+      if (startY === null || isRefreshing) return;
+      const diff = y - startY;
       if (diff > 0 && window.scrollY === 0) {
         currentDist = Math.min(MAX_PULL, diff * DAMPING);
         setPullDistance(currentDist);
-        if (e.cancelable && e.pointerType === "touch") e.preventDefault();
+        if (e?.cancelable) e.preventDefault();
       } else if (diff <= 0 && currentDist > 0) {
         currentDist = 0;
         setPullDistance(0);
       }
     }
 
-    async function finish() {
-      if (!pressed) return;
-      pressed = false;
+    async function tryEnd() {
       if (startY === null) return;
       const finalDist = currentDist;
       startY = null;
@@ -71,15 +71,46 @@ export function usePullToRefresh(
       }
     }
 
-    window.addEventListener("pointerdown", onDown);
-    window.addEventListener("pointermove", onMove, { passive: false });
-    window.addEventListener("pointerup", finish);
-    window.addEventListener("pointercancel", finish);
+    function onTouchStart(e: TouchEvent) {
+      tryStart(e.touches[0].clientY);
+    }
+    function onTouchMove(e: TouchEvent) {
+      tryMove(e.touches[0].clientY, e);
+    }
+    function onTouchEnd() {
+      tryEnd();
+    }
+
+    function onMouseDown(e: MouseEvent) {
+      if (e.button !== 0) return;
+      mousePressed = true;
+      tryStart(e.clientY);
+    }
+    function onMouseMove(e: MouseEvent) {
+      if (!mousePressed) return;
+      tryMove(e.clientY);
+    }
+    function onMouseUp() {
+      if (!mousePressed) return;
+      mousePressed = false;
+      tryEnd();
+    }
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchcancel", onTouchEnd);
+    window.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
     return () => {
-      window.removeEventListener("pointerdown", onDown);
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", finish);
-      window.removeEventListener("pointercancel", finish);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
+      window.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
     };
   }, [enabled]);
 
