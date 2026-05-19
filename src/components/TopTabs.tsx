@@ -18,6 +18,14 @@ export function TopTabs() {
           <Link
             key={tab.href}
             href={tab.href}
+            onClick={(e) => {
+              if (active) {
+                e.preventDefault();
+                window.dispatchEvent(
+                  new CustomEvent("tab-reset", { detail: { href: tab.href } }),
+                );
+              }
+            }}
             className={`flex-1 text-center py-2 rounded-lg text-sm font-semibold transition-all ${
               active
                 ? "bg-[var(--accent,#6c5ce7)] text-white shadow"

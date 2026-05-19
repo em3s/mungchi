@@ -1,17 +1,19 @@
 // 영어/한국어 TTS — 화자 선택 지원
 
 // 기호만 구분자로 처리, 공백은 구문의 일부로 유지
-// 단어 내부 하이픈(well-known)은 보호, 기호·구두점만 쉬어 읽기
-const ALPHA_KO = "[a-zA-Z\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]";
+// 단어 내부 하이픈(well-known)·어퍼스트로피(father's, don't)는 보호
+const ALPHA_KO = "[a-zA-Z가-힣ᄀ-ᇿ㄰-㆏]";
 const INTRA_HYPHEN_RE = new RegExp(`(${ALPHA_KO})-(?=${ALPHA_KO})`, "g");
-// 영문자·한글·공백·\x01(하이픈 자리표) 이외 문자가 1개 이상이면 구분자
-const SYMBOL_SEP_RE = /[^a-zA-Z\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\s\x01]+/g;
+const INTRA_APOS_RE = new RegExp(`(${ALPHA_KO})['’](?=${ALPHA_KO}|\\s|$)`, "g");
+// 영문자·한글·공백·\x01(하이픈 자리표)·\x02(어퍼스트로피 자리표) 이외 문자가 구분자
+const SYMBOL_SEP_RE = /[^a-zA-Z가-힣ᄀ-ᇿ㄰-㆏\s\x01\x02]+/g;
 
 function splitForTTS(text: string): string[] {
   return text
-    .replace(INTRA_HYPHEN_RE, "$1\x01") // 단어 내부 하이픈 보호
+    .replace(INTRA_HYPHEN_RE, "$1\x01")
+    .replace(INTRA_APOS_RE, "$1\x02")
     .split(SYMBOL_SEP_RE)
-    .map((p) => p.trim().replace(/\x01/g, "-")) // 하이픈 복원
+    .map((p) => p.trim().replace(/\x01/g, "-").replace(/\x02/g, "'"))
     .filter((p) => p.length > 0);
 }
 

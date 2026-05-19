@@ -6,6 +6,7 @@ import { Toast } from "@/components/Toast";
 import { TopTabs } from "@/components/TopTabs";
 import { useToast } from "@/hooks/useToast";
 import { AdminVocabSection } from "@/components/admin/AdminVocabSection";
+import { VocabSettings } from "@/components/VocabSettings";
 
 const SESSION_KEY = "mungchi_session";
 
@@ -48,6 +49,7 @@ export default function AdminPage() {
     <div className="max-w-[640px] mx-auto px-4 pt-4 pb-20">
       <TopTabs />
       <AdminVocabSection showToast={showToast} />
+      <VocabSettings />
       <Toast message={message} />
     </div>
   );
