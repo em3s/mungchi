@@ -26,7 +26,11 @@ export function PageHeader({ title, titleProps, rightSlot }: PageHeaderProps) {
       }`}
       style={{ background: "var(--bg)" }}
     >
-      <h1 className="text-xl font-bold md:text-2xl select-none" {...titleProps}>
+      <h1
+        className="font-display text-2xl md:text-3xl font-medium select-none"
+        style={{ color: "var(--ink)" }}
+        {...titleProps}
+      >
         {title}
       </h1>
       {rightSlot}

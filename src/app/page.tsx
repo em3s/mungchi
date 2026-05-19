@@ -302,7 +302,12 @@ export default function VocabPage() {
       {view === "list" && (
         <>
           <div className="mb-4 px-1">
-            <h2 className="text-lg font-bold text-gray-800 truncate">{listTitle}</h2>
+            <h2
+              className="font-display text-2xl font-medium truncate"
+              style={{ color: "var(--ink)" }}
+            >
+              {listTitle}
+            </h2>
           </div>
 
           {loading ? (
