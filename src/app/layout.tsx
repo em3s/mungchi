@@ -4,8 +4,8 @@ import { SWRProvider } from "@/components/SWRProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "뭉치",
-  description: "아이들 할일 관리 + 성과(달성) 시스템",
+  title: "뭉치 영어 단어장",
+  description: "영어 단어장",
   manifest: "/manifest.json",
   icons: [
     { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },
@@ -37,7 +37,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body className="antialiased">
+      <body className="antialiased" style={{ background: "var(--bg)" }}>
         <SWRProvider>
           <UpdateButton />
           {children}

@@ -8,7 +8,7 @@ interface PinModalProps {
   subtitle: string;
   emoji?: string;
   onSuccess: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
 }
 
 export function PinModal({
@@ -107,12 +107,14 @@ export function PinModal({
           </button>
         </div>
 
-        <button
-          className="mt-4 px-8 py-2.5 bg-gray-100 rounded-xl text-sm font-semibold text-gray-500 active:bg-gray-200"
-          onClick={onCancel}
-        >
-          취소
-        </button>
+        {onCancel && (
+          <button
+            className="mt-4 px-8 py-2.5 bg-gray-100 rounded-xl text-sm font-semibold text-gray-500 active:bg-gray-200"
+            onClick={onCancel}
+          >
+            취소
+          </button>
+        )}
       </div>
     </div>
   );

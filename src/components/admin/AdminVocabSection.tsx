@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { USERS } from "@/lib/constants";
 import { createList } from "@/lib/vocab";
+
+const USER_ID = "default";
 
 interface Props {
   showToast: (msg: string) => void;
@@ -39,7 +40,6 @@ function parseVocabText(raw: string): {
 }
 
 export function AdminVocabSection({ showToast }: Props) {
-  const [childIds, setChildIds] = useState<string[]>(["sihyun", "misong"]);
   const [rawText, setRawText] = useState("");
   const [generating, setGenerating] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -47,7 +47,6 @@ export function AdminVocabSection({ showToast }: Props) {
   async function handleImageExtract(file: File) {
     setExtracting(true);
     try {
-      // Canvas로 JPEG 변환 (mimeType 통일, 용량 압축)
       const base64 = await new Promise<string>((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
@@ -81,39 +80,12 @@ export function AdminVocabSection({ showToast }: Props) {
   }
 
   const { title, words, errors } = parseVocabText(rawText);
-  const canSubmit = title.trim() !== "" && words.length > 0 && childIds.length > 0;
+  const canSubmit = title.trim() !== "" && words.length > 0;
 
   return (
     <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
       <h2 className="text-lg font-bold mb-4">📖 단어장 만들기</h2>
 
-      {/* 대상 유저 */}
-      <div className="mb-4">
-        <div className="flex gap-3 flex-wrap">
-          {USERS.map((child) => (
-            <button
-              key={child.id}
-              onClick={() =>
-                setChildIds((prev) =>
-                  prev.includes(child.id)
-                    ? prev.filter((c) => c !== child.id)
-                    : [...prev, child.id],
-                )
-              }
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                childIds.includes(child.id)
-                  ? "bg-[#6c5ce7] text-white shadow-md"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              <span>{child.emoji}</span>
-              <span>{child.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 이미지 추출 */}
       <label className={`flex items-center justify-center gap-2 w-full py-3 mb-3 rounded-xl border-2 border-dashed font-semibold text-sm cursor-pointer transition-all ${extracting ? "border-gray-200 text-gray-300 bg-gray-50" : "border-[#6c5ce7]/40 text-[#6c5ce7] bg-[#6c5ce7]/5 active:bg-[#6c5ce7]/10"}`}>
         <input
           type="file"
@@ -129,7 +101,6 @@ export function AdminVocabSection({ showToast }: Props) {
         {extracting ? "🔍 추출 중..." : "📷 시험지 사진으로 추출"}
       </label>
 
-      {/* 형식 가이드 */}
       <button
         type="button"
         onClick={() => {
@@ -153,7 +124,6 @@ export function AdminVocabSection({ showToast }: Props) {
         className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none mb-2"
       />
 
-      {/* 오류 표시 */}
       {errors.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-2 text-xs">
           <div className="text-red-500 font-semibold mb-1">✗ {errors.length}개 오류</div>
@@ -163,7 +133,6 @@ export function AdminVocabSection({ showToast }: Props) {
         </div>
       )}
 
-      {/* 미리보기 카드 */}
       {(title || words.length > 0) && (
         <div className="mb-3 border border-[#6c5ce7]/20 rounded-xl overflow-hidden">
           <div className="bg-[#6c5ce7]/8 px-4 py-2.5 border-b border-[#6c5ce7]/10">
@@ -190,39 +159,37 @@ export function AdminVocabSection({ showToast }: Props) {
           if (!canSubmit) return;
           setGenerating(true);
           try {
-            let totalCreated = 0;
-            for (const childId of childIds) {
-              const { data: existing } = await supabase
-                .from("vocab_list_meta")
-                .select("id")
-                .eq("user_id", childId)
-                .eq("name", title)
-                .maybeSingle();
+            const { data: existing } = await supabase
+              .from("vocab_list_meta")
+              .select("id")
+              .eq("user_id", USER_ID)
+              .eq("name", title)
+              .maybeSingle();
 
-              let listId: string;
-              if (existing?.id) {
-                listId = existing.id;
-              } else {
-                const { ok, listId: newId } = await createList(childId, title);
-                if (!ok || !newId) continue;
-                listId = newId;
+            let listId: string;
+            if (existing?.id) {
+              listId = existing.id;
+            } else {
+              const { ok, listId: newId } = await createList(title);
+              if (!ok || !newId) {
+                showToast("생성 실패");
+                return;
               }
-
-              const baseTime = Date.now();
-              const rows = words.map((w, i) => ({
-                user_id: childId,
-                list_id: listId,
-                word: w.word,
-                meaning: w.meaning,
-                created_at: new Date(baseTime + i).toISOString(),
-              }));
-              const { error } = await supabase.from("vocab_entries").insert(rows);
-              if (error) throw error;
-              totalCreated += words.length;
+              listId = newId;
             }
 
-            const names = childIds.map((id) => USERS.find((u) => u.id === id)?.name).join(", ");
-            showToast(`${names}에게 "${title}" ${totalCreated}개 단어 추가!`);
+            const baseTime = Date.now();
+            const rows = words.map((w, i) => ({
+              user_id: USER_ID,
+              list_id: listId,
+              word: w.word,
+              meaning: w.meaning,
+              created_at: new Date(baseTime + i).toISOString(),
+            }));
+            const { error } = await supabase.from("vocab_entries").insert(rows);
+            if (error) throw error;
+
+            showToast(`"${title}" ${words.length}개 단어 추가!`);
             setRawText("");
           } catch {
             showToast("생성 실패");

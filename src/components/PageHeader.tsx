@@ -5,16 +5,10 @@ import { useState, useEffect } from "react";
 interface PageHeaderProps {
   title: React.ReactNode;
   titleProps?: React.HTMLAttributes<HTMLHeadingElement>;
-  coinBalance?: number | null;
   rightSlot?: React.ReactNode;
 }
 
-export function PageHeader({
-  title,
-  titleProps,
-  coinBalance,
-  rightSlot,
-}: PageHeaderProps) {
+export function PageHeader({ title, titleProps, rightSlot }: PageHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -35,12 +29,7 @@ export function PageHeader({
       <h1 className="text-xl font-bold md:text-2xl select-none" {...titleProps}>
         {title}
       </h1>
-      {rightSlot ??
-        (coinBalance !== undefined && coinBalance !== null && (
-          <span className="text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full">
-            🍪 {coinBalance}
-          </span>
-        ))}
+      {rightSlot}
     </div>
   );
 }

@@ -15,13 +15,11 @@ interface VocabQuizProps {
   quizType: VocabQuizType;
   onComplete: (total: number, correct: number) => void;
   onCancel: () => void;
-  onSpellingCorrect?: () => void;
 }
 
 function buildBasicQuestions(entries: VocabEntry[]): QuizQuestion[] {
   const allWords = entries.map((e) => e.word);
   return entries.map((entry) => {
-    // 편집 거리 기반으로 비슷한 단어 3개 선택
     const wrongChoices = getSimilarWords(entry.word, allWords, 3);
     const allChoices = [
       {
@@ -41,7 +39,6 @@ export function VocabQuiz({
   quizType,
   onComplete,
   onCancel,
-  onSpellingCorrect,
 }: VocabQuizProps) {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -53,7 +50,6 @@ export function VocabQuiz({
   const [round, setRound] = useState(1);
   const [wrongInRound, setWrongInRound] = useState<VocabEntry[]>([]);
   const [totalCorrect, setTotalCorrect] = useState(0);
-  const [candyPop, setCandyPop] = useState(false);
   const totalWords = entries.length;
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -114,9 +110,6 @@ export function VocabQuiz({
     if (correct) {
       setTotalCorrect((prev) => prev + 1);
       speakWord(current.entry.word);
-      setCandyPop(true);
-      setTimeout(() => setCandyPop(false), 1200);
-      onSpellingCorrect?.();
     } else {
       setWrongInRound((prev) => [...prev, current.entry]);
     }
@@ -124,14 +117,12 @@ export function VocabQuiz({
   }
 
   function handleNext() {
-    // totalCorrect는 이미 답 제출 시 업데이트됨
     if (totalCorrect >= totalWords) {
       onComplete(totalWords, totalWords);
       return;
     }
 
     if (currentIdx + 1 >= roundTotal) {
-      // 라운드 종료 → 틀린 것만 다음 라운드
       startRound(wrongInRound, round + 1);
       return;
     }
@@ -149,7 +140,6 @@ export function VocabQuiz({
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-gray-500">
           {round > 1 && <span className="text-amber-500">Round {round} · </span>}
@@ -160,7 +150,6 @@ export function VocabQuiz({
         </button>
       </div>
 
-      {/* 게이지 1: 현재 라운드 진행 */}
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-[10px] text-gray-400 w-8 shrink-0">진행</span>
         <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -171,7 +160,6 @@ export function VocabQuiz({
         </div>
       </div>
 
-      {/* 게이지 2: 전체 맞춘 수 (이게 꽉 차면 끝) */}
       <div className="flex items-center gap-2 mb-5">
         <span className="text-[10px] text-green-500 w-8 shrink-0 font-bold">정답</span>
         <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -185,7 +173,6 @@ export function VocabQuiz({
         </span>
       </div>
 
-      {/* Question */}
       <div className="text-center mb-6">
         <div className="text-sm text-gray-500 mb-2">
           {quizType === "basic" ? "이 뜻의 영어 단어는?" : "스펠링을 입력하세요"}
@@ -195,7 +182,6 @@ export function VocabQuiz({
         </div>
       </div>
 
-      {/* Answer area */}
       {quizType === "basic" ? (
         <div className="flex flex-col gap-2">
           {current.choices?.map((choice) => {
@@ -248,17 +234,6 @@ export function VocabQuiz({
         </form>
       )}
 
-      {/* Candy pop animation */}
-      {candyPop && quizType === "spelling" && (
-        <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-50">
-          <div className="animate-bounce text-3xl font-black text-amber-500 drop-shadow-lg"
-            style={{ animation: "candyFloat 1.2s ease-out forwards" }}>
-            +1 🍪
-          </div>
-        </div>
-      )}
-
-      {/* Result feedback */}
       {showResult && (
         <div className="mt-4 text-center">
           <div
@@ -272,11 +247,6 @@ export function VocabQuiz({
           >
             ▶ 발음 듣기
           </button>
-          {!isCorrect && quizType === "basic" && (
-            <div className="text-sm text-gray-500 mt-1.5">
-              괜찮아! 끝까지 하면 초코는 똑같이 받아 🍪
-            </div>
-          )}
           <button
             onClick={handleNext}
             className="mt-4 w-full bg-[var(--accent,#6c5ce7)] text-white py-3 rounded-xl font-bold"

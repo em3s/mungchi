@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getEntries,
   getVocabLists,
@@ -20,33 +19,38 @@ import {
   DAILY_LIST_ID,
 } from "@/lib/vocab";
 import { todayKST } from "@/lib/date";
-import { addTransaction } from "@/lib/coins";
-import { BottomNav } from "@/components/BottomNav";
 import { PageHeader } from "@/components/PageHeader";
 import { WordInput } from "@/components/WordInput";
 import { VocabQuiz } from "@/components/VocabQuiz";
 import { Toast } from "@/components/Toast";
 import { VocabSettings } from "@/components/VocabSettings";
 import { useToast } from "@/hooks/useToast";
-import { useFeatureGuard } from "@/hooks/useFeatureGuard";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { useLongPress } from "@/hooks/useLongPress";
+import { PinModal } from "@/components/PinModal";
+import { TopTabs } from "@/components/TopTabs";
 import { speakWord, speakKorean, getAvailableVoices } from "@/lib/tts";
 import type { VocabEntry, VocabQuizType, DictionaryEntry } from "@/lib/types";
 
 type ViewState = "home" | "list" | "quiz" | "result";
 
-export default function VocabPage({
-  params,
-}: {
-  params: Promise<{ childId: string }>;
-}) {
-  const { childId } = use(params);
-  const router = useRouter();
-  const { message: toastMsg, showToast } = useToast();
-  const { flagsLoaded, allowed: vocabAllowed } = useFeatureGuard(childId, "vocab");
+const SESSION_KEY = "mungchi_session";
 
-  // State
+export default function VocabPage() {
+  const { message: toastMsg, showToast } = useToast();
+
+  const [authed, setAuthed] = useState(false);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem(SESSION_KEY) === "true") setAuthed(true);
+    setSessionLoaded(true);
+  }, []);
+
+  const handlePinSuccess = useCallback(() => {
+    localStorage.setItem(SESSION_KEY, "true");
+    setAuthed(true);
+  }, []);
+
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<ViewState>("home");
@@ -57,10 +61,8 @@ export default function VocabPage({
   const [quizResult, setQuizResult] = useState<{
     total: number;
     correct: number;
-    candy: number;
   } | null>(null);
   const [config, setConfig] = useState<Record<string, number>>({});
-  const { coinsEnabled, coinBalance, setCoinBalance } = useCoinBalance(childId);
   const [showSettings, setShowSettings] = useState(false);
   const titleLongPress = useLongPress(() => setShowSettings(true));
   const [quizStatuses, setQuizStatuses] = useState<Map<string, { basic: boolean; spelling: boolean }>>(new Map());
@@ -70,53 +72,44 @@ export default function VocabPage({
   const editWordRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // TTS 화자
   const [enVoices, setEnVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [koVoices, setKoVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [enVoiceName, setEnVoiceName] = useState("");
   const [koVoiceName, setKoVoiceName] = useState("");
 
-  // 토글 (localStorage) — 2개, 빈값/체크
   const [toggles, setToggles] = useState<Record<string, [string, string]>>({});
 
-  // TTS 재생 중 여부
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // 롱프레스 메뉴
   const [menuEntryId, setMenuEntryId] = useState<string | null>(null);
 
-  // Vocab lists
   const [vocabLists, setVocabLists] = useState<
     { id: string; name: string; count: number; spellingCount: number; createdAt: string }[]
   >([]);
   const [listTitle, setListTitleState] = useState("");
 
   const loadLists = useCallback(async () => {
-    const lists = await getVocabLists(childId);
+    const lists = await getVocabLists();
     setVocabLists(lists);
     if (lists.length > 0) {
-      const statuses = await getQuizStatuses(childId, lists.map((l) => l.id));
+      const statuses = await getQuizStatuses(lists.map((l) => l.id));
       setQuizStatuses(statuses);
     }
-  }, [childId]);
+  }, []);
 
-  // Load entries for selected list
   const loadEntries = useCallback(async () => {
     if (!selectedListId) return;
-    const data = await getEntries(childId, selectedListId);
+    const data = await getEntries(selectedListId);
     setEntries(data);
     setLoading(false);
-  }, [childId, selectedListId]);
+  }, [selectedListId]);
 
-  // Initial load
   useEffect(() => {
-    if (!vocabAllowed) return;
     loadLists();
     loadDictionary();
     getVocabConfig().then(setConfig);
-  }, [childId, vocabAllowed, loadLists]);
+  }, [loadLists]);
 
-  // TTS 화자 로드
   useEffect(() => {
     getAvailableVoices().then((voices) => {
       setEnVoices(voices.filter((v) => v.lang.startsWith("en")));
@@ -126,26 +119,21 @@ export default function VocabPage({
     });
   }, []);
 
-  // 토글 로드 (리스트 변경 시)
   useEffect(() => {
     if (!selectedListId) return;
     const saved = localStorage.getItem(`vocab_toggles_${selectedListId}`);
     setToggles(saved ? (JSON.parse(saved) as Record<string, [string, string]>) : {});
   }, [selectedListId]);
 
-  // Load entries when selectedListId changes (list view only)
   useEffect(() => {
     if (selectedListId && view === "list") loadEntries();
   }, [selectedListId, loadEntries, view]);
 
-  if (!vocabAllowed) return null;
-
   const minWords = config.min_words ?? 3;
-
   const isDailyList = selectedListId === DAILY_LIST_ID;
 
   function handleOpenDaily() {
-    const words = getDailyWords(childId, todayKST());
+    const words = getDailyWords(todayKST());
     setListTitleState("오늘의 단어장");
     setSelectedListId(DAILY_LIST_ID);
     setEntries(words);
@@ -163,7 +151,7 @@ export default function VocabPage({
   async function handleCreateNew() {
     const name = newListName.trim();
     if (!name) return;
-    const result = await createList(childId, name);
+    const result = await createList(name);
     if (result.ok && result.listId) {
       setListTitleState(name);
       setSelectedListId(result.listId);
@@ -214,14 +202,14 @@ export default function VocabPage({
 
   async function handleTitleSave() {
     if (!selectedListId) return;
-    const ok = await renameList(childId, selectedListId, listTitle);
+    const ok = await renameList(selectedListId, listTitle);
     if (ok) {
       showToast("이름을 저장했어요");
     }
   }
 
   async function handleAddWord(dictEntry: DictionaryEntry) {
-    const result = await addEntry(childId, selectedListId!, dictEntry);
+    const result = await addEntry(selectedListId!, dictEntry);
     if (result.ok && result.entry) {
       setEntries((prev) => [...prev, result.entry!]);
       showToast(`"${dictEntry.word}" 추가!`);
@@ -233,7 +221,7 @@ export default function VocabPage({
   }
 
   async function handleAddCustom(word: string, meaning: string) {
-    const result = await addEntry(childId, selectedListId!, null, { word, meaning });
+    const result = await addEntry(selectedListId!, null, { word, meaning });
     if (result.ok && result.entry) {
       setEntries((prev) => [...prev, result.entry!]);
       showToast(`"${word}" 추가!`);
@@ -260,7 +248,7 @@ export default function VocabPage({
       setEditingEntryId(null);
       return;
     }
-    const ok = await updateEntry(childId, selectedListId!, entryId, w, m);
+    const ok = await updateEntry(selectedListId!, entryId, w, m);
     if (ok) {
       setEntries((prev) =>
         prev.map((e) => (e.id === entryId ? { ...e, word: w, meaning: m } : e)),
@@ -273,7 +261,7 @@ export default function VocabPage({
   }
 
   async function handleRemoveWord(entryId: string) {
-    const ok = await removeEntry(childId, selectedListId!, entryId);
+    const ok = await removeEntry(selectedListId!, entryId);
     if (ok) {
       setEntries((prev) => prev.filter((e) => e.id !== entryId));
     }
@@ -285,7 +273,7 @@ export default function VocabPage({
   }
 
   function handleStartDailyQuiz(type: VocabQuizType) {
-    const words = getDailyWords(childId, todayKST());
+    const words = getDailyWords(todayKST());
     setSelectedListId(DAILY_LIST_ID);
     setQuizType(type);
     const quizEntries = type === "spelling" ? words.filter((e) => e.spelling) : words;
@@ -297,8 +285,7 @@ export default function VocabPage({
     setSelectedListId(listId);
     setQuizType(type);
     setLoading(true);
-    const [data] = await Promise.all([getEntries(childId, listId), loadDictionary()]);
-    // 스펠링: spelling 체크된 단어만
+    const [data] = await Promise.all([getEntries(listId), loadDictionary()]);
     const quizEntries = type === "spelling" ? data.filter((e) => e.spelling) : data;
     setEntries(quizEntries);
     setLoading(false);
@@ -306,52 +293,39 @@ export default function VocabPage({
   }
 
   async function handleQuizComplete(total: number, correct: number) {
-    // 객관식: 완료 시 고정 보상, 스펠링: 이미 맞출 때마다 즉시 지급됨
-    const candy =
-      quizType === "basic"
-        ? (config.basic_reward ?? 1)
-        : correct; // spelling: 이미 지급 완료
-
-    // daily list는 DB 저장 스킵 (list_id가 UUID 아님)
     if (!isDailyList) {
-      await saveQuizResult(
-        childId,
-        selectedListId!,
-        quizType,
-        total,
-        correct,
-        candy,
-      );
+      await saveQuizResult(selectedListId!, quizType, total, correct);
     }
-
-    // 객관식만 완료 시 보상 지급 (스펠링은 onSpellingCorrect에서 즉시 지급)
-    if (quizType === "basic" && candy > 0 && coinsEnabled) {
-      const result = await addTransaction(
-        childId,
-        candy,
-        "vocab_quiz",
-        `객관식 퀴즈 ${correct}/${total}`,
-      );
-      if (result.ok) setCoinBalance(result.newBalance ?? null);
-    }
-
-    setQuizResult({ total, correct, candy });
+    setQuizResult({ total, correct });
     setView("result");
   }
 
-  return (
-    <div className="pt-2 pb-24">
-      {/* Header */}
-      <PageHeader
-        title="📖 영어 단어"
-        titleProps={titleLongPress}
-        coinBalance={coinsEnabled ? coinBalance : undefined}
-      />
+  if (!sessionLoaded) {
+    return (
+      <div className="text-center pt-[60px] text-gray-400 text-xl">
+        불러오는 중...
+      </div>
+    );
+  }
 
-      {/* Home View — vocab list + create new */}
+  if (!authed) {
+    return (
+      <PinModal
+        title="뭉치 단어장"
+        subtitle="비밀번호를 입력하세요"
+        emoji="📖"
+        onSuccess={handlePinSuccess}
+      />
+    );
+  }
+
+  return (
+    <div className="max-w-[480px] mx-auto px-4 pb-20 pt-4 md:max-w-[640px] md:px-6 md:pb-24">
+      <TopTabs />
+      <PageHeader title="📖 영어 단어" titleProps={titleLongPress} />
+
       {view === "home" && (
         <>
-          {/* Daily words card */}
           <div className="mb-4">
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
               <button
@@ -373,7 +347,7 @@ export default function VocabPage({
                   onClick={() => handleStartDailyQuiz("basic")}
                   className="flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 bg-blue-500 text-white"
                 >
-                  📝 객관식 🍪{config.basic_reward ?? 1}
+                  📝 객관식
                 </button>
                 <button
                   onClick={() => handleStartDailyQuiz("spelling")}
@@ -385,7 +359,6 @@ export default function VocabPage({
             </div>
           </div>
 
-          {/* New vocab list */}
           <div className="flex items-center gap-2 mb-6">
             <input
               type="text"
@@ -404,7 +377,6 @@ export default function VocabPage({
             </button>
           </div>
 
-          {/* Existing vocab lists */}
           {vocabLists.length === 0 ? (
             <div className="text-center py-16 text-gray-400">
               아직 단어장이 없어요
@@ -432,7 +404,7 @@ export default function VocabPage({
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
-                              const ok = await deleteList(childId, item.id);
+                              const ok = await deleteList(item.id);
                               if (ok) {
                                 showToast("단어장을 삭제했어요");
                                 loadLists();
@@ -461,7 +433,7 @@ export default function VocabPage({
                               : "bg-blue-500 text-white"
                           }`}
                         >
-                          📝 객관식 {qs?.basic ? "✓" : `🍪${config.basic_reward ?? 1}`}
+                          📝 객관식 {qs?.basic ? "✓" : ""}
                         </button>
                         <button
                           onClick={() => handleStartQuizFromHome(item.id, "spelling")}
@@ -474,7 +446,7 @@ export default function VocabPage({
                                 : "bg-purple-500 text-white"
                           }`}
                         >
-                          ✏️ 스펠링 {item.spellingCount === 0 ? "0개" : qs?.spelling ? "✓" : `🍪${item.spellingCount}`}
+                          ✏️ 스펠링 {item.spellingCount === 0 ? "0개" : qs?.spelling ? "✓" : `${item.spellingCount}개`}
                         </button>
                       </div>
                     )}
@@ -486,10 +458,8 @@ export default function VocabPage({
         </>
       )}
 
-      {/* List View */}
       {view === "list" && (
         <>
-          {/* Title */}
           <div className="mb-4">
             {isDailyList ? (
               <div className="text-lg font-bold text-gray-800 px-1">🌟 오늘의 단어장</div>
@@ -511,7 +481,6 @@ export default function VocabPage({
             </div>
           ) : (
             <>
-              {/* Add Form (inline) — daily에서는 숨김 */}
               {!isDailyList && showAddForm && (
                 <div className="mb-3">
                   <WordInput
@@ -523,7 +492,6 @@ export default function VocabPage({
                 </div>
               )}
 
-              {/* Word List */}
               <div className="mb-4">
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-2">
@@ -595,15 +563,13 @@ export default function VocabPage({
                           className="bg-white rounded-[14px] px-3 py-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
                         >
                           <div className="flex items-center gap-1.5">
-                            {/* 번호 */}
                             <span className="text-xs text-gray-300 w-5 text-right shrink-0">{index + 1}</span>
 
-                            {/* 스펠링 체크 — 번호 바로 옆 */}
                             {!isDailyList && (
                               <button
                                 onClick={async () => {
                                   const newVal = !entry.spelling;
-                                  const ok = await toggleSpelling(childId, selectedListId!, entry.id, newVal);
+                                  const ok = await toggleSpelling(selectedListId!, entry.id, newVal);
                                   if (ok) {
                                     setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, spelling: newVal } : e));
                                   }
@@ -618,7 +584,6 @@ export default function VocabPage({
                               </button>
                             )}
 
-                            {/* 단어+뜻 — long press target */}
                             <div
                               className="flex-1 min-w-0 py-0.5 select-none"
                               onPointerDown={() => !isDailyList && startLongPress(entry.id)}
@@ -630,7 +595,6 @@ export default function VocabPage({
                               <div className="text-xs text-gray-400 truncate mt-0.5">{entry.meaning}</div>
                             </div>
 
-                            {/* 한국어 TTS */}
                             <button
                               onClick={() => handleSpeak(() => speakKorean(entry.meaning, 1, koVoiceName || undefined))}
                               disabled={isSpeaking}
@@ -640,7 +604,6 @@ export default function VocabPage({
                               한
                             </button>
 
-                            {/* 영어 TTS 1회 */}
                             <button
                               onClick={() => handleSpeak(() => speakWord(entry.word, 1, enVoiceName || undefined))}
                               disabled={isSpeaking}
@@ -650,7 +613,6 @@ export default function VocabPage({
                               영
                             </button>
 
-                            {/* 영어 TTS 3회 */}
                             <button
                               onClick={() => handleSpeak(() => speakWord(entry.word, 3, enVoiceName || undefined))}
                               disabled={isSpeaking}
@@ -660,7 +622,6 @@ export default function VocabPage({
                               영<sub>3</sub>
                             </button>
 
-                            {/* 2개 토글 */}
                             {!isDailyList && ([0, 1] as const).map((slot) => {
                               const val = toggles[entry.id]?.[slot] ?? "";
                               return (
@@ -685,14 +646,13 @@ export default function VocabPage({
                 )}
               </div>
 
-              {/* Daily list quiz buttons */}
               {isDailyList && entries.length >= minWords && (
                 <div className="flex gap-2 mb-4">
                   <button
                     onClick={() => handleStartQuiz("basic")}
                     className="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1 active:opacity-80 bg-blue-500 text-white"
                   >
-                    📝 객관식 🍪{config.basic_reward ?? 1}
+                    📝 객관식
                   </button>
                   <button
                     onClick={() => {
@@ -720,22 +680,15 @@ export default function VocabPage({
         </>
       )}
 
-      {/* Quiz View */}
       {view === "quiz" && (
         <VocabQuiz
           entries={entries}
           quizType={quizType}
           onComplete={handleQuizComplete}
           onCancel={() => setView("home")}
-          onSpellingCorrect={async () => {
-            if (!coinsEnabled) return;
-            const result = await addTransaction(childId, 1, "vocab_quiz", "스펠링 정답 +1🍪");
-            if (result.ok) setCoinBalance(result.newBalance ?? null);
-          }}
         />
       )}
 
-      {/* Result View */}
       {view === "result" && quizResult && (
         <div className="text-center py-6">
           <div className="text-4xl mb-3">
@@ -751,11 +704,6 @@ export default function VocabPage({
           <div className="text-sm text-gray-500 mb-4">
             {quizType === "basic" ? "객관식" : "스펠링"} 퀴즈 완료!
           </div>
-          {quizResult.candy > 0 && (
-            <div className="text-lg font-bold text-amber-500 mb-4">
-              🍪 초코 +{quizResult.candy}!
-            </div>
-          )}
           <button
             onClick={() => {
               setQuizResult(null);
@@ -771,7 +719,6 @@ export default function VocabPage({
         </div>
       )}
 
-      {/* 롱프레스 메뉴 */}
       {menuEntryId && (
         <div
           className="fixed inset-0 z-50 flex items-end bg-black/20"
@@ -815,7 +762,6 @@ export default function VocabPage({
         </div>
       )}
 
-      <BottomNav childId={childId} />
       <Toast message={toastMsg} />
       {showSettings && (
         <VocabSettings

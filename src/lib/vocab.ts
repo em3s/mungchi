@@ -7,10 +7,11 @@ import {
   seedStatic,
   syncDynamic,
   getAllWords,
-  clearDynamicCache,
   resetAll,
 } from "@/lib/dict-db";
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
+
+const USER_ID = "default";
 
 // --- 오늘의 단어장 ---
 
@@ -37,12 +38,11 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** 날짜+유저 시드로 오늘의 단어 10개 선택 (동기, STATIC_DICT 직접 사용) */
-export function getDailyWords(userId: string, date: string): VocabEntry[] {
-  const seed = hashSeed(`${date}:${userId}`);
+/** 날짜 시드로 오늘의 단어 10개 선택 */
+export function getDailyWords(date: string): VocabEntry[] {
+  const seed = hashSeed(date);
   const rng = mulberry32(seed);
 
-  // Fisher-Yates 셔플 (인덱스 배열)
   const indices = Array.from({ length: STATIC_DICT.length }, (_, i) => i);
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -54,7 +54,7 @@ export function getDailyWords(userId: string, date: string): VocabEntry[] {
     const [word, meaning, level] = STATIC_DICT[idx];
     return {
       id: `daily-${i}`,
-      user_id: userId,
+      user_id: USER_ID,
       list_id: DAILY_LIST_ID,
       dictionary_id: null,
       word,
@@ -64,9 +64,9 @@ export function getDailyWords(userId: string, date: string): VocabEntry[] {
   });
 }
 
-const ENTRIES_TTL = 30_000; // 30초
-const LISTS_TTL = 30_000; // 30초
-const CONFIG_TTL = 60_000; // 1분
+const ENTRIES_TTL = 30_000;
+const LISTS_TTL = 30_000;
+const CONFIG_TTL = 60_000;
 
 // --- 사전: IndexedDB(정적+동적) → 메모리 캐시 ---
 
@@ -88,29 +88,23 @@ export async function loadDictionary(): Promise<DictionaryEntry[]> {
 }
 
 async function _loadDictionaryImpl(): Promise<DictionaryEntry[]> {
-
-  // 1. 정적 데이터를 IndexedDB에 시드 (최초 1회 또는 버전 변경 시)
   await seedStatic(STATIC_DICT);
 
-  // 2. Supabase에서 전체 사전 가져오기
   const { data } = await supabase
     .from("dictionary")
     .select("*")
     .order("word");
   const allDbEntries = (data as DictionaryEntry[]) ?? [];
 
-  // DB word→UUID 매핑 (정적 단어의 실제 UUID 보존용)
   const dbIdMap = new Map<string, string>();
   for (const e of allDbEntries) {
     dbIdMap.set(e.word, e.id);
   }
 
-  // 동적 단어만 IndexedDB에 동기화
   const staticWords = new Set(STATIC_DICT.map(([w]) => w));
   const dynamicOnly = allDbEntries.filter((e) => !staticWords.has(e.word));
   await syncDynamic(dynamicOnly);
 
-  // 3. IndexedDB에서 전체 로드 → 메모리 캐시 (DB UUID 우선 사용)
   const rows = await getAllWords();
   dictCache = rows.map((r) => ({
     id: r.dbId ?? dbIdMap.get(r.word) ?? `s:${r.word}`,
@@ -121,7 +115,6 @@ async function _loadDictionaryImpl(): Promise<DictionaryEntry[]> {
   return dictCache;
 }
 
-// IndexedDB 전체 초기화 + 재로드 (설정에서 사전 리로드)
 export async function reloadDictionary(): Promise<number> {
   await resetAll();
   dictCache = null;
@@ -149,20 +142,20 @@ export function searchDictionary(
 
 // --- 단어장 목록 조회 ---
 
-export async function getVocabLists(
-  childId: string,
-): Promise<{ id: string; name: string; count: number; spellingCount: number; createdAt: string }[]> {
-  return cached(`vocab_lists:${childId}`, LISTS_TTL, async () => {
+export async function getVocabLists(): Promise<
+  { id: string; name: string; count: number; spellingCount: number; createdAt: string }[]
+> {
+  return cached(`vocab_lists`, LISTS_TTL, async () => {
     const [metaRes, entriesRes] = await Promise.all([
       supabase
         .from("vocab_list_meta")
         .select("id, name, created_at")
-        .eq("user_id", childId)
+        .eq("user_id", USER_ID)
         .order("created_at", { ascending: false }),
       supabase
         .from("vocab_entries")
         .select("list_id, spelling")
-        .eq("user_id", childId),
+        .eq("user_id", USER_ID),
     ]);
 
     const counts = new Map<string, { total: number; spelling: number }>();
@@ -192,23 +185,21 @@ export async function getVocabLists(
 // --- 단어장 생성 ---
 
 export async function createList(
-  childId: string,
   name: string,
 ): Promise<{ ok: boolean; listId?: string }> {
   const { data, error } = await supabase
     .from("vocab_list_meta")
-    .insert({ user_id: childId, name })
+    .insert({ user_id: USER_ID, name })
     .select("id")
     .single();
   if (error) return { ok: false };
-  invalidate(`vocab_lists:${childId}`);
+  invalidate(`vocab_lists`);
   return { ok: true, listId: (data as { id: string }).id };
 }
 
 // --- 단어장 이름 변경 ---
 
 export async function renameList(
-  childId: string,
   listId: string,
   name: string,
 ): Promise<boolean> {
@@ -217,35 +208,29 @@ export async function renameList(
     .update({ name })
     .eq("id", listId);
   if (error) return false;
-  invalidate(`vocab_lists:${childId}`);
+  invalidate(`vocab_lists`);
   return true;
 }
 
-export async function deleteList(
-  childId: string,
-  listId: string,
-): Promise<boolean> {
+export async function deleteList(listId: string): Promise<boolean> {
   const { error } = await supabase
     .from("vocab_list_meta")
     .delete()
     .eq("id", listId)
-    .eq("user_id", childId);
+    .eq("user_id", USER_ID);
   if (error) return false;
-  invalidate(`vocab_lists:${childId}`);
+  invalidate(`vocab_lists`);
   return true;
 }
 
 // --- 단어 목록 ---
 
-export async function getEntries(
-  childId: string,
-  listId: string,
-): Promise<VocabEntry[]> {
-  return cached(`vocab_entries:${childId}:${listId}`, ENTRIES_TTL, async () => {
+export async function getEntries(listId: string): Promise<VocabEntry[]> {
+  return cached(`vocab_entries:${listId}`, ENTRIES_TTL, async () => {
     const { data } = await supabase
       .from("vocab_entries")
       .select("*")
-      .eq("user_id", childId)
+      .eq("user_id", USER_ID)
       .eq("list_id", listId)
       .order("created_at", { ascending: true });
     return (data as VocabEntry[]) ?? [];
@@ -253,7 +238,6 @@ export async function getEntries(
 }
 
 export async function addEntry(
-  childId: string,
   listId: string,
   dictEntry: DictionaryEntry | null,
   custom?: { word: string; meaning: string },
@@ -263,7 +247,7 @@ export async function addEntry(
   if (!word || !meaning) return { ok: false };
 
   const row: Record<string, unknown> = {
-    user_id: childId,
+    user_id: USER_ID,
     list_id: listId,
     word,
     meaning,
@@ -276,13 +260,12 @@ export async function addEntry(
     .select()
     .single();
   if (error) return { ok: false, duplicate: error.code === "23505" };
-  invalidate(`vocab_entries:${childId}:${listId}`);
-  invalidate(`vocab_lists:${childId}`);
+  invalidate(`vocab_entries:${listId}`);
+  invalidate(`vocab_lists`);
   return { ok: true, entry: data as VocabEntry };
 }
 
 export async function removeEntry(
-  childId: string,
   listId: string,
   entryId: string,
 ): Promise<boolean> {
@@ -291,15 +274,14 @@ export async function removeEntry(
     .delete()
     .eq("id", entryId);
   if (error) return false;
-  invalidate(`vocab_entries:${childId}:${listId}`);
-  invalidate(`vocab_lists:${childId}`);
+  invalidate(`vocab_entries:${listId}`);
+  invalidate(`vocab_lists`);
   return true;
 }
 
 // --- 단어 수정 ---
 
 export async function updateEntry(
-  childId: string,
   listId: string,
   entryId: string,
   word: string,
@@ -310,14 +292,13 @@ export async function updateEntry(
     .update({ word, meaning })
     .eq("id", entryId);
   if (error) return false;
-  invalidate(`vocab_entries:${childId}:${listId}`);
+  invalidate(`vocab_entries:${listId}`);
   return true;
 }
 
 // --- 스펠링 토글 ---
 
 export async function toggleSpelling(
-  childId: string,
   listId: string,
   entryId: string,
   value: boolean,
@@ -327,15 +308,14 @@ export async function toggleSpelling(
     .update({ spelling: value })
     .eq("id", entryId);
   if (error) return false;
-  invalidate(`vocab_entries:${childId}:${listId}`);
-  invalidate(`vocab_lists:${childId}`);
+  invalidate(`vocab_entries:${listId}`);
+  invalidate(`vocab_lists`);
   return true;
 }
 
 // --- 퀴즈 ---
 
 export async function getQuizStatuses(
-  childId: string,
   listIds: string[],
 ): Promise<Map<string, { basic: boolean; spelling: boolean }>> {
   const result = new Map<string, { basic: boolean; spelling: boolean }>();
@@ -345,9 +325,9 @@ export async function getQuizStatuses(
   const { data } = await supabase
     .from("vocab_quizzes")
     .select("list_id, quiz_type")
-    .eq("user_id", childId)
+    .eq("user_id", USER_ID)
     .in("list_id", listIds)
-    .gt("candy_earned", 0);
+    .gt("correct_answers", 0);
 
   for (const row of (data ?? []) as { list_id: string; quiz_type: string }[]) {
     const s = result.get(row.list_id);
@@ -360,20 +340,18 @@ export async function getQuizStatuses(
 }
 
 export async function saveQuizResult(
-  childId: string,
   listId: string,
   quizType: VocabQuizType,
   totalQuestions: number,
   correctAnswers: number,
-  candyEarned: number,
 ): Promise<{ ok: boolean }> {
   const { error } = await supabase.from("vocab_quizzes").insert({
-    user_id: childId,
+    user_id: USER_ID,
     list_id: listId,
     quiz_type: quizType,
     total_questions: totalQuestions,
     correct_answers: correctAnswers,
-    candy_earned: candyEarned,
+    candy_earned: 0,
   });
   return { ok: !error };
 }
@@ -435,13 +413,11 @@ export function getSimilarWords(
   if (pool.length === 0) return [];
 
   const word = targetWord.toLowerCase();
-  // 먼저 셔플 → 안정 정렬하면 같은 거리끼리 랜덤 순서 유지
   const shuffled = [...pool].sort(() => Math.random() - 0.5);
   const scored = shuffled.map((e) => ({
     entry: e,
     dist: levenshtein(word, e.word.toLowerCase()),
   }));
   scored.sort((a, b) => a.dist - b.dist);
-  // dist=0 제외 (동일 단어)
   return scored.filter((s) => s.dist > 0).slice(0, count).map((s) => s.entry);
 }

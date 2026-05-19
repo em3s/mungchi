@@ -7,22 +7,17 @@
     "prebuild": "node scripts/stamp-sw.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
     "dexie": "^4.3.0",
-    "emoji-picker-react": "^4.18.0",
     "next": "16.1.6",
-    "node-ical": "^0.25.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "swr": "^2.4.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
