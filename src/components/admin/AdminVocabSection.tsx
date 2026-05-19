@@ -42,42 +42,6 @@ function parseVocabText(raw: string): {
 export function AdminVocabSection({ showToast }: Props) {
   const [rawText, setRawText] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-
-  async function handleImageExtract(file: File) {
-    setExtracting(true);
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const MAX = 1600;
-          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
-          canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-          resolve(dataUrl.split(",")[1]);
-        };
-        img.onerror = reject;
-        img.src = URL.createObjectURL(file);
-      });
-
-      const res = await fetch("/api/extract-vocab", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mimeType: "image/jpeg" }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "API 오류");
-      setRawText(data.text.trim());
-      showToast("단어 추출 완료! 확인 후 단어장 만들기를 눌러주세요.");
-    } catch (e) {
-      showToast(`추출 실패: ${e instanceof Error ? e.message : "다시 시도해주세요"}`);
-    } finally {
-      setExtracting(false);
-    }
-  }
 
   const { title, words, errors } = parseVocabText(rawText);
   const canSubmit = title.trim() !== "" && words.length > 0;
@@ -85,21 +49,6 @@ export function AdminVocabSection({ showToast }: Props) {
   return (
     <section className="bg-white rounded-2xl p-5 shadow-sm mb-4">
       <h2 className="text-lg font-bold mb-4">📖 단어장 만들기</h2>
-
-      <label className={`flex items-center justify-center gap-2 w-full py-3 mb-3 rounded-xl border-2 border-dashed font-semibold text-sm cursor-pointer transition-all ${extracting ? "border-gray-200 text-gray-300 bg-gray-50" : "border-[#6c5ce7]/40 text-[#6c5ce7] bg-[#6c5ce7]/5 active:bg-[#6c5ce7]/10"}`}>
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          disabled={extracting}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleImageExtract(file);
-            e.target.value = "";
-          }}
-        />
-        {extracting ? "🔍 추출 중..." : "📷 시험지 사진으로 추출"}
-      </label>
 
       <button
         type="button"
@@ -120,7 +69,7 @@ export function AdminVocabSection({ showToast }: Props) {
         value={rawText}
         onChange={(e) => setRawText(e.target.value)}
         placeholder={"[단어장 제목]\napple | 사과\nbook | 책"}
-        rows={6}
+        rows={8}
         className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none mb-2"
       />
 

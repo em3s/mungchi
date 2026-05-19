@@ -9,7 +9,6 @@
 - **UI**: React + Tailwind CSS
 - **데이터**: Supabase (PostgreSQL), 클라이언트 직접 호출
 - **로컬 캐시**: IndexedDB (Dexie.js) — 사전 데이터
-- **AI**: Gemini 2.0 Flash — 시험지 사진 → 단어 자동 추출
 - **배포**: Vercel
 - **PWA**: manifest.json, iPad 9 반응형 대응
 
@@ -23,19 +22,16 @@
 ## 환경 변수
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `GEMINI_API_KEY` (어드민 시험지 사진 추출용)
 
 ## 라우트
 
-- `/` — 단어장 메인 (단어장 목록, 오늘의 단어장, 퀴즈)
-- `/admin` — 관리 (단어장 벌크 입력, 시험지 사진 추출) · PIN 인증
-- `/api/extract-vocab` — Gemini API 시험지 사진 추출
+- `/` — 단어장 메인 (단어장 목록, 오늘의 단어장, 퀴즈) · PIN 인증
+- `/admin` — 관리 (단어장 벌크 입력) · PIN 인증
 
 ## 프로젝트 구조
 
 - `src/app/page.tsx` — 단어장 메인
 - `src/app/admin/page.tsx` — 관리 페이지
-- `src/app/api/extract-vocab/route.ts` — Gemini 추출 API
 - `src/components/`
   - `PageHeader.tsx`, `PinModal.tsx`, `Toast.tsx`, `UpdateButton.tsx`, `SWRProvider.tsx`
   - `WordInput.tsx`, `VocabQuiz.tsx`, `VocabSettings.tsx`
@@ -66,9 +62,8 @@
 
 ## 관리 페이지
 
-- PIN 인증 (`src/lib/constants.ts`의 `PIN`)
+- PIN 인증 (`src/lib/constants.ts`의 `PIN`) — 메인과 세션 공유
 - 단어장 벌크 입력: `[제목]` + `word | meaning` 라인
-- 시험지 사진 추출: Gemini 2.0 Flash 멀티모달 호출
 
 ## 자동 업데이트 (PWA)
 
