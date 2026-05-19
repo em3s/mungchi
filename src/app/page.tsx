@@ -7,7 +7,6 @@ import {
   deleteList,
   removeEntry,
   updateEntry,
-  renameList,
 } from "@/lib/vocab";
 import { PageHeader } from "@/components/PageHeader";
 import { Toast } from "@/components/Toast";
@@ -149,14 +148,6 @@ export default function VocabPage() {
     if (isSpeaking) return;
     setIsSpeaking(true);
     try { await fn(); } finally { setIsSpeaking(false); }
-  }
-
-  async function handleTitleSave() {
-    if (!selectedListId) return;
-    const ok = await renameList(selectedListId, listTitle);
-    if (ok) {
-      showToast("이름을 저장했어요");
-    }
   }
 
   function handleStartEdit(entry: VocabEntry) {
@@ -310,15 +301,8 @@ export default function VocabPage() {
 
       {view === "list" && (
         <>
-          <div className="mb-4">
-            <input
-              type="text"
-              value={listTitle}
-              onChange={(e) => setListTitleState(e.target.value)}
-              onBlur={handleTitleSave}
-              placeholder="단어장 이름"
-              className="w-full text-lg font-bold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 px-1"
-            />
+          <div className="mb-4 px-1">
+            <h2 className="text-lg font-bold text-gray-800 truncate">{listTitle}</h2>
           </div>
 
           {loading ? (

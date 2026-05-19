@@ -59,21 +59,6 @@ export async function createList(
   return { ok: true, listId: (data as { id: string }).id };
 }
 
-// --- 단어장 이름 변경 ---
-
-export async function renameList(
-  listId: string,
-  name: string,
-): Promise<boolean> {
-  const { error } = await supabase
-    .from("vocab_list_meta")
-    .update({ name })
-    .eq("id", listId);
-  if (error) return false;
-  invalidate(`vocab_lists`);
-  return true;
-}
-
 export async function deleteList(listId: string): Promise<boolean> {
   const { error } = await supabase
     .from("vocab_list_meta")
