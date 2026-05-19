@@ -314,7 +314,7 @@ export default function VocabPage() {
             <div className="text-center py-16 text-gray-400">
               아직 단어장이 없어요
               <br />
-              <span className="text-sm">관리 페이지에서 단어장을 만들어주세요</span>
+              <span className="text-sm">만들기 탭에서 단어장을 만들어주세요</span>
             </div>
           ) : (
             <ul className="flex flex-col gap-2">
