@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getEntries,
   getVocabLists,
-  createList,
   deleteList,
   addEntry,
   removeEntry,
@@ -15,10 +14,7 @@ import {
   getVocabConfig,
   getQuizStatuses,
   loadDictionary,
-  getDailyWords,
-  DAILY_LIST_ID,
 } from "@/lib/vocab";
-import { todayKST } from "@/lib/date";
 import { PageHeader } from "@/components/PageHeader";
 import { WordInput } from "@/components/WordInput";
 import { VocabQuiz } from "@/components/VocabQuiz";
@@ -26,6 +22,7 @@ import { Toast } from "@/components/Toast";
 import { VocabSettings } from "@/components/VocabSettings";
 import { useToast } from "@/hooks/useToast";
 import { useLongPress } from "@/hooks/useLongPress";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PinModal } from "@/components/PinModal";
 import { TopTabs } from "@/components/TopTabs";
 import { speakWord, speakKorean, getAvailableVoices } from "@/lib/tts";
@@ -55,7 +52,6 @@ export default function VocabPage() {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<ViewState>("home");
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
-  const [newListName, setNewListName] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [quizType, setQuizType] = useState<VocabQuizType>("basic");
   const [quizResult, setQuizResult] = useState<{
@@ -97,6 +93,11 @@ export default function VocabPage() {
     }
   }, []);
 
+  const { pullDistance, refreshing, threshold } = usePullToRefresh(
+    loadLists,
+    view === "home",
+  );
+
   const loadEntries = useCallback(async () => {
     if (!selectedListId) return;
     const data = await getEntries(selectedListId);
@@ -130,15 +131,6 @@ export default function VocabPage() {
   }, [selectedListId, loadEntries, view]);
 
   const minWords = config.min_words ?? 3;
-  const isDailyList = selectedListId === DAILY_LIST_ID;
-
-  function handleOpenDaily() {
-    const words = getDailyWords(todayKST());
-    setListTitleState("오늘의 단어장");
-    setSelectedListId(DAILY_LIST_ID);
-    setEntries(words);
-    setView("list");
-  }
 
   function handleOpenList(listId: string) {
     const list = vocabLists.find((l) => l.id === listId);
@@ -146,21 +138,6 @@ export default function VocabPage() {
     setSelectedListId(listId);
     setLoading(true);
     setView("list");
-  }
-
-  async function handleCreateNew() {
-    const name = newListName.trim();
-    if (!name) return;
-    const result = await createList(name);
-    if (result.ok && result.listId) {
-      setListTitleState(name);
-      setSelectedListId(result.listId);
-      setNewListName("");
-      setLoading(true);
-      setView("list");
-    } else {
-      showToast("단어장 생성에 실패했어요");
-    }
   }
 
   function handleBackToHome() {
@@ -267,20 +244,6 @@ export default function VocabPage() {
     }
   }
 
-  function handleStartQuiz(type: VocabQuizType) {
-    setQuizType(type);
-    setView("quiz");
-  }
-
-  function handleStartDailyQuiz(type: VocabQuizType) {
-    const words = getDailyWords(todayKST());
-    setSelectedListId(DAILY_LIST_ID);
-    setQuizType(type);
-    const quizEntries = type === "spelling" ? words.filter((e) => e.spelling) : words;
-    setEntries(quizEntries);
-    setView("quiz");
-  }
-
   async function handleStartQuizFromHome(listId: string, type: VocabQuizType) {
     setSelectedListId(listId);
     setQuizType(type);
@@ -293,9 +256,7 @@ export default function VocabPage() {
   }
 
   async function handleQuizComplete(total: number, correct: number) {
-    if (!isDailyList) {
-      await saveQuizResult(selectedListId!, quizType, total, correct);
-    }
+    await saveQuizResult(selectedListId!, quizType, total, correct);
     setQuizResult({ total, correct });
     setView("result");
   }
@@ -319,69 +280,41 @@ export default function VocabPage() {
     );
   }
 
+  const ptrActive = pullDistance > 0 || refreshing;
+
   return (
-    <div className="max-w-[480px] mx-auto px-4 pb-20 pt-4 md:max-w-[640px] md:px-6 md:pb-24">
+    <div
+      className="relative max-w-[480px] mx-auto px-4 pb-20 pt-4 md:max-w-[640px] md:px-6 md:pb-24"
+      style={{
+        transform: ptrActive ? `translateY(${pullDistance}px)` : undefined,
+        transition: refreshing || pullDistance === 0 ? "transform 0.2s ease-out" : "none",
+      }}
+    >
+      {ptrActive && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none"
+          style={{ top: -40, height: 32, width: 32 }}
+        >
+          <div
+            className={`w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-base ${refreshing ? "animate-spin" : ""}`}
+            style={{
+              opacity: Math.min(1, pullDistance / threshold),
+            }}
+          >
+            {refreshing ? "⟳" : pullDistance >= threshold ? "↑" : "↓"}
+          </div>
+        </div>
+      )}
       <TopTabs />
       <PageHeader title="📖 영어 단어" titleProps={titleLongPress} />
 
       {view === "home" && (
         <>
-          <div className="mb-4">
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-[14px] shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden">
-              <button
-                onClick={handleOpenDaily}
-                className="w-full flex items-center justify-between px-4 py-3.5 active:bg-amber-100/50 transition-colors"
-              >
-                <div className="text-left">
-                  <div className="font-bold text-base text-amber-800">
-                    🌟 오늘의 단어장
-                  </div>
-                  <div className="text-xs text-amber-600/70 mt-0.5">
-                    매일 새로운 10개 단어
-                  </div>
-                </div>
-                <span className="text-amber-400">›</span>
-              </button>
-              <div className="flex gap-2 px-4 pb-3 -mt-1">
-                <button
-                  onClick={() => handleStartDailyQuiz("basic")}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 bg-blue-500 text-white"
-                >
-                  📝 객관식
-                </button>
-                <button
-                  onClick={() => handleStartDailyQuiz("spelling")}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 active:opacity-80 bg-purple-500 text-white"
-                >
-                  ✏️ 스펠링
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 mb-6">
-            <input
-              type="text"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleCreateNew(); }}
-              placeholder="새 단어장 이름"
-              className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-700"
-            />
-            <button
-              onClick={handleCreateNew}
-              disabled={!newListName.trim()}
-              className="bg-[var(--accent,#6c5ce7)] text-white px-4 py-3 rounded-xl font-bold text-sm whitespace-nowrap active:opacity-80 disabled:opacity-40"
-            >
-              + 새 단어장
-            </button>
-          </div>
-
           {vocabLists.length === 0 ? (
             <div className="text-center py-16 text-gray-400">
               아직 단어장이 없어요
               <br />
-              <span className="text-sm">새 단어장을 만들어보세요!</span>
+              <span className="text-sm">관리 페이지에서 단어장을 만들어주세요</span>
             </div>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -461,18 +394,14 @@ export default function VocabPage() {
       {view === "list" && (
         <>
           <div className="mb-4">
-            {isDailyList ? (
-              <div className="text-lg font-bold text-gray-800 px-1">🌟 오늘의 단어장</div>
-            ) : (
-              <input
-                type="text"
-                value={listTitle}
-                onChange={(e) => setListTitleState(e.target.value)}
-                onBlur={handleTitleSave}
-                placeholder="단어장 이름"
-                className="w-full text-lg font-bold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 px-1"
-              />
-            )}
+            <input
+              type="text"
+              value={listTitle}
+              onChange={(e) => setListTitleState(e.target.value)}
+              onBlur={handleTitleSave}
+              placeholder="단어장 이름"
+              className="w-full text-lg font-bold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 px-1"
+            />
           </div>
 
           {loading ? (
@@ -481,7 +410,7 @@ export default function VocabPage() {
             </div>
           ) : (
             <>
-              {!isDailyList && showAddForm && (
+              {showAddForm && (
                 <div className="mb-3">
                   <WordInput
                     onSelect={handleAddWord}
@@ -496,10 +425,10 @@ export default function VocabPage() {
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-xs font-semibold text-gray-500 tracking-wider">
-                      단어 ({entries.length}){!isDailyList && <> · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span></>}
+                      단어 ({entries.length}) · <span className="text-purple-400">스펠링 {entries.filter((e) => e.spelling).length}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      {!isDailyList && !showAddForm && (
+                      {!showAddForm && (
                         <button
                           onClick={() => setShowAddForm(true)}
                           className="text-sm font-semibold px-3 py-1 rounded-xl text-white bg-[var(--accent,#6c5ce7)] ml-1"
@@ -518,7 +447,7 @@ export default function VocabPage() {
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {entries.map((entry, index) => {
-                      if (!isDailyList && editingEntryId === entry.id) {
+                      if (editingEntryId === entry.id) {
                         return (
                           <li
                             key={entry.id}
@@ -565,28 +494,26 @@ export default function VocabPage() {
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs text-gray-300 w-5 text-right shrink-0">{index + 1}</span>
 
-                            {!isDailyList && (
-                              <button
-                                onClick={async () => {
-                                  const newVal = !entry.spelling;
-                                  const ok = await toggleSpelling(selectedListId!, entry.id, newVal);
-                                  if (ok) {
-                                    setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, spelling: newVal } : e));
-                                  }
-                                }}
-                                className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm ${
-                                  entry.spelling
-                                    ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
-                                    : "bg-white border-[var(--accent,#6c5ce7)]"
-                                }`}
-                              >
-                                {entry.spelling ? "✓" : ""}
-                              </button>
-                            )}
+                            <button
+                              onClick={async () => {
+                                const newVal = !entry.spelling;
+                                const ok = await toggleSpelling(selectedListId!, entry.id, newVal);
+                                if (ok) {
+                                  setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, spelling: newVal } : e));
+                                }
+                              }}
+                              className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all text-sm ${
+                                entry.spelling
+                                  ? "bg-[var(--accent,#6c5ce7)] border-[var(--accent,#6c5ce7)] text-white"
+                                  : "bg-white border-[var(--accent,#6c5ce7)]"
+                              }`}
+                            >
+                              {entry.spelling ? "✓" : ""}
+                            </button>
 
                             <div
                               className="flex-1 min-w-0 py-0.5 select-none"
-                              onPointerDown={() => !isDailyList && startLongPress(entry.id)}
+                              onPointerDown={() => startLongPress(entry.id)}
                               onPointerUp={cancelLongPress}
                               onPointerLeave={cancelLongPress}
                               onTouchMove={cancelLongPress}
@@ -622,7 +549,7 @@ export default function VocabPage() {
                               영<sub>3</sub>
                             </button>
 
-                            {!isDailyList && ([0, 1] as const).map((slot) => {
+                            {([0, 1] as const).map((slot) => {
                               const val = toggles[entry.id]?.[slot] ?? "";
                               return (
                                 <button
@@ -645,29 +572,6 @@ export default function VocabPage() {
                   </ul>
                 )}
               </div>
-
-              {isDailyList && entries.length >= minWords && (
-                <div className="flex gap-2 mb-4">
-                  <button
-                    onClick={() => handleStartQuiz("basic")}
-                    className="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1 active:opacity-80 bg-blue-500 text-white"
-                  >
-                    📝 객관식
-                  </button>
-                  <button
-                    onClick={() => {
-                      const spellingEntries = entries.filter((e) => e.spelling);
-                      if (spellingEntries.length === 0) return;
-                      setEntries(spellingEntries);
-                      handleStartQuiz("spelling");
-                    }}
-                    disabled={entries.filter((e) => e.spelling).length === 0}
-                    className="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1 active:opacity-80 bg-purple-500 text-white disabled:opacity-40"
-                  >
-                    ✏️ 스펠링
-                  </button>
-                </div>
-              )}
 
               <button
                 onClick={handleBackToHome}
