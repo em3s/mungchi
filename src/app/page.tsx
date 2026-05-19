@@ -55,7 +55,7 @@ export default function VocabPage() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [menuEntryId, setMenuEntryId] = useState<string | null>(null);
 
-  const [testMode, setTestMode] = useState(false);
+  const [maskMode, setMaskMode] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
   const [vocabLists, setVocabLists] = useState<
@@ -76,7 +76,7 @@ export default function VocabPage() {
     setListTitleState("");
     setToggles({});
     setMenuEntryId(null);
-    setTestMode(false);
+    setMaskMode(false);
     setRevealed(new Set());
     loadLists();
   }, [loadLists]);
@@ -335,16 +335,16 @@ export default function VocabPage() {
                 </div>
                 <button
                   onClick={() => {
-                    setTestMode((m) => !m);
+                    setMaskMode((m) => !m);
                     setRevealed(new Set());
                   }}
                   className={`text-sm font-semibold px-3 py-1.5 rounded-xl shrink-0 ${
-                    testMode
+                    maskMode
                       ? "bg-amber-500 text-white"
                       : "bg-white border border-gray-200 text-gray-600"
                   }`}
                 >
-                  {testMode ? "시험 종료" : "📝 시험보기"}
+                  {maskMode ? "가리기 종료" : "🙈 뜻 가리기"}
                 </button>
               </div>
 
@@ -394,7 +394,7 @@ export default function VocabPage() {
                         </li>
                       );
                     }
-                    const isRevealed = !testMode || revealed.has(entry.id);
+                    const meaningRevealed = !maskMode || revealed.has(entry.id);
                     return (
                       <li
                         key={entry.id}
@@ -409,14 +409,22 @@ export default function VocabPage() {
                             onPointerUp={cancelLongPress}
                             onPointerLeave={cancelLongPress}
                             onTouchMove={cancelLongPress}
-                            onClick={testMode ? () => toggleReveal(entry.id) : undefined}
+                            onClick={maskMode ? () => toggleReveal(entry.id) : undefined}
                           >
-                            {isRevealed ? (
-                              <div className="text-sm font-semibold text-gray-800 truncate">{entry.word}</div>
+                            <div className="text-sm font-semibold text-gray-800 truncate">{entry.word}</div>
+                            {maskMode && !meaningRevealed ? (
+                              <div className="text-sm font-semibold text-gray-300 truncate tracking-widest mt-0.5">••••••</div>
                             ) : (
-                              <div className="text-sm font-semibold text-gray-300 truncate tracking-widest">••••••</div>
+                              <div
+                                className={`truncate mt-0.5 ${
+                                  maskMode
+                                    ? "text-sm font-semibold text-gray-800"
+                                    : "text-xs text-gray-400"
+                                }`}
+                              >
+                                {entry.meaning}
+                              </div>
                             )}
-                            <div className="text-xs text-gray-400 truncate mt-0.5">{entry.meaning}</div>
                           </div>
 
                           <button
