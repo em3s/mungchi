@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { createList } from "@/lib/vocab";
 
-const USER_ID = "default";
+const USER_ID = "sihyun";
 
 interface Props {
   showToast: (msg: string) => void;

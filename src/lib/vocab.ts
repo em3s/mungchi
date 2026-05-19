@@ -11,7 +11,7 @@ import {
 } from "@/lib/dict-db";
 import type { DictionaryEntry, VocabEntry, VocabQuizType } from "@/lib/types";
 
-const USER_ID = "default";
+const USER_ID = "sihyun";
 
 // --- 오늘의 단어장 ---
 
