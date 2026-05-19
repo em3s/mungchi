@@ -1,6 +1,6 @@
 -- mungchi Supabase 스키마 — 영어 단어장만
 -- Supabase SQL Editor에서 실행
--- user_id 컬럼은 호환성을 위해 유지하되, 코드에서는 "default" 고정값 사용
+-- 단일 유저 시스템: 코드에서는 user_id="sihyun" 고정값 사용
 
 -- 1. dictionary: 영어 사전 (English → Korean)
 CREATE TABLE dictionary (
@@ -75,3 +75,16 @@ CREATE POLICY "anon_all" ON vocab_config FOR ALL TO anon USING (true) WITH CHECK
 -- 초기 보상 설정 (현재 코드에서는 min_words만 사용)
 INSERT INTO vocab_config (key, value) VALUES
   ('min_words', 3);
+
+-- 6. vocab_entry_counts: 단어장별 단어 수 집계 뷰
+-- PostgREST 기본 limit(1000)을 우회 — 클라이언트는 list_id별 count를 1쿼리로 조회
+CREATE OR REPLACE VIEW vocab_entry_counts AS
+SELECT
+  list_id,
+  user_id,
+  COUNT(*)::int AS total,
+  COUNT(*) FILTER (WHERE spelling)::int AS spelling_count
+FROM vocab_entries
+GROUP BY list_id, user_id;
+
+GRANT SELECT ON vocab_entry_counts TO anon, authenticated;

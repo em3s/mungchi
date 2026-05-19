@@ -146,25 +146,26 @@ export async function getVocabLists(): Promise<
   { id: string; name: string; count: number; spellingCount: number; createdAt: string }[]
 > {
   return cached(`vocab_lists`, LISTS_TTL, async () => {
-    const [metaRes, entriesRes] = await Promise.all([
+    const [metaRes, countsRes] = await Promise.all([
       supabase
         .from("vocab_list_meta")
         .select("id, name, created_at")
         .eq("user_id", USER_ID)
         .order("created_at", { ascending: false }),
       supabase
-        .from("vocab_entries")
-        .select("list_id, spelling")
+        .from("vocab_entry_counts")
+        .select("list_id, total, spelling_count")
         .eq("user_id", USER_ID),
     ]);
 
     const counts = new Map<string, { total: number; spelling: number }>();
-    if (entriesRes.data) {
-      for (const row of entriesRes.data as { list_id: string; spelling: boolean }[]) {
-        const prev = counts.get(row.list_id) ?? { total: 0, spelling: 0 };
-        prev.total += 1;
-        if (row.spelling) prev.spelling += 1;
-        counts.set(row.list_id, prev);
+    if (countsRes.data) {
+      for (const row of countsRes.data as {
+        list_id: string;
+        total: number;
+        spelling_count: number;
+      }[]) {
+        counts.set(row.list_id, { total: row.total, spelling: row.spelling_count });
       }
     }
 
