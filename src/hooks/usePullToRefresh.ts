@@ -21,27 +21,35 @@ export function usePullToRefresh(
       setPullDistance(0);
       return;
     }
+
     let startY: number | null = null;
     let currentDist = 0;
     let isRefreshing = false;
+    let pressed = false;
 
-    function onTouchStart(e: TouchEvent) {
+    function onDown(e: PointerEvent) {
       if (window.scrollY > 0 || isRefreshing) return;
-      startY = e.touches[0].clientY;
+      pressed = true;
+      startY = e.clientY;
       currentDist = 0;
     }
 
-    function onTouchMove(e: TouchEvent) {
-      if (startY === null || isRefreshing) return;
-      const diff = e.touches[0].clientY - startY;
+    function onMove(e: PointerEvent) {
+      if (!pressed || startY === null || isRefreshing) return;
+      const diff = e.clientY - startY;
       if (diff > 0 && window.scrollY === 0) {
         currentDist = Math.min(MAX_PULL, diff * DAMPING);
         setPullDistance(currentDist);
-        if (e.cancelable) e.preventDefault();
+        if (e.cancelable && e.pointerType === "touch") e.preventDefault();
+      } else if (diff <= 0 && currentDist > 0) {
+        currentDist = 0;
+        setPullDistance(0);
       }
     }
 
-    async function onTouchEnd() {
+    async function finish() {
+      if (!pressed) return;
+      pressed = false;
       if (startY === null) return;
       const finalDist = currentDist;
       startY = null;
@@ -63,13 +71,15 @@ export function usePullToRefresh(
       }
     }
 
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
     return () => {
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
     };
   }, [enabled]);
 
