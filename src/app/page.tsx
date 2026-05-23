@@ -404,7 +404,10 @@ export default function VocabPage() {
                               <>
                                 <div className="text-sm font-semibold text-gray-800 truncate">{entry.meaning}</div>
                                 {wordRevealed ? (
-                                  <div className="text-xs text-gray-400 truncate mt-0.5">{entry.word}</div>
+                                  <div className="text-xs truncate tracking-widest mt-0.5">
+                                    <span className="text-gray-500 font-medium">{entry.word.charAt(0)}</span>
+                                    <span className="text-gray-300">{"•".repeat(Math.max(0, entry.word.length - 1))}</span>
+                                  </div>
                                 ) : (
                                   <div className="text-xs text-gray-300 truncate tracking-widest mt-0.5">••••••</div>
                                 )}
