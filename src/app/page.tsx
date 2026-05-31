@@ -49,6 +49,8 @@ export default function VocabPage() {
   const [editMeaning, setEditMeaning] = useState("");
   const editWordRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const isLongPressRef = useRef<boolean>(false);
 
   const [toggles, setToggles] = useState<Record<string, [string, string]>>({});
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -124,17 +126,69 @@ export default function VocabPage() {
     setLoading(true);
   }
 
-  function cycleToggle(entryId: string, slot: 0 | 1) {
+  const cycleToggle = useCallback((entryId: string) => {
     setToggles((prev) => {
-      const cur = prev[entryId]?.[slot] ?? "";
-      const next = cur === "✓" ? "" : "✓";
-      const entry: [string, string] = [...(prev[entryId] ?? ["", ""])] as [string, string];
-      entry[slot] = next;
-      const updated = { ...prev, [entryId]: entry };
-      if (selectedListId) localStorage.setItem(`vocab_toggles_${selectedListId}`, JSON.stringify(updated));
+      const current = prev[entryId] ?? ["", "0"];
+      const currentSymbol = current[0] || "";
+      let nextSymbol = "";
+      if (currentSymbol === "") nextSymbol = "△";
+      else if (currentSymbol === "△") nextSymbol = "○";
+      else if (currentSymbol === "○") nextSymbol = "☆";
+      else nextSymbol = "";
+
+      const updated = { ...prev, [entryId]: [nextSymbol, current[1] || "0"] as [string, string] };
+      if (selectedListId) {
+        localStorage.setItem(`vocab_toggles_${selectedListId}`, JSON.stringify(updated));
+      }
       return updated;
     });
-  }
+  }, [selectedListId]);
+
+  const handleCounterClick = useCallback((entryId: string) => {
+    // If it was a long press, do not trigger standard increment
+    if (isLongPressRef.current) {
+      isLongPressRef.current = false;
+      return;
+    }
+    setToggles((prev) => {
+      const current = prev[entryId] ?? ["", "0"];
+      const currentCount = parseInt(current[1] || "0", 10);
+      const nextCount = currentCount + 1;
+      const updated = { ...prev, [entryId]: [current[0], String(nextCount)] as [string, string] };
+      if (selectedListId) {
+        localStorage.setItem(`vocab_toggles_${selectedListId}`, JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, [selectedListId]);
+
+  const startResetTimer = useCallback((entryId: string) => {
+    isLongPressRef.current = false;
+    resetTimerRef.current = setTimeout(() => {
+      isLongPressRef.current = true;
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+      if (window.confirm("이 단어의 학습 횟수를 0으로 초기화할까요?")) {
+        setToggles((prev) => {
+          const current = prev[entryId] ?? ["", "0"];
+          const updated = { ...prev, [entryId]: [current[0], "0"] as [string, string] };
+          if (selectedListId) {
+            localStorage.setItem(`vocab_toggles_${selectedListId}`, JSON.stringify(updated));
+          }
+          return updated;
+        });
+        showToast("학습 횟수가 초기화되었습니다.");
+      }
+    }, 800);
+  }, [selectedListId, showToast]);
+
+  const cancelResetTimer = useCallback(() => {
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = undefined;
+    }
+  }, []);
 
   function startLongPress(entryId: string) {
     longPressTimerRef.current = setTimeout(() => setMenuEntryId(entryId), 800);
@@ -215,14 +269,15 @@ export default function VocabPage() {
 
   const ptrActive = pullDistance > 0 || refreshing;
 
-  const checkCounts = entries.reduce<[number, number]>(
-    (acc, e) => {
-      const t = toggles[e.id];
-      if (t?.[0] === "✓") acc[0]++;
-      if (t?.[1] === "✓") acc[1]++;
+  const statusCounts = entries.reduce(
+    (acc, entry) => {
+      const status = toggles[entry.id]?.[0] || "";
+      if (status === "△") acc.triangle++;
+      else if (status === "○") acc.circle++;
+      else if (status === "☆") acc.star++;
       return acc;
     },
-    [0, 0],
+    { triangle: 0, circle: 0, star: 0 }
   );
 
   return (
@@ -317,10 +372,17 @@ export default function VocabPage() {
           ) : (
             <>
               <div className="mb-3 flex items-center justify-between gap-2">
-                <div className="text-xs font-semibold text-gray-500 tracking-wider">
-                  단어 ({entries.length})
-                  <span className="text-green-600 ml-2">✓<sub>1</sub> {checkCounts[0]}</span>
-                  <span className="text-green-600 ml-2">✓<sub>2</sub> {checkCounts[1]}</span>
+                <div className="text-xs font-semibold text-gray-500 tracking-wider flex flex-wrap gap-x-2 gap-y-1 items-center">
+                  <span>단어 ({entries.length})</span>
+                  {statusCounts.triangle > 0 && (
+                    <span className="text-amber-500 font-bold ml-1 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200">△ {statusCounts.triangle}</span>
+                  )}
+                  {statusCounts.circle > 0 && (
+                    <span className="text-green-600 font-bold ml-1 bg-green-50 px-1.5 py-0.5 rounded-md border border-green-200">○ {statusCounts.circle}</span>
+                  )}
+                  {statusCounts.star > 0 && (
+                    <span className="text-purple-600 font-bold ml-1 bg-purple-50 px-1.5 py-0.5 rounded-md border border-purple-200">☆ {statusCounts.star}</span>
+                  )}
                 </div>
                 <button
                   onClick={() => {
@@ -447,22 +509,71 @@ export default function VocabPage() {
                             영<sub>3</sub>
                           </button>
 
-                          {([0, 1] as const).map((slot) => {
-                            const val = toggles[entry.id]?.[slot] ?? "";
+                          {(() => {
+                            const status = toggles[entry.id]?.[0] || "";
+                            const countVal = parseInt(toggles[entry.id]?.[1] || "0", 10);
+
+                            // Stage button styles
+                            let stageClass = "text-gray-300 bg-gray-50 border-gray-100 hover:bg-gray-100";
+                            if (status === "△") stageClass = "text-amber-500 bg-amber-50 border-amber-200 hover:bg-amber-100 font-extrabold";
+                            else if (status === "○") stageClass = "text-green-600 bg-green-50 border-green-200 hover:bg-green-100 font-extrabold";
+                            else if (status === "☆") stageClass = "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100 font-extrabold";
+
+                            // Counter button styles (changes color every 10 levels)
+                            let counterClass = "text-gray-400 bg-gray-50 border-gray-100 hover:bg-gray-100";
+                            if (countVal > 0) {
+                              const level = Math.floor(countVal / 10);
+                              switch (level) {
+                                case 0:
+                                  counterClass = "text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 font-bold";
+                                  break;
+                                case 1:
+                                  counterClass = "text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100 font-bold";
+                                  break;
+                                case 2:
+                                  counterClass = "text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 font-bold";
+                                  break;
+                                case 3:
+                                  counterClass = "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100 font-bold";
+                                  break;
+                                case 4:
+                                  counterClass = "text-rose-600 bg-rose-50 border-rose-200 hover:bg-rose-100 font-bold";
+                                  break;
+                                default:
+                                  counterClass = "text-red-600 bg-red-50 border-red-200 hover:bg-red-100 font-bold animate-pulse";
+                                  break;
+                              }
+                            }
+
                             return (
-                              <button
-                                key={slot}
-                                onClick={() => cycleToggle(entry.id, slot)}
-                                className={`w-7 h-7 rounded-md border flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
-                                  val === "✓"
-                                    ? "text-green-600 bg-green-50 border-green-200"
-                                    : "text-gray-200 bg-gray-50 border-gray-100"
-                                }`}
-                              >
-                                {val || "·"}
-                              </button>
+                              <>
+                                {/* 4-stage Status Toggle Button */}
+                                <button
+                                  onClick={() => cycleToggle(entry.id)}
+                                  className={`w-7 h-7 rounded-md border flex items-center justify-center text-xs shrink-0 transition-all cursor-pointer ${stageClass}`}
+                                >
+                                  {status || "·"}
+                                </button>
+
+                                {/* Learning Counter Button (long press to reset with confirm) */}
+                                <button
+                                  onClick={() => handleCounterClick(entry.id)}
+                                  onPointerDown={() => startResetTimer(entry.id)}
+                                  onPointerUp={cancelResetTimer}
+                                  onPointerLeave={cancelResetTimer}
+                                  onPointerCancel={cancelResetTimer}
+                                  onTouchStart={() => {
+                                    isLongPressRef.current = false;
+                                  }}
+                                  onTouchMove={cancelResetTimer}
+                                  onTouchEnd={cancelResetTimer}
+                                  className={`w-7 h-7 rounded-md border flex items-center justify-center text-xs shrink-0 transition-all select-none cursor-pointer ${counterClass}`}
+                                >
+                                  {countVal}
+                                </button>
+                              </>
                             );
-                          })}
+                          })()}
                         </div>
                       </li>
                     );
