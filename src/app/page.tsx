@@ -62,13 +62,16 @@ export default function VocabPage() {
   const [vocabLists, setVocabLists] = useState<
     { id: string; name: string; count: number; createdAt: string }[]
   >([]);
+  const [listsLoading, setListsLoading] = useState(true);
   const [listTitle, setListTitleState] = useState("");
 
   const view: "home" | "list" = selectedListId ? "list" : "home";
 
   const loadLists = useCallback(async () => {
+    setListsLoading(true);
     const lists = await getVocabLists();
     setVocabLists(lists);
+    setListsLoading(false);
   }, []);
 
   const handleBackToHome = useCallback(() => {
@@ -89,6 +92,7 @@ export default function VocabPage() {
 
   const loadEntries = useCallback(async () => {
     if (!selectedListId) return;
+    setLoading(true);
     const data = await getEntries(selectedListId);
     setEntries(data);
     setLoading(false);
@@ -308,7 +312,12 @@ export default function VocabPage() {
 
       {view === "home" && (
         <>
-          {vocabLists.length === 0 ? (
+          {listsLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+              <div className="w-10 h-10 border-4 border-gray-100 border-t-[var(--accent,#6c5ce7)] rounded-full animate-spin mb-4"></div>
+              <div className="text-sm font-semibold">단어장 목록을 불러오는 중...</div>
+            </div>
+          ) : vocabLists.length === 0 ? (
             <div className="text-center py-16 text-gray-400">
               아직 단어장이 없어요
               <br />
@@ -366,8 +375,9 @@ export default function VocabPage() {
           </div>
 
           {loading ? (
-            <div className="text-center py-10 text-gray-400">
-              불러오는 중...
+            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+              <div className="w-10 h-10 border-4 border-gray-100 border-t-[var(--accent,#6c5ce7)] rounded-full animate-spin mb-4"></div>
+              <div className="text-sm font-semibold">단어를 불러오는 중...</div>
             </div>
           ) : (
             <>
