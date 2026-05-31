@@ -451,7 +451,7 @@ export default function VocabPage() {
                         key={entry.id}
                         className="bg-white rounded-[14px] px-3 py-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
                       >
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-400 w-6 text-right shrink-0 tabular-nums">{index + 1}</span>
 
                           <div
@@ -482,31 +482,24 @@ export default function VocabPage() {
                             )}
                           </div>
 
+                          {/* Korean Speech Button */}
                           <button
                             onClick={() => handleSpeak(() => speakKorean(entry.meaning, 1, getVoiceName("ko")))}
                             disabled={isSpeaking}
-                            className="w-7 h-7 flex items-center justify-center text-orange-400 active:text-orange-600 shrink-0 text-xs font-bold disabled:opacity-30"
+                            className="w-11 h-11 rounded-xl border flex items-center justify-center text-sm font-extrabold text-orange-500 bg-orange-50 border-orange-100 hover:bg-orange-100 active:bg-orange-200 shrink-0 select-none cursor-pointer transition-all disabled:opacity-30"
                             aria-label="한국어 발음"
                           >
                             한
                           </button>
 
+                          {/* English Speech Button */}
                           <button
                             onClick={() => handleSpeak(() => speakWord(entry.word, 1, getVoiceName("en")))}
                             disabled={isSpeaking}
-                            className="w-7 h-7 flex items-center justify-center text-blue-400 active:text-blue-600 shrink-0 text-xs font-bold disabled:opacity-30"
+                            className="w-11 h-11 rounded-xl border flex items-center justify-center text-sm font-extrabold text-blue-500 bg-blue-50 border-blue-100 hover:bg-blue-100 active:bg-blue-200 shrink-0 select-none cursor-pointer transition-all disabled:opacity-30"
                             aria-label="영어 발음"
                           >
                             영
-                          </button>
-
-                          <button
-                            onClick={() => handleSpeak(() => speakWord(entry.word, 3, getVoiceName("en")))}
-                            disabled={isSpeaking}
-                            className="w-7 h-7 flex items-center justify-center text-blue-300 active:text-blue-500 shrink-0 text-xs font-bold disabled:opacity-30"
-                            aria-label="영어 발음 3회"
-                          >
-                            영<sub>3</sub>
                           </button>
 
                           {(() => {
@@ -550,7 +543,7 @@ export default function VocabPage() {
                                 {/* 4-stage Status Toggle Button */}
                                 <button
                                   onClick={() => cycleToggle(entry.id)}
-                                  className={`w-7 h-7 rounded-md border flex items-center justify-center text-xs shrink-0 transition-all cursor-pointer ${stageClass}`}
+                                  className={`w-11 h-11 rounded-xl border flex items-center justify-center text-base shrink-0 transition-all select-none cursor-pointer ${stageClass}`}
                                 >
                                   {status || "·"}
                                 </button>
@@ -567,7 +560,7 @@ export default function VocabPage() {
                                   }}
                                   onTouchMove={cancelResetTimer}
                                   onTouchEnd={cancelResetTimer}
-                                  className={`w-7 h-7 rounded-md border flex items-center justify-center text-xs shrink-0 transition-all select-none cursor-pointer ${counterClass}`}
+                                  className={`w-11 h-11 rounded-xl border flex items-center justify-center text-xs shrink-0 transition-all select-none cursor-pointer ${counterClass}`}
                                 >
                                   {countVal}
                                 </button>
