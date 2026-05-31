@@ -153,7 +153,7 @@ export default function VocabPage() {
     setToggles((prev) => {
       const current = prev[entryId] ?? ["", "0"];
       const currentCount = parseInt(current[1] || "0", 10);
-      const nextCount = currentCount + 1;
+      const nextCount = Math.min(99, currentCount + 1);
       const updated = { ...prev, [entryId]: [current[0], String(nextCount)] as [string, string] };
       if (selectedListId) {
         localStorage.setItem(`vocab_toggles_${selectedListId}`, JSON.stringify(updated));
