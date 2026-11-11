@@ -1,9 +1,11 @@
 import { buildGuideText } from "@/lib/import/guide";
+import { resolveOrigin } from "@/lib/import/origin";
 
 export const dynamic = "force-dynamic";
 
 export function GET(req: Request) {
-  return new Response(buildGuideText(new URL(req.url).origin), {
+  const origin = resolveOrigin((n) => req.headers.get(n), req.url);
+  return new Response(buildGuideText(origin), {
     headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=300" },
   });
 }

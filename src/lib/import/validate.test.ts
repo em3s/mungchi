@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseBulkText } from "./parse";
-import { MAX_IMPORT_WORDS, validateImport } from "./validate";
+import { MAX_IMPORT_CHARS, MAX_IMPORT_WORDS, analyzeImport, validateImport } from "./validate";
 
 const v = (raw: string) => validateImport(parseBulkText(raw));
 
@@ -55,5 +55,24 @@ describe("validateImport", () => {
     expect(v(mk(100)).ok).toBe(true);
     expect(v(mk(101)).ok).toBe(false);
     expect(v("[T]").ok).toBe(false);
+  });
+});
+
+describe("analyzeImport", () => {
+  it("rejects over-long input without parsing", () => {
+    const r = analyzeImport("[T]\n" + "a | b\n".repeat(MAX_IMPORT_CHARS));
+    expect(r.ok).toBe(false);
+    expect(r.errors[0].reason).toContain("너무 길어요");
+  });
+  it("is fast for many duplicate words within the limit", () => {
+    const raw = "[T]\n" + "apple | 사과\n".repeat(2000);
+    const t = Date.now();
+    const r = analyzeImport(raw);
+    expect(Date.now() - t).toBeLessThan(500);
+    expect(r.duplicates).toEqual(["apple"]);
+    expect(r.ok).toBe(true);
+  });
+  it("accepts normal input like validateImport", () => {
+    expect(analyzeImport("[T]\na | b").ok).toBe(true);
   });
 });

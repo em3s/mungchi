@@ -1,6 +1,8 @@
-import type { LineError, ParsedBulk } from "./parse";
+import { parseBulkText, type LineError, type ParsedBulk } from "./parse";
 
 export const MAX_IMPORT_WORDS = 100;
+// 100개 x (단어 64 + 뜻 200 + 구분) + 제목 정도. 넘으면 파싱 전에 거절한다.
+export const MAX_IMPORT_CHARS = 30_000;
 const MAX_TITLE = 50;
 const MAX_WORD = 64;
 const MAX_MEANING = 200;
@@ -38,6 +40,7 @@ export function validateImport(parsed: ParsedBulk): ImportCheck {
 
   const seen = new Set<string>();
   const duplicates: string[] = [];
+  const dupSeen = new Set<string>();
   const words: { word: string; meaning: string }[] = [];
   for (const r of parsed.rows) {
     let bad = false;
@@ -57,7 +60,10 @@ export function validateImport(parsed: ParsedBulk): ImportCheck {
     }
     if (bad) continue;
     if (seen.has(r.word)) {
-      if (!duplicates.includes(r.word)) duplicates.push(r.word);
+      if (!dupSeen.has(r.word)) {
+        dupSeen.add(r.word);
+        duplicates.push(r.word);
+      }
       continue;
     }
     seen.add(r.word);
@@ -72,4 +78,18 @@ export function validateImport(parsed: ParsedBulk): ImportCheck {
   }
   errors.sort((a, b) => a.line - b.line);
   return { ok: errors.length === 0, title, words, duplicates, errors };
+}
+
+/** 원문 전체 검사. 너무 길면 파싱하지 않고 거절한다(화면 멈춤 방지). */
+export function analyzeImport(raw: string): ImportCheck {
+  if (raw.length > MAX_IMPORT_CHARS) {
+    return {
+      ok: false,
+      title: "",
+      words: [],
+      duplicates: [],
+      errors: [{ line: 0, text: "", reason: `내용이 너무 길어요(${MAX_IMPORT_CHARS.toLocaleString("en-US")}자 이하). 나눠서 넣어 주세요` }],
+    };
+  }
+  return validateImport(parseBulkText(raw));
 }

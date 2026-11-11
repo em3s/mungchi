@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { PinModal } from "@/components/PinModal";
 import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
-import { decodeFragment, parseBulkText } from "@/lib/import/parse";
-import { validateImport } from "@/lib/import/validate";
+import { decodeFragment } from "@/lib/import/parse";
+import { analyzeImport } from "@/lib/import/validate";
 import { addWordsOnly, previewAddWords, type PreviewAddResult } from "@/lib/vocab";
 
 const SESSION_KEY = "mungchi_session";
@@ -45,17 +45,18 @@ export default function ImportPage() {
   const hash = useSyncExternalStore(subscribeHash, getHash, () => null);
   const authed = useSyncExternalStore(subscribeSession, getSession, () => false);
 
-  const [pasted, setPasted] = useState("");
+  const [pasted, setPasted] = useState<string | null>(null); // null = 건드리지 않음(링크 원문 표시)
   const [applied, setApplied] = useState<string | null>(null); // 붙여넣기 확정 텍스트
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [needPin, setNeedPin] = useState(false);
+  // [넣기]를 누른 시점의 목록. PIN 확인 중 입력이 바뀌어도 이것만 저장한다.
+  const [pending, setPending] = useState<{ title: string; words: { word: string; meaning: string }[] } | null>(null);
   const [writing, setWriting] = useState(false);
   const [writeFailed, setWriteFailed] = useState(false);
 
   // 입력 원문: 붙여넣기가 있으면 그것, 없으면 fragment.
-  const decoded = hash === null ? null : decodeFragment(hash);
+  const decoded = useMemo(() => (hash === null ? null : decodeFragment(hash)), [hash]);
   const text = applied ?? (decoded?.ok ? decoded.text : null);
-  const check = text === null ? null : validateImport(parseBulkText(text));
+  const check = useMemo(() => (text === null ? null : analyzeImport(text)), [text]);
   const key = check && check.ok ? `${check.title}\u0000${check.words.map((w) => w.word).join("\u0001")}` : null;
 
   // 미리보기: DB 를 읽기만 한다(페이지를 열 때 쓰기 없음).
@@ -72,20 +73,19 @@ export default function ImportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  const doWrite = useCallback(async () => {
-    if (!check || !check.ok) return;
+  const doWrite = useCallback(async (target: { title: string; words: { word: string; meaning: string }[] }) => {
     setWriting(true);
     setWriteFailed(false);
-    const r = await addWordsOnly(check.title, check.words);
+    const r = await addWordsOnly(target.title, target.words);
     setWriting(false);
     if (!r.ok) {
       setWriteFailed(true);
       showToast("넣지 못했어요");
       return;
     }
-    showToast(`"${check.title}" ${r.added.length}개 단어 추가!`);
+    showToast(`"${target.title}" ${r.added.length}개 단어 추가!`);
     router.push("/");
-  }, [check, router, showToast]);
+  }, [router, showToast]);
 
   const handlePinSuccess = useCallback(() => {
     try {
@@ -94,14 +94,16 @@ export default function ImportPage() {
       /* ignore */
     }
     sessionListeners.forEach((l) => l());
-    setNeedPin(false);
-    void doWrite();
-  }, [doWrite]);
+    const target = pending;
+    setPending(null);
+    if (target) void doWrite(target);
+  }, [doWrite, pending]);
 
   const onInsert = () => {
-    if (writing) return;
-    if (!authed) setNeedPin(true);
-    else void doWrite();
+    if (writing || !check || !check.ok) return;
+    const target = { title: check.title, words: check.words };
+    if (!authed) setPending(target);
+    else void doWrite(target);
   };
 
   if (hash === null) {
@@ -130,15 +132,15 @@ export default function ImportPage() {
             {`[단어장 제목]\napple | 사과\nbook | 책`}
           </div>
           <textarea
-            value={pasted}
+            value={pasted ?? text ?? ""}
             onChange={(e) => setPasted(e.target.value)}
             placeholder={"[단어장 제목]\napple | 사과\nbook | 책"}
             rows={8}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none mb-2"
           />
           <button
-            onClick={() => setApplied(pasted)}
-            disabled={pasted.trim() === ""}
+            onClick={() => setApplied(pasted ?? text ?? "")}
+            disabled={(pasted ?? text ?? "").trim() === ""}
             className="w-full bg-[#6c5ce7] text-white py-3 rounded-xl font-bold disabled:opacity-40"
           >
             미리보기
@@ -208,13 +210,13 @@ export default function ImportPage() {
         </section>
       )}
 
-      {needPin && (
+      {pending && (
         <PinModal
           title="뭉치 단어장"
           subtitle="비밀번호를 입력하면 넣어요"
           emoji="🔒"
           onSuccess={handlePinSuccess}
-          onCancel={() => setNeedPin(false)}
+          onCancel={() => setPending(null)}
         />
       )}
       <Toast message={message} />
