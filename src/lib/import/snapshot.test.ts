@@ -28,4 +28,8 @@ describe("snapshot", () => {
     expect(snap.words).not.toEqual(live);
     expect(activeSnapshot(snap, makeKey("A", live))).toBeNull();
   });
+  it("activeSnapshot is null when only a meaning changed", () => {
+    const snap = { key: makeKey("A", words), title: "A", words };
+    expect(activeSnapshot(snap, makeKey("A", [{ word: "apple", meaning: "사과나무" }]))).toBeNull();
+  });
 });
