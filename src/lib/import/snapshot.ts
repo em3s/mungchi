@@ -6,8 +6,9 @@ export interface ImportSnapshot {
   words: { word: string; meaning: string }[];
 }
 
-export function makeKey(title: string, words: { word: string }[]): string {
-  return `${title}\u0000${words.map((w) => w.word).join("\u0001")}`;
+export function makeKey(title: string, words: { word: string; meaning: string }[]): string {
+  // 뜻까지 포함한다(뜻만 바뀌어도 다른 목록). JSON 이라 구분자 충돌이 없다.
+  return JSON.stringify([title, words.map((w) => [w.word, w.meaning])]);
 }
 
 /** 현재 key 와 같을 때만 스냅숏을 돌려준다. 다르면 null(PIN 을 닫고 미리보기를 새로 그린다). */

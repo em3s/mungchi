@@ -61,6 +61,9 @@ export default function ImportPage() {
   const key = check && check.ok ? makeKey(check.title, check.words) : null;
   // PIN 을 기다리는 동안 링크가 바뀌면 스냅숏이 무효가 되어 PIN 창이 닫히고 미리보기가 새로 그려진다.
   const pending = activeSnapshot(pendingRaw, key);
+  // 링크 내용이 달라진 순간 옛 스냅숏을 지운다(A→B→A 로 돌아와도 PIN 창이 되살아나지 않게).
+  // 렌더 중 자기 상태 갱신은 React 가 허용하는 패턴이다.
+  if (pendingRaw !== null && pending === null) setPending(null);
 
   // 미리보기: DB 를 읽기만 한다(페이지를 열 때 쓰기 없음).
   useEffect(() => {

@@ -6,8 +6,14 @@ const words = [{ word: "apple", meaning: "사과" }];
 describe("snapshot", () => {
   it("makeKey differs by title and by words", () => {
     expect(makeKey("A", words)).not.toBe(makeKey("B", words));
-    expect(makeKey("A", words)).not.toBe(makeKey("A", [{ word: "pear" }]));
-    expect(makeKey("A", words)).toBe(makeKey("A", [{ word: "apple" }]));
+    expect(makeKey("A", words)).not.toBe(makeKey("A", [{ word: "pear", meaning: "사과" }]));
+    expect(makeKey("A", words)).toBe(makeKey("A", [{ word: "apple", meaning: "사과" }]));
+  });
+  it("makeKey differs when only a meaning changes", () => {
+    expect(makeKey("A", [{ word: "apple", meaning: "사과" }])).not.toBe(makeKey("A", [{ word: "apple", meaning: "사과나무" }]));
+  });
+  it("makeKey has no separator collisions", () => {
+    expect(makeKey("A", [{ word: "a", meaning: "b|c" }])).not.toBe(makeKey("A", [{ word: "a", meaning: "b" }, { word: "c", meaning: "" }]));
   });
   it("is active only while the link content is unchanged", () => {
     const snap = { key: makeKey("A", words), title: "A", words };
