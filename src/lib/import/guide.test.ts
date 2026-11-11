@@ -11,6 +11,9 @@ describe("buildGuideText", () => {
     expect(text).toContain("encodeURIComponent");
     expect(text).toContain("```");
   });
+  it("states the length limit", () => {
+    expect(text).toContain("30,000자");
+  });
   it("contains no secrets or token mentions", () => {
     expect(text).not.toMatch(/token|토큰|api.?key|999999|sihyun|\d{6}/i);
   });
