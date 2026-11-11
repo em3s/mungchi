@@ -1,3 +1,4 @@
+import { MAX_FRAGMENT_CHARS } from "./parse";
 import { MAX_IMPORT_CHARS, MAX_IMPORT_WORDS } from "./validate";
 
 // Gemini 같은 AI 가 읽는 공개 지침. 비밀값은 넣지 않는다.
@@ -25,7 +26,7 @@ ${ex1}
 - 영어 단어: 소문자 영어로 시작, 영어·공백·작은따옴표(')·마침표(.)·하이픈(-)만 가능 (예: look after, o'clock, well-known). 64자 이하
 - 뜻: 1~200자
 - 한 번에 ${MAX_IMPORT_WORDS}개까지. 더 많으면 단어장을 나눠 링크를 여러 개 만듭니다
-- 링크가 너무 길면(텍스트 약 ${MAX_IMPORT_CHARS.toLocaleString("en-US")}자 초과) 앱이 받지 않으니 단어장을 나눠 링크를 여러 개 만듭니다
+- 링크가 너무 길면 앱이 받지 않아요(링크 약 ${MAX_FRAGMENT_CHARS.toLocaleString("en-US")}자, 붙여넣기 ${MAX_IMPORT_CHARS.toLocaleString("en-US")}자). 그러면 단어장을 나눠 링크를 여러 개 만드세요
 - 같은 단어가 반복되면 첫 번째만 들어갑니다
 - 이미 있는 단어는 앱이 건너뜁니다
 

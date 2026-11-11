@@ -12,7 +12,7 @@ describe("buildGuideText", () => {
     expect(text).toContain("```");
   });
   it("states the length limit", () => {
-    expect(text).toContain("30,000자");
+    expect(text).toContain("링크 약 200,000자, 붙여넣기 30,000자");
   });
   it("contains no secrets or token mentions", () => {
     expect(text).not.toMatch(/token|토큰|api.?key|999999|sihyun|\d{6}/i);

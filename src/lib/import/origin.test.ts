@@ -4,7 +4,7 @@ import { resolveOrigin } from "./origin";
 const h = (m: Record<string, string>) => (n: string) => m[n] ?? null;
 
 describe("resolveOrigin", () => {
-  it("prefers SITE_URL env", () => {
+  it("prefers NEXT_PUBLIC_SITE_URL env", () => {
     expect(resolveOrigin(h({ host: "evil.test" }), "https://mungchi.example/")).toBe("https://mungchi.example");
   });
   it("ignores malformed site url", () => {
