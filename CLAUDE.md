@@ -17,6 +17,7 @@
 - `npm run dev` — 개발 서버 (http://localhost:3000)
 - `npm run build` — 프로덕션 빌드
 - `npm run lint` — ESLint
+- `npm test` — vitest
 
 ## 환경 변수
 
@@ -26,6 +27,8 @@
 
 - `/` — 단어장 메인 (단어장 목록, 단어 목록, 가리기 모드, TTS) · PIN 인증
 - `/admin` — 관리 및 단어장 벌크 입력 · PIN 인증
+- `/guide`, `/guide.txt` — 공개 지침(같은 내용). AI(Gemini 등)가 읽고 "넣기 링크"를 만드는 방법(형식, encodeURIComponent 예시, 100개 상한)을 안내. 비밀값 없음
+- `/import` — 넣기 링크 도착 화면. 흐름: 링크 `/import#<encodeURIComponent(벌크 텍스트)>` → fragment 디코드(서버로 안 감) → 파싱·검사 → 미리보기(새/기존 단어장, 추가·건너뛸 단어, 오류 줄; DB 는 읽기만) → [넣기] → PIN(미인증일 때, 세션은 다른 페이지와 공유) → 추가만(같은 이름 가장 오래된 단어장, 없으면 생성, 기존 단어 건너뜀) → `/` 로 이동. 디코드 실패·fragment 없음이면 붙여넣기 칸. 페이지를 열 때는 쓰기 없음
 
 ## 프로젝트 구조
 
@@ -40,6 +43,8 @@
 - `src/lib/`
   - `vocab.ts` — 단어장 및 단어 CRUD API (Supabase 연동)
   - `tts.ts` — Web Speech API 발음 기능 (영어 1회/3회, 한국어)
+  - `import/` — 넣기 링크 순수 모듈(`parse.ts` 디코드·파서, `validate.ts` 검사, `guide.ts` 지침 본문). 단어 상한 100
+  - `vocab.ts` 의 `previewAddWords`(읽기)·`addWordsOnly`(추가만) — 넣기 링크용
   - `cache.ts`, `date.ts`, `swr.ts`, `types.ts`, `constants.ts`
   - `supabase/client.ts` — Supabase 클라이언트 설정 (빌드 시 예외 방지 대응)
 - `supabase-schema.sql` — DB 스키마
@@ -78,3 +83,4 @@
 - KST 타임존 (UTC+9) 일관 사용 (`src/lib/date.ts`)
 - Supabase 에러 핸들링: 읽기=fallback, 쓰기=토스트
 - RLS 활성화 (anon 전체 허용)
+- 넣기 링크 한계: PIN 이 클라이언트 코드에 있어 강한 잠금이 아니고, (user_id,name) 유일 제약이 없어 같은 이름 단어장을 동시에 만들면 2개가 생길 수 있음
