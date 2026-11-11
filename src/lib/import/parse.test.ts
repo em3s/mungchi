@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeFragment, parseBulkText } from "./parse";
+import { MAX_FRAGMENT_CHARS, decodeFragment, parseBulkText } from "./parse";
 
 const enc = encodeURIComponent;
 
@@ -33,6 +33,14 @@ describe("decodeFragment", () => {
     expect(decodeFragment("")).toEqual({ ok: false, reason: "empty" });
     expect(decodeFragment("#")).toEqual({ ok: false, reason: "empty" });
     expect(decodeFragment("#%20%0A")).toEqual({ ok: false, reason: "empty" });
+  });
+  it("over-long fragment is rejected before decoding", () => {
+    expect(decodeFragment("#" + "a".repeat(MAX_FRAGMENT_CHARS + 1))).toEqual({ ok: false, reason: "toolong" });
+    expect(decodeFragment("#" + "a".repeat(MAX_FRAGMENT_CHARS)).ok).toBe(true);
+  });
+  it("a worst-case valid import (100 words, 200 Korean chars each) fits the cap", () => {
+    const body = Array.from({ length: 100 }, (_, i) => `${"a".repeat(60)}${String(i).padStart(4, "b")} | ${"가".repeat(200)}`).join("\n");
+    expect(encodeURIComponent("[" + "가".repeat(50) + "]\n" + body).length).toBeLessThanOrEqual(MAX_FRAGMENT_CHARS);
   });
   it("invalid sequences report reason 'broken'", () => {
     expect(decodeFragment("#%E0%A4%A")).toEqual({ ok: false, reason: "broken" });

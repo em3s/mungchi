@@ -22,6 +22,7 @@
 ## 환경 변수
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL` (선택) — `/guide`·`/guide.txt` 지침의 공개 주소. 없으면 요청 호스트(`x-forwarded-host` → `host`)
 
 ## 라우트
 

@@ -7,6 +7,7 @@ import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import { decodeFragment } from "@/lib/import/parse";
 import { analyzeImport } from "@/lib/import/validate";
+import { activeSnapshot, makeKey, type ImportSnapshot } from "@/lib/import/snapshot";
 import { addWordsOnly, previewAddWords, type PreviewAddResult } from "@/lib/vocab";
 
 const SESSION_KEY = "mungchi_session";
@@ -49,7 +50,7 @@ export default function ImportPage() {
   const [applied, setApplied] = useState<string | null>(null); // 붙여넣기 확정 텍스트
   const [preview, setPreview] = useState<Preview | null>(null);
   // [넣기]를 누른 시점의 목록. PIN 확인 중 입력이 바뀌어도 이것만 저장한다.
-  const [pending, setPending] = useState<{ title: string; words: { word: string; meaning: string }[] } | null>(null);
+  const [pendingRaw, setPending] = useState<ImportSnapshot | null>(null);
   const [writing, setWriting] = useState(false);
   const [writeFailed, setWriteFailed] = useState(false);
 
@@ -57,7 +58,9 @@ export default function ImportPage() {
   const decoded = useMemo(() => (hash === null ? null : decodeFragment(hash)), [hash]);
   const text = applied ?? (decoded?.ok ? decoded.text : null);
   const check = useMemo(() => (text === null ? null : analyzeImport(text)), [text]);
-  const key = check && check.ok ? `${check.title}\u0000${check.words.map((w) => w.word).join("\u0001")}` : null;
+  const key = check && check.ok ? makeKey(check.title, check.words) : null;
+  // PIN 을 기다리는 동안 링크가 바뀌면 스냅숏이 무효가 되어 PIN 창이 닫히고 미리보기가 새로 그려진다.
+  const pending = activeSnapshot(pendingRaw, key);
 
   // 미리보기: DB 를 읽기만 한다(페이지를 열 때 쓰기 없음).
   useEffect(() => {
@@ -73,7 +76,7 @@ export default function ImportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  const doWrite = useCallback(async (target: { title: string; words: { word: string; meaning: string }[] }) => {
+  const doWrite = useCallback(async (target: ImportSnapshot) => {
     setWriting(true);
     setWriteFailed(false);
     const r = await addWordsOnly(target.title, target.words);
@@ -101,7 +104,7 @@ export default function ImportPage() {
 
   const onInsert = () => {
     if (writing || !check || !check.ok) return;
-    const target = { title: check.title, words: check.words };
+    const target = { key: key as string, title: check.title, words: check.words };
     if (!authed) setPending(target);
     else void doWrite(target);
   };
@@ -123,6 +126,11 @@ export default function ImportPage() {
       {decoded && !decoded.ok && decoded.reason === "broken" && applied === null && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3 text-sm text-red-500">
           링크가 깨졌어요. 아래 칸에 단어 목록 텍스트를 붙여넣어 주세요.
+        </div>
+      )}
+      {decoded && !decoded.ok && decoded.reason === "toolong" && applied === null && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3 text-sm text-red-500">
+          링크가 너무 길어요. 나눠서 보내 달라고 해 주세요.
         </div>
       )}
 

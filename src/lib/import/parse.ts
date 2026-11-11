@@ -2,13 +2,19 @@
 
 export type DecodeResult =
   | { ok: true; text: string }
-  | { ok: false; reason: "empty" | "broken" };
+  | { ok: false; reason: "empty" | "broken" | "toolong" };
+
+// 인코딩된 fragment 길이 상한(디코드·파싱 전에 거른다).
+// 계산 근거: 100단어 x (단어 64자 + 뜻 200자 x 한글 3바이트 x %XX 3자 = 1,800자 + 구분 ~10자)
+//   ≈ 190,000 + 제목 → 200,000 이면 정상 최대 입력을 담는다.
+export const MAX_FRAGMENT_CHARS = 200_000;
 
 // fragment(`#...`)를 디코드한다. `+` 는 공백으로 본다(`%2B` 는 + 로 남는다).
 // 잘린 %인코딩 등은 "broken", 내용이 없으면 "empty".
 export function decodeFragment(hash: string): DecodeResult {
   const body = hash.startsWith("#") ? hash.slice(1) : hash;
   if (body === "") return { ok: false, reason: "empty" };
+  if (body.length > MAX_FRAGMENT_CHARS) return { ok: false, reason: "toolong" };
   let text: string;
   try {
     text = decodeURIComponent(body.replace(/\+/g, " "));
