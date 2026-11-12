@@ -18,7 +18,7 @@ describe("buildGuideText", () => {
     expect(text).not.toMatch(/token|토큰|api.?key|999999|sihyun|\d{6}/i);
   });
   it("example links in the guide decode and validate", () => {
-    const links = text.match(/https:\/\/example\.test\/import#\S+/g) ?? [];
+    const links = text.match(/https:\/\/example\.test\/import#%\S+/g) ?? [];
     expect(links.length).toBeGreaterThanOrEqual(2);
     for (const link of links) {
       const d = decodeFragment(link.slice(link.indexOf("#")));
@@ -27,7 +27,7 @@ describe("buildGuideText", () => {
     }
   });
   it("examples include a space-containing word and Korean meaning", () => {
-    const links = text.match(/https:\/\/example\.test\/import#\S+/g) ?? [];
+    const links = text.match(/https:\/\/example\.test\/import#%\S+/g) ?? [];
     const decoded = links.map((l) => decodeFragment(l.slice(l.indexOf("#")))).map((d) => (d.ok ? d.text : ""));
     expect(decoded.some((t) => /[a-z]+ [a-z]+ \|/.test(t))).toBe(true);
     expect(decoded.some((t) => /[가-힣]/.test(t))).toBe(true);
