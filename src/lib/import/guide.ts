@@ -23,7 +23,7 @@ ${ex1}
 
 규칙
 - 제목: 1~50자
-- 영어 단어: 소문자 영어로 시작, 영어·공백·작은따옴표(')·마침표(.)·하이픈(-)만 가능 (예: look after, o'clock, well-known). 64자 이하
+- 영어 단어: 영어로 시작, 영어·숫자·공백과 ' . , - / ~ ↔ ( ) ! ? & ; : 만 가능 (예: look after, clutch / clutched, wrap ↔ unwrap, fling one's arms around ~). 100자 이하
 - 뜻: 1~200자
 - 한 번에 ${MAX_IMPORT_WORDS}개까지. 더 많으면 단어장을 나눠 링크를 여러 개 만듭니다
 - 링크가 너무 길면 앱이 받지 않아요(링크 약 ${MAX_FRAGMENT_CHARS.toLocaleString("en-US")}자, 붙여넣기 ${MAX_IMPORT_CHARS.toLocaleString("en-US")}자). 그러면 단어장을 나눠 링크를 여러 개 만드세요
@@ -34,7 +34,7 @@ ${ex1}
 
 링크 = ${base}/import# + encodeURIComponent(위 텍스트 전체)
 
-줄바꿈, 공백, 한글, | 는 모두 인코딩해야 합니다. 직접 계산하지 말고 encodeURIComponent 와 같은 결과를 내세요.
+줄바꿈, 공백, 한글, | 는 모두 인코딩해야 합니다. 머리로 계산하지 말고 코드를 실행해서 만드세요(Python: urllib.parse.quote(text, safe=""), JavaScript: encodeURIComponent(text)).
 (공백은 %20, 줄바꿈은 %0A, | 는 %7C, 한글은 %XX%XX%XX 형태)
 
 예시 1 (공백이 있는 단어, 한글 뜻):

@@ -1,12 +1,13 @@
 import { parseBulkText, type LineError, type ParsedBulk } from "./parse";
 
 export const MAX_IMPORT_WORDS = 100;
-// 100개 x (단어 64 + 뜻 200 + 구분) + 제목 정도. 넘으면 파싱 전에 거절한다.
+// 100개 x (단어 100 + 뜻 200 + 구분) + 제목 정도. 넘으면 파싱 전에 거절한다.
 export const MAX_IMPORT_CHARS = 30_000;
 const MAX_TITLE = 50;
-const MAX_WORD = 64;
+const MAX_WORD = 100;
 const MAX_MEANING = 200;
-const WORD_PATTERN = /^[a-z][a-z '.-]*$/;
+// 영어로 시작(또는 ~ ( 로 시작). 시험지 표기(clutch / clutched, wrap ↔ unwrap, fling one's arms around ~)를 받는다.
+const WORD_PATTERN = /^[a-z~(][a-z0-9 '’.,!?&;:()/~↔-]*$/;
 const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
 
 export interface ImportCheck {
@@ -48,7 +49,7 @@ export function validateImport(parsed: ParsedBulk): ImportCheck {
       errors.push({ line: r.line, text: clip(r.word), reason: `단어는 ${MAX_WORD}자 이하` });
       bad = true;
     } else if (!WORD_PATTERN.test(r.word)) {
-      errors.push({ line: r.line, text: clip(r.word), reason: "단어는 영어 소문자·공백·'.-만 가능(첫 글자는 영어)" });
+      errors.push({ line: r.line, text: clip(r.word), reason: "단어는 영어·숫자·공백과 ' . , - / ~ ↔ ( ) ! ? & ; : 만 가능(첫 글자는 영어)" });
       bad = true;
     }
     if (len(r.meaning) > MAX_MEANING) {

@@ -26,10 +26,10 @@ describe("validateImport", () => {
     expect(v("[T]\nx | a\u007fb").ok).toBe(false);
   });
   it("word pattern", () => {
-    for (const w of ["1abc", "a_b", "한글", "-a", "a/b", "x".repeat(65)]) {
+    for (const w of ["1abc", "a_b", "한글", "-a", "a<b", "/a", "x".repeat(101)]) {
       expect(v(`[T]\n${w} | m`).ok, w).toBe(false);
     }
-    for (const w of ["look after", "o'clock", "well-known", "etc.", "Apple"]) {
+    for (const w of ["look after", "o'clock", "well-known", "etc.", "Apple", "clutch / clutched", "wrap ↔ unwrap", "fling one's arms around ~", "(be) good at", "~ as well", "x".repeat(100)]) {
       expect(v(`[T]\n${w} | m`).ok, w).toBe(true);
     }
   });
@@ -74,5 +74,23 @@ describe("analyzeImport", () => {
   });
   it("accepts normal input like validateImport", () => {
     expect(analyzeImport("[T]\na | b").ok).toBe(true);
+  });
+});
+
+describe("real worksheet output (Gemini OCR prompt)", () => {
+  it("accepts slash, arrow, tilde and parentheses forms", () => {
+    const raw = `[Anne of Green Gables]
+stiffly | 딱딱하게, 완고하게
+clutch / clutched | 움켜잡다 / 움켜잡았다
+end up | 결국 (어떤 처지에) 처하게 되다
+pull up / pulled up | 멈추다, 서다 / 멈췄다, 섰다
+imagine / imagination | 상상하다 / 상상력, 상상
+dare | (위험하거나 힘들거나 곤란한 일을) 해 보라고 하다, 부추기다
+wrap ↔ unwrap | 싸다 ↔ 풀다
+fling one's arms around ~ | ~에게 달려들다`;
+    const r = analyzeImport(raw);
+    expect(r.errors).toEqual([]);
+    expect(r.words).toHaveLength(8);
+    expect(r.words[1]).toEqual({ word: "clutch / clutched", meaning: "움켜잡다 / 움켜잡았다" });
   });
 });
