@@ -22,6 +22,7 @@
 ## 환경 변수
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `MCP_AUTH_SECRET`(32자 이상), `MCP_OWNER_PASSWORD`(8자 이상) — Gemini 커넥터(MCP)용 서버 비밀값. 없으면 `/api/mcp`·`/oauth/*` 가 503(꺼짐). 비밀값을 바꾸면 발급된 연결이 모두 끊김
 - `NEXT_PUBLIC_SITE_URL` (선택) — `/guide`·`/guide.txt` 지침의 공개 주소. 없으면 요청 호스트(`x-forwarded-host` → `host`)
 
 ## 라우트
@@ -30,6 +31,9 @@
 - `/admin` — 관리 및 단어장 벌크 입력 · PIN 인증
 - `/guide`, `/guide.txt` — 공개 지침(같은 내용). AI(Gemini 등)가 읽고 "넣기 링크"를 만드는 방법(형식, encodeURIComponent 예시, 100개 상한)을 안내. 비밀값 없음
 - `/import` — 넣기 링크 도착 화면. 흐름: 링크 `/import#<encodeURIComponent(벌크 텍스트)>` → fragment 디코드(서버로 안 감) → 파싱·검사 → 미리보기(새/기존 단어장, 추가·건너뛸 단어, 오류 줄; DB 는 읽기만) → [넣기] → PIN(미인증일 때, 세션은 다른 페이지와 공유) → 추가만(같은 이름 가장 오래된 단어장, 없으면 생성, 기존 단어 건너뜀) → `/` 로 이동. 디코드 실패·fragment 없음이면 붙여넣기 칸. 페이지를 열 때는 쓰기 없음
+
+- `/api/mcp` — MCP 서버(JSON-RPC POST, 상태 없음). Gemini 앱 맞춤 커넥터 주소. 도구: `list_vocab_lists`(읽기), `add_words`(추가만, `/import` 와 같은 검사·저장). OAuth 액세스 토큰 필요
+- `/.well-known/oauth-protected-resource`, `/.well-known/oauth-authorization-server`, `/oauth/register`·`/oauth/authorize`·`/oauth/token` — 커넥터 연결용 OAuth(동적 등록, PKCE S256). 승인 화면에서 `MCP_OWNER_PASSWORD` 확인. 토큰은 `MCP_AUTH_SECRET` 서명(DB 없음): 액세스 1시간, 리프레시 180일
 
 ## 프로젝트 구조
 
@@ -44,6 +48,7 @@
 - `src/lib/`
   - `vocab.ts` — 단어장 및 단어 CRUD API (Supabase 연동)
   - `tts.ts` — Web Speech API 발음 기능 (영어 1회/3회, 한국어)
+  - `mcp/` — 커넥터(`server.ts` JSON-RPC·도구, `token.ts` 서명 토큰·PKCE, `http.ts` 메타데이터)
   - `import/` — 넣기 링크 순수 모듈(`parse.ts` 디코드·파서, `validate.ts` 검사, `guide.ts` 지침 본문). 단어 상한 100
   - `vocab.ts` 의 `previewAddWords`(읽기)·`addWordsOnly`(추가만) — 넣기 링크용
   - `cache.ts`, `date.ts`, `swr.ts`, `types.ts`, `constants.ts`
