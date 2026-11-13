@@ -1,6 +1,6 @@
 // 토큰 발급. authorization_code(+PKCE) 와 refresh_token 만.
 import { TTL, mcpEnv, pkceOk, sign, verify } from "@/lib/mcp/token";
-import { disabled, json, readParams } from "@/lib/mcp/http";
+import { json, readParams } from "@/lib/mcp/http";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,6 @@ function issue(secret: string, clientId: string) {
 
 export async function POST(req: Request) {
   const env = mcpEnv();
-  if (!env) return disabled();
   const p = await readParams(req);
 
   if (p.grant_type === "authorization_code") {

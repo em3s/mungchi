@@ -1,6 +1,6 @@
 // 연결 승인 화면. 대장님(보호자) 비밀번호(MCP_OWNER_PASSWORD)를 넣어야 커넥터가 연결된다.
 import { TTL, mcpEnv, passwordOk, sign, verify } from "@/lib/mcp/token";
-import { disabled, readParams } from "@/lib/mcp/http";
+import { readParams } from "@/lib/mcp/http";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +45,6 @@ function pick(src: Record<string, string>): Q {
 
 export function GET(req: Request) {
   const env = mcpEnv();
-  if (!env) return disabled();
   const q = pick(Object.fromEntries(new URL(req.url).searchParams));
   const bad = check(env.secret, q);
   if (bad) return page(`<h1>연결할 수 없어요</h1><p class="err">${esc(bad)}</p>`, 400);
@@ -54,7 +53,6 @@ export function GET(req: Request) {
 
 export async function POST(req: Request) {
   const env = mcpEnv();
-  if (!env) return disabled();
   const p = await readParams(req);
   const q = pick(p);
   const bad = check(env.secret, q);

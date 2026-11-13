@@ -12,8 +12,6 @@ export function json(body: unknown, status = 200, extra: Record<string, string> 
   });
 }
 
-export const disabled = () => json({ error: "temporarily_unavailable", error_description: "connector not configured" }, 503);
-
 /** 폼(application/x-www-form-urlencoded) 또는 JSON 본문을 평평한 문자열 맵으로 읽는다. */
 export async function readParams(req: Request): Promise<Record<string, string>> {
   const ct = req.headers.get("content-type") ?? "";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- JSON-RPC 응답을 테스트에서 자유롭게 읽는다 */
 import { describe, expect, it, vi } from "vitest";
 import { handleRpc, type McpDeps } from "./server";
 
