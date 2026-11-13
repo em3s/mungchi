@@ -1,13 +1,21 @@
-import { MAX_FRAGMENT_CHARS } from "./parse";
+import { strToU8, zlibSync } from "fflate";
 import { MAX_IMPORT_CHARS, MAX_IMPORT_WORDS } from "./validate";
 
+// Python 의 base64.urlsafe_b64encode(zlib.compress(text.encode("utf-8"), 9)).decode().rstrip("=") 와 같은 값.
+export function zFragment(text: string): string {
+  const bytes = zlibSync(strToU8(text), { level: 9 });
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 // Gemini 같은 AI 가 읽는 공개 지침. 비밀값은 넣지 않는다.
-// 예시 링크는 encodeURIComponent 로 만들어 항상 올바른 인코딩이 되게 한다.
+// 예시 링크는 앱과 같은 압축(zFragment)으로 만들어 항상 올바르게 한다.
 export function buildGuideText(origin: string): string {
   const base = origin.replace(/\/+$/, "");
   const ex1 = "[Day 1]\napple | 사과\nlook after | 돌보다";
   const ex2 = "[Anne of Green Gables]\nclutch / clutched | 움켜잡다 / 움켜잡았다\nwrap ↔ unwrap | 싸다 ↔ 풀다\nfling one's arms around ~ | ~에게 달려들다";
-  const link = (t: string) => `${base}/import#${encodeURIComponent(t)}`;
+  const link = (t: string) => `${base}/import#z=${zFragment(t)}`;
 
   return `# 뭉치 단어장 만들기 — AI 지침
 
@@ -42,13 +50,15 @@ ${ex1}
 
 ## 2. 넣기 링크 만들기
 
-링크 = ${base}/import# + encodeURIComponent(1번 텍스트 전체)
+반드시 코드를 실행해서 만듭니다. 머리로 만들면 링크가 깨집니다. 아래 Python 을 그대로 실행하고, text 에는 1번 텍스트 전체를 넣습니다.
 
-- 반드시 코드를 실행해서 만듭니다. 머리로 인코딩하면 링크가 깨집니다.
-  Python: "${base}/import#" + urllib.parse.quote(text, safe="")
-  JavaScript: "${base}/import#" + encodeURIComponent(text)
-- 줄바꿈은 %0A, 공백은 %20, | 는 %7C, 한글은 %XX%XX%XX 가 됩니다.
-- 링크 한 개가 너무 길면 앱이 받지 않아요(링크 약 ${MAX_FRAGMENT_CHARS.toLocaleString("en-US")}자, 붙여넣기 ${MAX_IMPORT_CHARS.toLocaleString("en-US")}자). 그러면 단어장을 나눕니다.
+import zlib, base64
+link = "${base}/import#z=" + base64.urlsafe_b64encode(zlib.compress(text.encode("utf-8"), 9)).decode().rstrip("=")
+print(link)
+
+- 출력된 링크를 한 글자도 바꾸지 않고 그대로 씁니다. 한 글자라도 틀리면 앱이 "링크가 깨졌어요"라고 합니다.
+- 코드를 실행할 수 없으면 링크를 만들지 않습니다. 코드 블록만 주고 "${base}/import 의 붙여넣기 칸에 복사해 넣으세요"라고 안내합니다.
+- 한 단어장 텍스트는 ${MAX_IMPORT_CHARS.toLocaleString("en-US")}자 이하. 넘으면 단어장을 나눕니다.
 
 예시 1 텍스트:
 ${ex1}
@@ -63,7 +73,7 @@ ${link(ex2)}
 ## 3. 답하는 형식 (단어장마다)
 
 1) 단어장 텍스트를 \`\`\`markdown 코드 블록 하나에 넣어 보여 줍니다.
-2) 그 바로 아래에 "👉 뭉치에 넣기" 와 넣기 링크를 줍니다(링크 전체를 그대로, 줄여 쓰지 않기).
+2) 그 바로 아래에 넣기 링크를 마크다운 링크로 줍니다: [👉 뭉치에 넣기](링크) — 긴 주소를 그대로 늘어놓지 않습니다.
 3) 그 아래에 짧게 정리합니다: 문항 수와 출력 줄 수, 중복 제거 내역(사유), OCR 오탈자 수정·행 병합·기호 정돈 내역.
 
 예:
@@ -72,7 +82,7 @@ ${link(ex2)}
 ${ex1}
 \`\`\`
 
-👉 뭉치에 넣기: ${link(ex1)}
+[👉 뭉치에 넣기](${link(ex1)})
 
 ## 4. 아이에게 안내
 

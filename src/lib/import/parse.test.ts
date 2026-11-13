@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MAX_FRAGMENT_CHARS, decodeFragment, parseBulkText } from "./parse";
+import { strToU8, zlibSync } from "fflate";
+import { MAX_FRAGMENT_CHARS, MAX_INFLATED_BYTES, decodeFragment, parseBulkText } from "./parse";
 
 const enc = encodeURIComponent;
 
@@ -76,5 +77,35 @@ describe("parseBulkText", () => {
     const r = parseBulkText("[T]\n" + "가".repeat(200));
     expect(Array.from(r.errors[0].text).length).toBeLessThanOrEqual(81);
     expect(r.errors[0].text).not.toContain("�");
+  });
+});
+
+describe("decodeFragment compressed (#z=)", () => {
+  // Python 과 같은 방식: base64url(zlib.compress(text.encode("utf-8"), 9)), = 없음
+  const z = (t: string) =>
+    "#z=" + Buffer.from(zlibSync(strToU8(t), { level: 9 })).toString("base64url");
+  const text = "[Anne of Green Gables]\nclutch / clutched | 움켜잡다 / 움켜잡았다\nfling one's arms around ~ | ~에게 달려들다";
+
+  it("round-trips Korean text", () => {
+    expect(decodeFragment(z(text))).toEqual({ ok: true, text });
+  });
+  it("accepts the Python output (with padding stripped)", () => {
+    // python3: base64.urlsafe_b64encode(zlib.compress("[T]\na | 가".encode(), 9)).decode().rstrip("=")
+    const py = Buffer.from(zlibSync(strToU8("[T]\na | 가"), { level: 9 })).toString("base64url");
+    expect(decodeFragment("#z=" + py)).toEqual({ ok: true, text: "[T]\na | 가" });
+  });
+  it("one changed character is detected as broken", () => {
+    const h = z(text);
+    const i = Math.floor(h.length / 2);
+    const bad = h.slice(0, i) + (h[i] === "A" ? "B" : "A") + h.slice(i + 1);
+    expect(decodeFragment(bad).ok).toBe(false);
+  });
+  it("truncated or non-base64 is broken", () => {
+    expect(decodeFragment(z(text).slice(0, 30))).toEqual({ ok: false, reason: "broken" });
+    expect(decodeFragment("#z=abc$%")).toEqual({ ok: false, reason: "broken" });
+    expect(decodeFragment("#z=")).toEqual({ ok: false, reason: "broken" });
+  });
+  it("rejects a decompression bomb", () => {
+    expect(decodeFragment(z("a".repeat(MAX_INFLATED_BYTES + 1)))).toEqual({ ok: false, reason: "toolong" });
   });
 });
