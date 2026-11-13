@@ -2,13 +2,13 @@
 import { handleRpc } from "@/lib/mcp/server";
 import { apiKeyOk, mcpEnv, verify } from "@/lib/mcp/token";
 import { disabled, json, originOf } from "@/lib/mcp/http";
-import { addWordsOnly, getVocabLists } from "@/lib/vocab";
+import { DbUnavailable, addList, listLists } from "@/lib/db/vocab";
 
 export const dynamic = "force-dynamic";
 
 const deps = {
-  listLists: async () => (await getVocabLists()).map((l) => ({ name: l.name, count: l.count })),
-  addWords: (title: string, words: { word: string; meaning: string }[]) => addWordsOnly(title, words),
+  listLists: async () => (await listLists()).map((l) => ({ name: l.name, count: l.count })),
+  addWords: (title: string, words: { word: string; meaning: string }[]) => addList(title, words),
 };
 
 function unauthorized(req: Request) {
@@ -35,7 +35,13 @@ export async function POST(req: Request) {
   } catch {
     return json({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } }, 400);
   }
-  const res = await handleRpc(msg, deps);
+  let res;
+  try {
+    res = await handleRpc(msg, deps);
+  } catch (e) {
+    if (e instanceof DbUnavailable) return json({ jsonrpc: "2.0", id: null, error: { code: -32603, message: "DB not configured" } }, 503);
+    throw e;
+  }
   if (res === null) return new Response(null, { status: 202 });
   return json(res);
 }

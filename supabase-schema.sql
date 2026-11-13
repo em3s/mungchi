@@ -56,21 +56,21 @@ CREATE TABLE vocab_config (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- RLS (anon 전체 허용)
+-- RLS (켜 두고 anon 정책 없음 = 공개 키로는 접근 불가)
 ALTER TABLE dictionary ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_all" ON dictionary FOR ALL TO anon USING (true) WITH CHECK (true);
+-- anon 정책 없음: 앱 서버(서비스 키)만 접근 (dictionary)
 
 ALTER TABLE vocab_list_meta ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_all" ON vocab_list_meta FOR ALL TO anon USING (true) WITH CHECK (true);
+-- anon 정책 없음: 앱 서버(서비스 키)만 접근 (vocab_list_meta)
 
 ALTER TABLE vocab_entries ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_all" ON vocab_entries FOR ALL TO anon USING (true) WITH CHECK (true);
+-- anon 정책 없음: 앱 서버(서비스 키)만 접근 (vocab_entries)
 
 ALTER TABLE vocab_quizzes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_all" ON vocab_quizzes FOR ALL TO anon USING (true) WITH CHECK (true);
+-- anon 정책 없음: 앱 서버(서비스 키)만 접근 (vocab_quizzes)
 
 ALTER TABLE vocab_config ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon_all" ON vocab_config FOR ALL TO anon USING (true) WITH CHECK (true);
+-- anon 정책 없음: 앱 서버(서비스 키)만 접근 (vocab_config)
 
 -- 초기 보상 설정 (현재 코드에서는 min_words만 사용)
 INSERT INTO vocab_config (key, value) VALUES
@@ -87,4 +87,5 @@ SELECT
 FROM vocab_entries
 GROUP BY list_id, user_id;
 
-GRANT SELECT ON vocab_entry_counts TO anon, authenticated;
+
+REVOKE ALL ON vocab_entry_counts FROM anon, authenticated;

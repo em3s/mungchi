@@ -2,7 +2,7 @@
 // DB 테이블 없이 동작하고, 비밀값을 바꾸면 발급된 토큰이 모두 무효가 된다.
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
-export type TokenKind = "client" | "code" | "access" | "refresh";
+export type TokenKind = "client" | "code" | "access" | "refresh" | "session";
 
 export interface TokenBody {
   k: TokenKind;

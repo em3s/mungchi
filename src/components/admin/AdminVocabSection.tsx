@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase/client";
-import { createList } from "@/lib/vocab";
+import { addList } from "@/lib/vocab";
 
-const USER_ID = "sihyun";
 
 interface Props {
   showToast: (msg: string) => void;
@@ -108,35 +106,12 @@ export function AdminVocabSection({ showToast }: Props) {
           if (!canSubmit) return;
           setGenerating(true);
           try {
-            const { data: existing } = await supabase
-              .from("vocab_list_meta")
-              .select("id")
-              .eq("user_id", USER_ID)
-              .eq("name", title)
-              .maybeSingle();
-
-            let listId: string;
-            if (existing?.id) {
-              listId = existing.id;
-            } else {
-              const { ok, listId: newId } = await createList(title);
-              if (!ok || !newId) {
-                showToast("생성 실패");
-                return;
-              }
-              listId = newId;
+            // 제목이 같아도 새 단어장을 만든다(목록 맨 위).
+            const { ok } = await addList(title, words);
+            if (!ok) {
+              showToast("생성 실패");
+              return;
             }
-
-            const baseTime = Date.now();
-            const rows = words.map((w, i) => ({
-              user_id: USER_ID,
-              list_id: listId,
-              word: w.word,
-              meaning: w.meaning,
-              created_at: new Date(baseTime + i).toISOString(),
-            }));
-            const { error } = await supabase.from("vocab_entries").insert(rows);
-            if (error) throw error;
 
             showToast(`"${title}" ${words.length}개 단어 추가!`);
             setRawText("");
