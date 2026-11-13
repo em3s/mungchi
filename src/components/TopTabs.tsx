@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "📖 단어장" },
   { href: "/admin", label: "🔧 만들기" },
+  { href: "/ai", label: "🤖 AI로 넣기" },
 ];
 
 export function TopTabs() {

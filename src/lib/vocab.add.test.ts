@@ -59,7 +59,7 @@ vi.mock("@/lib/supabase/client", () => {
   return { supabase: { from } };
 });
 
-import { addWordsOnly, previewAddWords } from "./vocab";
+import { addWordsOnly } from "./vocab";
 
 const words = [{ word: "apple", meaning: "사과" }, { word: "pear", meaning: "배" }];
 
@@ -72,73 +72,34 @@ beforeEach(() => {
   st.raceOlder = false;
 });
 
-describe("previewAddWords (page load)", () => {
-  it("reads only — never inserts/upserts/updates/deletes", async () => {
-    st.lists = [{ id: "L1", user_id: "sihyun", name: "T" }];
-    st.entries = [{ list_id: "L1", word: "apple" }];
-    const r = await previewAddWords("T", words);
-    expect(r).toEqual({ ok: true, listId: "L1", listExists: true, toAdd: ["pear"], skipped: ["apple"] });
-    expect(st.calls.every((c) => c.endsWith(".select"))).toBe(true);
-  });
-  it("new list: listExists false, everything to add, no writes", async () => {
-    const r = await previewAddWords("T", words);
-    expect(r).toEqual({ ok: true, listId: null, listExists: false, toAdd: ["apple", "pear"], skipped: [] });
-    expect(st.calls.every((c) => c.endsWith(".select"))).toBe(true);
-  });
-  it("scopes to user sihyun", async () => {
-    st.lists = [{ id: "X", user_id: "other", name: "T" }];
-    expect((await previewAddWords("T", words))).toMatchObject({ listExists: false });
-  });
-  it("db error → ok false", async () => {
-    st.fail = "findList";
-    expect((await previewAddWords("T", words)).ok).toBe(false);
-  });
-});
-
-describe("addWordsOnly", () => {
+describe("addWordsOnly (new list every time)", () => {
   it("creates a new list and adds all words in order", async () => {
     const r = await addWordsOnly("T", words);
     expect(r).toEqual({ ok: true, listId: "NEW", listCreated: true, added: ["apple", "pear"], skipped: [] });
-    expect(st.upsert!.opts).toEqual({ onConflict: "list_id,word", ignoreDuplicates: true });
     const ts = st.upsert!.rows.map((x) => Date.parse(x.created_at));
     expect(ts[1] - ts[0]).toBe(1);
     expect(st.upsert!.rows.every((x) => x.user_id === "sihyun" && x.list_id === "NEW")).toBe(true);
   });
-  it("adds to existing list and skips existing words", async () => {
+  it("same title again makes another list (no merge, no reads)", async () => {
     st.lists = [{ id: "L1", user_id: "sihyun", name: "T" }];
     st.entries = [{ list_id: "L1", word: "apple" }];
     const r = await addWordsOnly("T", words);
-    expect(r).toEqual({ ok: true, listId: "L1", listCreated: false, added: ["pear"], skipped: ["apple"] });
-    expect(st.calls.filter((c) => c === "vocab_list_meta.insert")).toEqual([]);
-    expect(st.upsert!.rows.map((x) => x.word)).toEqual(["pear"]);
+    expect(r).toMatchObject({ ok: true, listId: "NEW", added: ["apple", "pear"] });
+    expect(st.calls.filter((c) => c === "vocab_list_meta.insert")).toHaveLength(1);
+    expect(st.calls.some((c) => c.endsWith(".select"))).toBe(false);
   });
-  it("all existing → no upsert", async () => {
-    st.lists = [{ id: "L1", user_id: "sihyun", name: "T" }];
-    st.entries = [{ list_id: "L1", word: "apple" }, { list_id: "L1", word: "pear" }];
-    const r = await addWordsOnly("T", words);
-    expect(r).toMatchObject({ ok: true, added: [], skipped: ["apple", "pear"] });
-    expect(st.upsert).toBeUndefined();
-  });
-  it("after creating, converges on the oldest same-name list", async () => {
-    st.raceOlder = true;
-    const r = await addWordsOnly("T", words);
-    expect(r).toMatchObject({ ok: true, listId: "OLDER" });
-    expect(st.upsert!.rows.every((x) => x.list_id === "OLDER")).toBe(true);
-  });
-  it("db errors → ok false", async () => {
-    for (const fail of ["findList", "findEntries", "upsert"]) {
-      st.lists = [{ id: "L1", user_id: "sihyun", name: "T" }];
-      st.fail = fail;
-      expect((await addWordsOnly("T", words)).ok, fail).toBe(false);
-    }
-    st.lists = [];
+  it("create failure → ok false, nothing else", async () => {
     st.fail = "createList";
     expect((await addWordsOnly("T", words)).ok).toBe(false);
+    expect(st.upsert).toBeUndefined();
   });
-  it("never calls update or delete", async () => {
-    st.lists = [{ id: "L1", user_id: "sihyun", name: "T" }];
+  it("word insert failure → removes only the list it just made", async () => {
+    st.fail = "upsert";
+    expect((await addWordsOnly("T", words)).ok).toBe(false);
+    expect(st.calls.filter((c) => c.endsWith(".delete"))).toEqual(["vocab_list_meta.delete"]);
+  });
+  it("never updates, and deletes nothing on success", async () => {
     await addWordsOnly("T", words);
-    await addWordsOnly("New", words);
     expect(st.calls.filter((c) => /\.(update|delete)$/.test(c))).toEqual([]);
   });
 });
