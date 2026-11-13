@@ -1,7 +1,7 @@
 // 뭉치 MCP 서버 주소. Gemini 앱 "맞춤 커넥터"에 이 주소를 넣는다. OAuth 액세스 토큰이 있어야 한다.
 import { handleRpc } from "@/lib/mcp/server";
 import { mcpEnv, verify } from "@/lib/mcp/token";
-import { disabled, json, originOf } from "@/lib/mcp/http";
+import { json, originOf } from "@/lib/mcp/http";
 import { addWordsOnly, getVocabLists } from "@/lib/vocab";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,6 @@ function unauthorized(req: Request) {
 
 export async function POST(req: Request) {
   const env = mcpEnv();
-  if (!env) return disabled();
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   if (!verify(env.secret, token, "access")) return unauthorized(req);
