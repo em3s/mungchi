@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { passwordOk, pkceOk, redirectUriOk, sign, verify } from "./token";
+import { afterEach, vi } from "vitest";
+import { apiKeyOk, passwordOk, pkceOk, redirectUriOk, sign, verify } from "./token";
 
 const S = "s".repeat(32);
 
@@ -49,5 +50,21 @@ describe("password and redirect", () => {
     expect(redirectUriOk("http://evil.example/cb")).toBe(false);
     expect(redirectUriOk("javascript:alert(1)")).toBe(false);
     expect(redirectUriOk("https://a.example/cb#x")).toBe(false);
+  });
+});
+
+describe("apiKeyOk", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("off when MCP_API_KEY is unset or short", () => {
+    vi.stubEnv("MCP_API_KEY", "");
+    expect(apiKeyOk("")).toBe(false);
+    expect(apiKeyOk("anything")).toBe(false);
+    vi.stubEnv("MCP_API_KEY", "short");
+    expect(apiKeyOk("short")).toBe(false);
+  });
+  it("matches exact key only", () => {
+    vi.stubEnv("MCP_API_KEY", "k".repeat(20));
+    expect(apiKeyOk("k".repeat(20))).toBe(true);
+    expect(apiKeyOk("k".repeat(19))).toBe(false);
   });
 });
