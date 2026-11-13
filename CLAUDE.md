@@ -7,7 +7,7 @@
 - **프레임워크**: Next.js (App Router)
 - **언어**: TypeScript
 - **UI**: React + Tailwind CSS
-- **데이터**: Supabase (PostgreSQL), 클라이언트 직접 호출
+- **데이터**: Supabase (PostgreSQL). 서버(API 라우트)만 서비스 키로 접근, 브라우저는 `/api/vocab` 호출
 - **배포**: Vercel
 - **PWA**: manifest.json, iPad 9 반응형 대응
 
@@ -21,8 +21,9 @@
 
 ## 환경 변수
 
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `APP_PIN` (필수) — 앱 PIN(숫자 4~12자리). 없으면 PIN 화면이 "확인하지 못했어요"로 막힘
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase 주소
+- `SUPABASE_SERVICE_ROLE_KEY` (필수, 서버 전용) — 서비스 키. 없으면 `/api/vocab`·커넥터가 503
+- `APP_PIN` (필수) — 앱 PIN(숫자 4~12자리). 없으면 PIN 화면이 "확인하지 못했어요"로 막힘. PIN 이 맞으면 서명 쿠키 `mungchi_auth`(HttpOnly, 180일, `MCP_AUTH_SECRET` 으로 서명)
 - `MCP_AUTH_SECRET`(32자 이상), `MCP_OWNER_PASSWORD`(8자 이상) — Gemini 커넥터(MCP)용 서버 비밀값. 없으면 `/api/mcp`·`/oauth/*` 가 503(꺼짐). 기본값 없음. 서명값을 바꾸면 발급된 연결이 모두 끊김
 - `MCP_API_KEY`(16자 이상) (선택) — 커넥터 고정 키. `MCP_AUTH_SECRET`·`MCP_OWNER_PASSWORD` 도 있어야 켜짐. 있으면 `/api/mcp` 가 `Authorization: Bearer <키>` 또는 `X-API-Key: <키>` 도 받음(OAuth 와 함께)
 - `NEXT_PUBLIC_SITE_URL` (선택) — 커넥터 OAuth 메타데이터·AI 탭에 쓰는 공개 주소. 없으면 요청 호스트(`x-forwarded-host` → `host`)
@@ -31,6 +32,8 @@
 
 - `/` — 단어장 메인 (단어장 목록, 단어 목록, 가리기 모드, TTS) · PIN 인증
 - `/admin` — 관리 및 단어장 벌크 입력 · PIN 인증
+- `/api/vocab` — 화면용 단어장 API(POST `{op}`: lists, entries, addList, deleteList, removeEntry, updateEntry). 세션 쿠키 필요
+- `/api/pin` — GET 자릿수·로그인 여부, POST PIN 확인 후 세션 쿠키
 - `/ai` — 세 번째 탭. Gemini 커넥터(MCP) 사용법(아이 사용법, 보호자 연결 방법, 커넥터 주소). 공개, 비밀값 없음
 
 - `/api/mcp` — MCP 서버(JSON-RPC POST, 상태 없음). Gemini 앱 맞춤 커넥터 주소. 도구: `list_vocab_lists`(읽기), `add_words`(부를 때마다 새 단어장, `words/validate.ts` 검사). OAuth 액세스 토큰 필요
@@ -47,15 +50,16 @@
   - `useSW.ts` — Service Worker 업데이트 감지
   - `useToast.ts`, `usePullToRefresh.ts`
 - `src/lib/`
-  - `vocab.ts` — 단어장 및 단어 CRUD API (Supabase 연동)
+  - `vocab.ts` — 화면용 단어장 함수(`/api/vocab` 호출, 30초 캐시). 401 이면 PIN 다시
+  - `db/` — 서버 전용(`server-only`): `supabase.ts` 서비스 키 클라이언트, `vocab.ts` 단어장 DB 함수(`addList` 는 늘 새 단어장)
+  - `session.ts` — 로그인 쿠키 서명·확인
   - `tts.ts` — Web Speech API 발음 기능 (영어 1회/3회, 한국어)
   - `mcp/` — 커넥터(`server.ts` JSON-RPC·도구, `token.ts` 서명 토큰·PKCE, `http.ts` 메타데이터)
   - `words/validate.ts` — 단어 목록 검사(제목 1~50자, 단어 패턴, 뜻 1~200자, 100개 상한, 중복 제거). 커넥터가 씀
   - `origin.ts` — 공개 주소 결정
-  - `vocab.ts` 의 `addWordsOnly` — 커넥터용: 넣을 때마다 새 단어장(제목이 같아도 따로, 목록 맨 위). 수정·삭제 없음
   - `cache.ts`, `date.ts`, `swr.ts`, `types.ts`, `pin.ts`(서버 PIN 확인)
-  - `supabase/client.ts` — Supabase 클라이언트 설정 (빌드 시 예외 방지 대응)
-- `supabase-schema.sql` — DB 스키마
+- `supabase-schema.sql` — DB 스키마(RLS 켜고 anon 정책 없음)
+- `supabase/lock-anon.sql` — 기존 DB 의 anon 전체 허용 정책을 지우는 SQL(한 번 실행)
 
 ## 단어장 시스템
 
@@ -76,7 +80,7 @@
 ## 관리 페이지
 
 - PIN 인증 — PIN 은 서버 환경변수 `APP_PIN`(숫자 4~12자리)에만 있음. `PinModal` 이 `/api/pin` 으로 확인(GET 자릿수, POST 검사, 틀리면 1초 지연). 메인과 세션 공유
-- 단어장 벌크 입력: `[단어장 제목]` 첫 줄 자동 추출 + `영어단어 | 뜻` 형태로 줄바꿈 기입 시 대량 단어장 생성
+- 단어장 벌크 입력: `[단어장 제목]` 첫 줄 자동 추출 + `영어단어 | 뜻` 형태로 줄바꿈 기입 시 대량 단어장 생성(제목이 같아도 새 단어장)
 
 ## 자동 업데이트 (PWA)
 
@@ -90,5 +94,5 @@
 - 코드 변경 후 `npm run build` 확인
 - KST 타임존 (UTC+9) 일관 사용 (`src/lib/date.ts`)
 - Supabase 에러 핸들링: 읽기=fallback, 쓰기=토스트
-- RLS 활성화 (anon 전체 허용)
-- 앱 PIN 은 서버에서 확인하지만, 통과 표시는 브라우저 localStorage(`mungchi_session`)라 강한 잠금은 아님(DB 는 RLS anon 전체 허용). 커넥터는 서버 비밀값(`MCP_*`)으로 따로 잠김
+- RLS 활성화, anon 정책 없음(공개 키로는 접근 불가). 서버만 서비스 키로 접근
+- 잠금: 화면은 PIN → 서명 쿠키, 커넥터는 OAuth(`MCP_*`), DB 는 서비스 키만. PIN 은 숫자라 서버에서 틀릴 때 1초 지연만 있음

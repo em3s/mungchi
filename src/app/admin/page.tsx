@@ -1,30 +1,17 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import { PinModal } from "@/components/PinModal";
 import { Toast } from "@/components/Toast";
 import { TopTabs } from "@/components/TopTabs";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/hooks/useAuth";
 import { AdminVocabSection } from "@/components/admin/AdminVocabSection";
 import { VocabSettings } from "@/components/VocabSettings";
-
-const SESSION_KEY = "mungchi_session";
 
 export default function AdminPage() {
   const { message, showToast } = useToast();
 
-  const [authed, setAuthed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem(SESSION_KEY) === "true") setAuthed(true);
-    setLoaded(true);
-  }, []);
-
-  const handlePinSuccess = useCallback(() => {
-    localStorage.setItem(SESSION_KEY, "true");
-    setAuthed(true);
-  }, []);
+  const { authed, loaded, onPinSuccess: handlePinSuccess } = useAuth();
 
   if (!loaded) {
     return (

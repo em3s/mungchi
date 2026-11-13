@@ -13,11 +13,11 @@ import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PinModal } from "@/components/PinModal";
+import { useAuth } from "@/hooks/useAuth";
 import { TopTabs } from "@/components/TopTabs";
 import { speakWord, speakKorean } from "@/lib/tts";
 import type { VocabEntry } from "@/lib/types";
 
-const SESSION_KEY = "mungchi_session";
 
 function getVoiceName(lang: "en" | "ko"): string | undefined {
   if (typeof window === "undefined") return undefined;
@@ -27,18 +27,7 @@ function getVoiceName(lang: "en" | "ko"): string | undefined {
 export default function VocabPage() {
   const { message: toastMsg, showToast } = useToast();
 
-  const [authed, setAuthed] = useState(false);
-  const [sessionLoaded, setSessionLoaded] = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem(SESSION_KEY) === "true") setAuthed(true);
-    setSessionLoaded(true);
-  }, []);
-
-  const handlePinSuccess = useCallback(() => {
-    localStorage.setItem(SESSION_KEY, "true");
-    setAuthed(true);
-  }, []);
+  const { authed, loaded: sessionLoaded, onPinSuccess: handlePinSuccess } = useAuth();
 
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [loading, setLoading] = useState(false);
