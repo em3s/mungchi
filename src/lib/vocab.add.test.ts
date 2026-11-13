@@ -59,7 +59,7 @@ vi.mock("@/lib/supabase/client", () => {
   return { supabase: { from } };
 });
 
-import { addWordsOnly, previewAddWords } from "./vocab";
+import { addWordsOnly } from "./vocab";
 
 const words = [{ word: "apple", meaning: "사과" }, { word: "pear", meaning: "배" }];
 
@@ -70,15 +70,6 @@ beforeEach(() => {
   st.upsert = undefined;
   st.fail = undefined;
   st.raceOlder = false;
-});
-
-describe("previewAddWords (page load)", () => {
-  it("never touches the DB and always plans a new list", async () => {
-    st.lists = [{ id: "L1", user_id: "sihyun", name: "T" }];
-    const r = await previewAddWords("T", words);
-    expect(r).toEqual({ ok: true, listId: null, listExists: false, toAdd: ["apple", "pear"], skipped: [] });
-    expect(st.calls).toEqual([]);
-  });
 });
 
 describe("addWordsOnly (new list every time)", () => {

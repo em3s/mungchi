@@ -115,20 +115,11 @@ export async function updateEntry(
   return true;
 }
 
-// --- 넣기 링크·AI 커넥터: 넣을 때마다 새 단어장 ---
+// --- AI 커넥터: 넣을 때마다 새 단어장 ---
 // 제목이 같아도 합치지 않는다(아이들이 같은 단어장을 여러 번 넣고 싶어 함). 새 단어장은 목록 맨 위에 온다.
 // 수정·삭제 없음. 실패하면 방금 만든 빈 단어장만 정리한다.
 
 type WordInput = { word: string; meaning: string };
-
-export type PreviewAddResult =
-  | { ok: true; listId: null; listExists: false; toAdd: string[]; skipped: string[] }
-  | { ok: false };
-
-/** 넣기 전 미리보기. 항상 새 단어장이라 DB 를 읽지 않는다. */
-export async function previewAddWords(_name: string, words: WordInput[]): Promise<PreviewAddResult> {
-  return { ok: true, listId: null, listExists: false, toAdd: words.map((w) => w.word), skipped: [] };
-}
 
 export type AddWordsResult =
   | { ok: true; listId: string; listCreated: true; added: string[]; skipped: string[] }

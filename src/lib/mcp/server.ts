@@ -1,7 +1,6 @@
 // 뭉치 MCP 서버(JSON-RPC, Streamable HTTP 의 단일 JSON 응답 방식). 상태 없음.
 // 도구: 단어장 목록 보기(읽기), 단어 넣기(추가만: 수정·삭제 없음).
-import { validateImport } from "@/lib/import/validate";
-import type { ParsedBulk } from "@/lib/import/parse";
+import { MAX_WORDS, validateWords, type WordList } from "@/lib/words/validate";
 
 export interface McpDeps {
   listLists(): Promise<{ name: string; count: number }[]>;
@@ -73,14 +72,14 @@ const ok = (id: RpcId, result: unknown) => ({ jsonrpc: "2.0", id, result });
 const err = (id: RpcId, code: number, message: string) => ({ jsonrpc: "2.0", id, error: { code, message } });
 const text = (t: string, isError = false) => ({ content: [{ type: "text", text: t }], isError });
 
-/** 도구 인자를 검사기 입력으로 바꾼다. 줄 번호는 단어 순서(1부터). */
-export function toParsed(args: unknown): ParsedBulk | string {
+/** 도구 인자를 검사기 입력으로 바꾼다. line 은 단어 순서(1부터). */
+export function toWordList(args: unknown): WordList | string {
   const a = (args ?? {}) as Json;
   if (typeof a.title !== "string") return "title 이 필요해요";
   if (!Array.isArray(a.words)) return "words 배열이 필요해요";
-  if (a.words.length > 200) return "words 가 너무 많아요(한 번에 100개)";
-  const rows: ParsedBulk["rows"] = [];
-  const errors: ParsedBulk["errors"] = [];
+  if (a.words.length > MAX_WORDS * 2) return `words 가 너무 많아요(한 번에 ${MAX_WORDS}개)`;
+  const rows: WordList["rows"] = [];
+  const errors: WordList["errors"] = [];
   a.words.forEach((w, i) => {
     const o = (w ?? {}) as Json;
     const word = typeof o.word === "string" ? o.word.trim().toLowerCase() : "";
@@ -88,7 +87,7 @@ export function toParsed(args: unknown): ParsedBulk | string {
     if (word && meaning) rows.push({ line: i + 1, word, meaning });
     else errors.push({ line: i + 1, text: word, reason: "단어나 뜻이 비었어요" });
   });
-  return { title: a.title.trim(), titleLine: 0, rows, errors };
+  return { title: a.title.trim(), rows, errors };
 }
 
 async function callTool(name: unknown, args: unknown, deps: McpDeps) {
@@ -98,9 +97,9 @@ async function callTool(name: unknown, args: unknown, deps: McpDeps) {
     return text(lists.map((l) => `- ${l.name} (${l.count}개)`).join("\n"));
   }
   if (name === "add_words") {
-    const parsed = toParsed(args);
+    const parsed = toWordList(args);
     if (typeof parsed === "string") return text(parsed, true);
-    const check = validateImport(parsed);
+    const check = validateWords(parsed);
     if (!check.ok) {
       const lines = check.errors.map((e) => (e.line > 0 ? `${e.line}번째 단어 ${e.text}: ${e.reason}` : e.reason));
       return text(`넣지 않았어요. 고칠 곳:\n${lines.join("\n")}`, true);

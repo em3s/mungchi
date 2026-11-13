@@ -1,5 +1,5 @@
 // MCP·OAuth 라우트가 함께 쓰는 작은 도우미.
-import { resolveOrigin } from "@/lib/import/origin";
+import { resolveOrigin } from "@/lib/origin";
 
 export function originOf(req: Request): string {
   return resolveOrigin((n) => req.headers.get(n));

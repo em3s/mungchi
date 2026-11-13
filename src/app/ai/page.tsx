@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { TopTabs } from "@/components/TopTabs";
-import { resolveOrigin } from "@/lib/import/origin";
+import { resolveOrigin } from "@/lib/origin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "AI로 단어 넣기 · 뭉치" };
