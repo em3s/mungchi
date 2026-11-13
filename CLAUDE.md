@@ -22,6 +22,7 @@
 ## 환경 변수
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `APP_PIN` (필수) — 앱 PIN(숫자 4~12자리). 없으면 PIN 화면이 "확인하지 못했어요"로 막힘
 - `MCP_AUTH_SECRET`(32자 이상), `MCP_OWNER_PASSWORD`(8자 이상) — Gemini 커넥터(MCP)용 서버 비밀값. 없으면 `/api/mcp`·`/oauth/*` 가 503(꺼짐). 기본값 없음. 서명값을 바꾸면 발급된 연결이 모두 끊김
 - `MCP_API_KEY`(16자 이상) (선택) — 커넥터 고정 키. `MCP_AUTH_SECRET`·`MCP_OWNER_PASSWORD` 도 있어야 켜짐. 있으면 `/api/mcp` 가 `Authorization: Bearer <키>` 또는 `X-API-Key: <키>` 도 받음(OAuth 와 함께)
 - `NEXT_PUBLIC_SITE_URL` (선택) — 커넥터 OAuth 메타데이터·AI 탭에 쓰는 공개 주소. 없으면 요청 호스트(`x-forwarded-host` → `host`)
@@ -52,7 +53,7 @@
   - `words/validate.ts` — 단어 목록 검사(제목 1~50자, 단어 패턴, 뜻 1~200자, 100개 상한, 중복 제거). 커넥터가 씀
   - `origin.ts` — 공개 주소 결정
   - `vocab.ts` 의 `addWordsOnly` — 커넥터용: 넣을 때마다 새 단어장(제목이 같아도 따로, 목록 맨 위). 수정·삭제 없음
-  - `cache.ts`, `date.ts`, `swr.ts`, `types.ts`, `constants.ts`
+  - `cache.ts`, `date.ts`, `swr.ts`, `types.ts`, `pin.ts`(서버 PIN 확인)
   - `supabase/client.ts` — Supabase 클라이언트 설정 (빌드 시 예외 방지 대응)
 - `supabase-schema.sql` — DB 스키마
 
@@ -74,7 +75,7 @@
 
 ## 관리 페이지
 
-- PIN 인증 (`src/lib/constants.ts`의 `PIN`) — 메인과 세션 공유
+- PIN 인증 — PIN 은 서버 환경변수 `APP_PIN`(숫자 4~12자리)에만 있음. `PinModal` 이 `/api/pin` 으로 확인(GET 자릿수, POST 검사, 틀리면 1초 지연). 메인과 세션 공유
 - 단어장 벌크 입력: `[단어장 제목]` 첫 줄 자동 추출 + `영어단어 | 뜻` 형태로 줄바꿈 기입 시 대량 단어장 생성
 
 ## 자동 업데이트 (PWA)
@@ -90,4 +91,4 @@
 - KST 타임존 (UTC+9) 일관 사용 (`src/lib/date.ts`)
 - Supabase 에러 핸들링: 읽기=fallback, 쓰기=토스트
 - RLS 활성화 (anon 전체 허용)
-- 앱 PIN 은 클라이언트 코드에 있어 강한 잠금이 아님. 커넥터는 서버 비밀값(`MCP_*`)으로 따로 잠김
+- 앱 PIN 은 서버에서 확인하지만, 통과 표시는 브라우저 localStorage(`mungchi_session`)라 강한 잠금은 아님(DB 는 RLS anon 전체 허용). 커넥터는 서버 비밀값(`MCP_*`)으로 따로 잠김
