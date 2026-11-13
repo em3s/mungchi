@@ -7,7 +7,6 @@ function deps(): McpDeps & { addWords: ReturnType<typeof vi.fn> } {
     listLists: async () => [{ name: "Day 1", count: 3 }],
     addWords: vi.fn(async (_t: string, words: { word: string }[]) => ({
       ok: true as const,
-      listCreated: true,
       added: words.map((w) => w.word),
       skipped: [],
     })),
@@ -42,6 +41,7 @@ describe("handleRpc", () => {
       { word: "wrap ↔ unwrap", meaning: "싸다 ↔ 풀다" },
     ]);
     expect(r.result.content[0].text).toContain("2개를 넣었어요");
+    expect(r.result.content[0].text).toContain("새 단어장");
   });
   it("add_words with any invalid word writes nothing", async () => {
     const d = deps();

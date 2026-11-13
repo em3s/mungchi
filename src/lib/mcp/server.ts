@@ -8,7 +8,7 @@ export interface McpDeps {
   addWords(
     title: string,
     words: { word: string; meaning: string }[],
-  ): Promise<{ ok: true; listCreated: boolean; added: string[]; skipped: string[] } | { ok: false }>;
+  ): Promise<{ ok: true; added: string[]; skipped: string[] } | { ok: false }>;
 }
 
 export const PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
@@ -16,10 +16,10 @@ export const PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 const INSTRUCTIONS = `뭉치는 아이들의 영어 단어장 앱입니다. 사용자가 단어장(시험지) 사진을 주고 "뭉치에 넣어 줘"라고 하면:
 1) 사진을 읽어 단어장 제목과 "영어 | 한글 뜻" 목록으로 정리합니다(규칙은 add_words 설명).
 2) 정리한 목록을 사용자에게 먼저 보여 줍니다.
-3) add_words 로 넣고, 결과(새로 넣은 단어 수, 건너뛴 단어)를 알려 줍니다.
+3) add_words 로 한 번 넣고, 결과(넣은 단어 수)를 알려 줍니다. 같은 단어장을 다시 넣지 않습니다.
 단어를 고치거나 지우는 기능은 없습니다. 고칠 것이 있으면 뭉치 앱의 관리 화면에서 하라고 안내합니다.`;
 
-const ADD_DESC = `뭉치 단어장에 단어를 넣습니다(추가만). 같은 제목의 단어장이 있으면 거기에 이어 붙이고, 없으면 새로 만듭니다. 이미 있는 단어는 건너뜁니다.
+const ADD_DESC = `뭉치에 새 단어장을 만들어 단어를 넣습니다. 부를 때마다 새 단어장이 생기고(제목이 같아도 따로), 목록 맨 위에 옵니다. 한 단어장은 한 번만 부르세요(다시 부르면 같은 단어장이 하나 더 생김).
 정리 규칙(초등/리더스북 영어 단어 시험지):
 - title: 단어장 제목 1~50자. 시험지의 책 제목·Day·Unit, 사용자가 정해 주면 그것.
 - word: 영어로 시작, 영어·숫자·공백과 ' . , - / ~ ↔ ( ) ! ? & ; : 만, 100자 이하. 원형/과거형·단수/복수·유의어는 " / " (예: gather / gathered), 반의어는 " ↔ " (예: wrap ↔ unwrap).
@@ -33,7 +33,7 @@ export const TOOLS = [
   {
     name: "list_vocab_lists",
     title: "단어장 목록 보기",
-    description: "뭉치의 단어장 제목과 단어 수를 봅니다(읽기만). 이어 붙일 단어장 제목을 확인할 때 씁니다.",
+    description: "뭉치의 단어장 제목과 단어 수를 봅니다(읽기만, 최근 것이 위).",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true },
   },
@@ -108,9 +108,9 @@ async function callTool(name: unknown, args: unknown, deps: McpDeps) {
     const r = await deps.addWords(check.title, check.words);
     if (!r.ok) return text("저장하지 못했어요. 잠시 뒤 다시 해 주세요.", true);
     const parts = [
-      `단어장 "${check.title}"${r.listCreated ? "을 새로 만들고" : "에"} ${r.added.length}개를 넣었어요.`,
+      `새 단어장 "${check.title}"을 만들고 ${r.added.length}개를 넣었어요. 뭉치 단어장 맨 위에 있어요.`,
     ];
-    if (r.skipped.length) parts.push(`이미 있어서 건너뜀 ${r.skipped.length}개: ${r.skipped.join(", ")}`);
+    if (r.skipped.length) parts.push(`넣지 못한 단어 ${r.skipped.length}개: ${r.skipped.join(", ")}`);
     if (check.duplicates.length) parts.push(`목록 안에서 겹쳐 하나만 넣음: ${check.duplicates.join(", ")}`);
     return text(parts.join("\n"));
   }

@@ -115,107 +115,58 @@ export async function updateEntry(
   return true;
 }
 
-// --- Gemini 넣기 링크: 추가만 ---
-// 읽기(미리보기)와 쓰기(넣기)를 나눈다. 미리보기는 DB 를 읽기만 한다.
+// --- 넣기 링크·AI 커넥터: 넣을 때마다 새 단어장 ---
+// 제목이 같아도 합치지 않는다(아이들이 같은 단어장을 여러 번 넣고 싶어 함). 새 단어장은 목록 맨 위에 온다.
+// 수정·삭제 없음. 실패하면 방금 만든 빈 단어장만 정리한다.
 
 type WordInput = { word: string; meaning: string };
 
-// 같은 이름 단어장이 여럿이면 가장 오래된 것(동률은 id)을 쓴다.
-async function findOldestList(name: string): Promise<{ id: string | null; error: boolean }> {
-  const { data, error } = await supabase
-    .from("vocab_list_meta")
-    .select("id")
-    .eq("user_id", USER_ID)
-    .eq("name", name)
-    .order("created_at", { ascending: true })
-    .order("id", { ascending: true })
-    .limit(1);
-  if (error) return { id: null, error: true };
-  return { id: (data as { id: string }[] | null)?.[0]?.id ?? null, error: false };
-}
-
-async function findExistingWords(listId: string, words: string[]): Promise<Set<string> | null> {
-  const { data, error } = await supabase
-    .from("vocab_entries")
-    .select("word")
-    .eq("list_id", listId)
-    .in("word", words);
-  if (error) return null;
-  return new Set(((data as { word: string }[] | null) ?? []).map((r) => r.word));
-}
-
 export type PreviewAddResult =
-  | { ok: true; listId: string | null; listExists: boolean; toAdd: string[]; skipped: string[] }
+  | { ok: true; listId: null; listExists: false; toAdd: string[]; skipped: string[] }
   | { ok: false };
 
-/** 넣기 전 미리보기. DB 를 읽기만 한다(쓰기 없음). */
-export async function previewAddWords(name: string, words: WordInput[]): Promise<PreviewAddResult> {
-  const found = await findOldestList(name);
-  if (found.error) return { ok: false };
-  const all = words.map((w) => w.word);
-  if (!found.id) return { ok: true, listId: null, listExists: false, toAdd: all, skipped: [] };
-  const existing = await findExistingWords(found.id, all);
-  if (!existing) return { ok: false };
-  return {
-    ok: true,
-    listId: found.id,
-    listExists: true,
-    toAdd: all.filter((w) => !existing.has(w)),
-    skipped: all.filter((w) => existing.has(w)),
-  };
+/** 넣기 전 미리보기. 항상 새 단어장이라 DB 를 읽지 않는다. */
+export async function previewAddWords(_name: string, words: WordInput[]): Promise<PreviewAddResult> {
+  return { ok: true, listId: null, listExists: false, toAdd: words.map((w) => w.word), skipped: [] };
 }
 
 export type AddWordsResult =
-  | { ok: true; listId: string; listCreated: boolean; added: string[]; skipped: string[] }
+  | { ok: true; listId: string; listCreated: true; added: string[]; skipped: string[] }
   | { ok: false };
 
-/** 추가만 한다(수정·삭제 없음). 단어장이 없으면 만들고, 이미 있는 단어는 건너뛴다. */
+/** 새 단어장을 만들고 단어를 넣는다(입력 안 중복은 검사 단계에서 이미 걸러짐). */
 export async function addWordsOnly(name: string, words: WordInput[]): Promise<AddWordsResult> {
-  const found = await findOldestList(name);
-  if (found.error) return { ok: false };
-  let listId = found.id;
-  let listCreated = false;
-  if (!listId) {
-    const { data, error } = await supabase
-      .from("vocab_list_meta")
-      .insert({ user_id: USER_ID, name })
-      .select("id")
-      .single();
-    if (error || !data) return { ok: false };
-    listId = (data as { id: string }).id;
-    listCreated = true;
-    // 동시에 같은 이름이 만들어졌을 수 있다(유일 제약 없음). 다시 조회해 가장 오래된 단어장으로 모은다.
-    const again = await findOldestList(name);
-    if (again.error) return { ok: false };
-    listId = again.id ?? listId;
-  }
+  const { data, error } = await supabase
+    .from("vocab_list_meta")
+    .insert({ user_id: USER_ID, name })
+    .select("id")
+    .single();
+  if (error || !data) return { ok: false };
+  const listId = (data as { id: string }).id;
 
-  const existing = await findExistingWords(listId, words.map((w) => w.word));
-  if (!existing) return { ok: false };
-  const toAdd = words.filter((w) => !existing.has(w.word));
-  const skipped = words.filter((w) => existing.has(w.word)).map((w) => w.word);
-  let added = toAdd.map((w) => w.word);
-
-  if (toAdd.length > 0) {
-    const base = Date.now(); // 관리 페이지처럼 입력 순서를 created_at 으로 보존
-    const rows = toAdd.map((w, i) => ({
-      user_id: USER_ID,
-      list_id: listId,
-      word: w.word,
-      meaning: w.meaning,
-      created_at: new Date(base + i).toISOString(),
-    }));
-    const { data, error } = await supabase
-      .from("vocab_entries")
-      .upsert(rows, { onConflict: "list_id,word", ignoreDuplicates: true })
-      .select("word");
-    if (error) return { ok: false };
-    const inserted = new Set(((data as { word: string }[] | null) ?? []).map((r) => r.word));
-    skipped.push(...added.filter((w) => !inserted.has(w)));
-    added = added.filter((w) => inserted.has(w));
+  const base = Date.now(); // 관리 페이지처럼 입력 순서를 created_at 으로 보존
+  const rows = words.map((w, i) => ({
+    user_id: USER_ID,
+    list_id: listId,
+    word: w.word,
+    meaning: w.meaning,
+    created_at: new Date(base + i).toISOString(),
+  }));
+  const ins = await supabase
+    .from("vocab_entries")
+    .upsert(rows, { onConflict: "list_id,word", ignoreDuplicates: true })
+    .select("word");
+  if (ins.error) {
+    // 방금 만든 빈 단어장만 지운다(다른 데이터는 건드리지 않음).
+    await supabase.from("vocab_list_meta").delete().eq("id", listId).eq("user_id", USER_ID);
+    invalidate(`vocab_lists`);
+    return { ok: false };
   }
+  const inserted = new Set(((ins.data as { word: string }[] | null) ?? []).map((r) => r.word));
+  const added = words.map((w) => w.word).filter((w) => inserted.has(w));
+  const skipped = words.map((w) => w.word).filter((w) => !inserted.has(w));
 
   invalidate(`vocab_lists`);
   invalidate(`vocab_entries:${listId}`);
-  return { ok: true, listId, listCreated, added, skipped };
+  return { ok: true, listId, listCreated: true, added, skipped };
 }

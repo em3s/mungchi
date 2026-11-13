@@ -179,9 +179,7 @@ export default function ImportPage() {
               ? "확인하는 중..."
               : !pv.ok
                 ? "단어장을 확인하지 못했어요"
-                : pv.listExists
-                  ? "이미 있는 단어장에 더해요"
-                  : "새 단어장을 만들어요"}
+                : "새 단어장을 만들어 맨 위에 넣어요(같은 제목이 있어도 따로 만들어요)"}
           </div>
 
           {pv && pv.ok && (
