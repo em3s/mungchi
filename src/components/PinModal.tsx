@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { PIN } from "@/lib/constants";
+import { useState, useCallback, useEffect } from "react";
 
 interface PinModalProps {
   title: string;
@@ -19,32 +18,62 @@ export function PinModal({
   onCancel,
 }: PinModalProps) {
   const [input, setInput] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<"" | "wrong" | "server">("");
+  const [length, setLength] = useState(6);
+  const [checking, setChecking] = useState(false);
+
+  // PIN 은 서버에만 있다. 자릿수만 받아 점 개수를 맞춘다.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/pin", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d && typeof d.length === "number") setLength(d.length);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleKey = useCallback(
-    (digit: string) => {
-      setError(false);
+    async (digit: string) => {
+      if (checking) return;
+      setError("");
       const next = input + digit;
-      if (next.length >= PIN.length) {
-        if (next === PIN) {
-          onSuccess();
-        } else {
-          setError(true);
-          setInput("");
-        }
-      } else {
+      if (next.length < length) {
         setInput(next);
+        return;
       }
+      setInput(next);
+      setChecking(true);
+      try {
+        const r = await fetch("/api/pin", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ pin: next }),
+        });
+        if (r.ok) {
+          onSuccess();
+          return;
+        }
+        setError(r.status === 401 ? "wrong" : "server");
+      } catch {
+        setError("server");
+      } finally {
+        setChecking(false);
+      }
+      setInput("");
     },
-    [input, onSuccess]
+    [input, length, checking, onSuccess]
   );
 
   const handleDelete = useCallback(() => {
-    setError(false);
+    setError("");
     setInput((prev) => prev.slice(0, -1));
   }, []);
 
-  const dots = Array.from({ length: PIN.length }, (_, i) => i < input.length);
+  const dots = Array.from({ length }, (_, i) => i < input.length);
 
   return (
     <div
@@ -77,7 +106,7 @@ export function PinModal({
 
         {error && (
           <div className="text-[#e17055] text-sm font-semibold -mt-2 mb-4">
-            비밀번호가 틀렸어요
+            {error === "wrong" ? "비밀번호가 틀렸어요" : "확인하지 못했어요. 잠시 뒤 다시 해 주세요"}
           </div>
         )}
 
