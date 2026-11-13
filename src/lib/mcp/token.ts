@@ -1,7 +1,6 @@
 // 뭉치 MCP 커넥터용 OAuth 토큰. 서버 비밀값(MCP_AUTH_SECRET)으로 서명한 상태 없는 토큰이다.
 // DB 테이블 없이 동작하고, 비밀값을 바꾸면 발급된 토큰이 모두 무효가 된다.
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { PIN } from "@/lib/constants";
 
 export type TokenKind = "client" | "code" | "access" | "refresh";
 
@@ -78,13 +77,17 @@ export const TTL = {
   refresh: 180 * 24 * 3600,
 };
 
-// 환경변수가 없으면 쓰는 기본값. 강한 잠금이 아니다(앱 PIN 과 같은 수준: 코드에 있음).
-// 더 조이려면 Vercel 에 MCP_AUTH_SECRET(32자 이상)·MCP_OWNER_PASSWORD 를 넣으면 그 값을 쓴다.
-const DEFAULT_SECRET = "mungchi-mcp-default-signing-secret-v1-change-via-env";
+/** 필요한 환경변수. 없으면 커넥터 전체를 끈다(503). 기본값은 두지 않는다. */
+export function mcpEnv(): { secret: string; password: string } | null {
+  const secret = process.env.MCP_AUTH_SECRET ?? "";
+  const password = process.env.MCP_OWNER_PASSWORD ?? "";
+  if (secret.length < 32 || password.length < 8) return null;
+  return { secret, password };
+}
 
-/** 서명 비밀값과 연결 비밀번호. 환경변수가 있으면 그 값, 없으면 기본값(비밀번호 = 앱 PIN). */
-export function mcpEnv(): { secret: string; password: string } {
-  const s = process.env.MCP_AUTH_SECRET ?? "";
-  const p = process.env.MCP_OWNER_PASSWORD ?? "";
-  return { secret: s.length >= 32 ? s : DEFAULT_SECRET, password: p.length >= 6 ? p : PIN };
+/** 고정 API 키(MCP_API_KEY, 16자 이상). 없으면 키 방식은 꺼진다(OAuth 만). */
+export function apiKeyOk(given: string): boolean {
+  const key = process.env.MCP_API_KEY ?? "";
+  if (key.length < 16 || !given) return false;
+  return passwordOk(given, key);
 }

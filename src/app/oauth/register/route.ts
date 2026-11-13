@@ -1,11 +1,12 @@
 // 동적 클라이언트 등록(RFC 7591). 상태 없이 client_id 에 redirect_uris 를 서명해 담는다.
 import { mcpEnv, redirectUriOk, sign } from "@/lib/mcp/token";
-import { json } from "@/lib/mcp/http";
+import { disabled, json } from "@/lib/mcp/http";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const env = mcpEnv();
+  if (!env) return disabled();
   let body: { redirect_uris?: unknown; client_name?: unknown };
   try {
     const raw = await req.text();

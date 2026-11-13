@@ -1,7 +1,7 @@
 // 뭉치 MCP 서버 주소. Gemini 앱 "맞춤 커넥터"에 이 주소를 넣는다. OAuth 액세스 토큰이 있어야 한다.
 import { handleRpc } from "@/lib/mcp/server";
-import { mcpEnv, verify } from "@/lib/mcp/token";
-import { json, originOf } from "@/lib/mcp/http";
+import { apiKeyOk, mcpEnv, verify } from "@/lib/mcp/token";
+import { disabled, json, originOf } from "@/lib/mcp/http";
 import { addWordsOnly, getVocabLists } from "@/lib/vocab";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +20,12 @@ function unauthorized(req: Request) {
 
 export async function POST(req: Request) {
   const env = mcpEnv();
+  if (!env) return disabled();
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
-  if (!verify(env.secret, token, "access")) return unauthorized(req);
+  // OAuth 액세스 토큰, 또는 고정 API 키(Authorization: Bearer <키> / X-API-Key: <키>)
+  const key = req.headers.get("x-api-key")?.trim() || token;
+  if (!verify(env.secret, token, "access") && !apiKeyOk(key)) return unauthorized(req);
 
   const raw = await req.text();
   if (raw.length > 200_000) return json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Too large" } }, 413);
